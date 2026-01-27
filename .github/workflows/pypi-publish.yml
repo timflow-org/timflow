@@ -42,7 +42,7 @@ jobs:
       - build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: pypi-publish
       url: https://pypi.org/p/timflow
     permissions:
       id-token: write
