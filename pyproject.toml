@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "timflow"
+description = "Analytic element modeling of groundwater flow"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = []
+
+
+[tool.setuptools.dynamic]
+version = { attr = "timflow.version.__version__" }
