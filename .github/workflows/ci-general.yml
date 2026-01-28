@@ -3,7 +3,8 @@ name: Test General
 on:
   workflow_run:
     workflows: ["Lint"]
-    types: [completed]
+    types: 
+      - completed
     branches:
       - main
       - dev
