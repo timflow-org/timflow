@@ -38,7 +38,7 @@ def test_notebook_py(pth):
         ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
         try:
             assert (
-                ep.preprocess(nb, {"metadata": {"path": "docs/transient/s02examples"}})
+                ep.preprocess(nb, {"metadata": {"path": "docs/transient/02examples"}})
                 is not None
             ), f"Got empty notebook for {os.path.basename(pth)}"
         except Exception as e:
