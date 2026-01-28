@@ -13,7 +13,7 @@ from nbconvert.preprocessors import (
 # %%
 nbdirs = [
     # os.path.join("docs/00tutorials"),
-    os.path.join("docs/02examples"),
+    os.path.join("docs/transient/02examples"),
     # os.path.join("notebooks"),
 ]
 
@@ -28,66 +28,6 @@ def get_notebooks():
             os.path.join(nbdir, f) for f in os.listdir(nbdir) if f.endswith(".ipynb")
         ]
     return nblist
-
-
-# def get_jupyter_kernel():
-#     try:
-#         jklcmd = ("jupyter", "kernelspec", "list")
-#         b = subprocess.Popen(
-#             jklcmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-#         ).communicate()[0]
-#         if isinstance(b, bytes):
-#             b = b.decode("utf-8")
-#         print(b)
-#         for line in b.splitlines():
-#             if "python" in line:
-#                 kernel = line.split()[0]
-#     except:  # noqa
-#         kernel = None
-
-#     return kernel
-
-
-# @pytest.mark.notebooks
-# @pytest.mark.parametrize("pth", get_notebooks())
-# def test_notebook(pth):
-#     kernel = get_jupyter_kernel()
-#     print("available jupyter kernel {}".format(kernel))
-
-#     fn = os.path.basename(pth)
-
-#     cmd = (
-#         "jupyter "
-#         + "nbconvert "
-#         + "--ExecutePreprocessor.timeout=600 "
-#         + "--to "
-#         + "notebook "
-#         + "--execute "
-#         + "{} ".format(pth)
-#         + "--output-dir "
-#         + "{} ".format(testdir)
-#         + "--output "
-#         + "{}".format(fn)
-#     )
-#     ival = os.system(cmd)
-#     assert ival == 0, "could not run {}".format(fn)
-
-
-# @pytest.mark.notebooks
-# @pytest.mark.parametrize("pth", get_notebooks())
-# def test_notebook_cmd(pth):
-#     cmd = (
-#         "jupyter "
-#         + "nbconvert "
-#         + "--ExecutePreprocessor.timeout=600 "
-#         + "--ExecutePreprocessor.kernel_name=python3 "
-#         + "--to "
-#         + "notebook "
-#         + "--execute "
-#         + "{} ".format(pth)
-#     )
-#     ival = os.system(cmd)
-#     assert ival == 0, f"could not run {os.path.basename(pth)}"
 
 
 @pytest.mark.notebooks
