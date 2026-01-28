@@ -1,13 +1,10 @@
-name: Test Transient
+name: Transient
 
 on:
   workflow_run:
-    workflows: ["Lint"]
-    types: 
-      - completed
-    branches:
-      - main
-      - dev
+    workflows: [Lint]
+    types: [completed]
+    branches: [main, dev]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
