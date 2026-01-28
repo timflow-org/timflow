@@ -1,6 +1,6 @@
 import numpy as np
 
-import timml as tml
+from timflow import steady as tml
 
 
 def test_wellstring_layers_int():

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from timml.besselaesnumba import besselaesnumba as besselaesnew
+from timflow.steady.besselaesnumba import besselaesnumba as besselaesnew
 
 """
 x=2.0

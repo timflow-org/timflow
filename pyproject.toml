@@ -40,7 +40,8 @@ repository = "https://github.com/timflow-org/timflow"
 documentation = "https://github.com/timflow-org/timflow"  # TODO: update
 
 [project.optional-dependencies]
-ci = ["pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely", "ruff"]
+lint = ["ruff"]
+ci = ["timflow[lint]", "pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely",]
 docs = [
     "timflow[ci]",
     "sphinx",

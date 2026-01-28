@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import exp1
 
-import ttim
+from timflow import transient as ttim
 
 
 def theis(r, t, T, S, Q):
