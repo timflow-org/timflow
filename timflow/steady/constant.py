@@ -12,8 +12,8 @@ import inspect  # Used for storing the input
 
 import numpy as np
 
-from .element import Element
-from .equation import PotentialEquation
+from timflow.steady.element import Element
+from timflow.steady.equation import PotentialEquation
 
 __all__ = ["Constant", "ConstantStar", "ConstantInside"]
 

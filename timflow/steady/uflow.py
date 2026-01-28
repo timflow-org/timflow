@@ -11,7 +11,7 @@ import inspect  # Used for storing the input
 
 import numpy as np
 
-from .element import Element
+from timflow.steady.element import Element
 
 __all__ = ["Uflow"]
 

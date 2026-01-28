@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import k0, k1
 
-from .element import Element
-from .equation import HeadEquation, MscreenWellNoflowEquation
-from .trace import timtracelines
+from timflow.steady.element import Element
+from timflow.steady.equation import HeadEquation, MscreenWellNoflowEquation
+from timflow.steady.trace import timtracelines
 
 __all__ = [
     "Well",
