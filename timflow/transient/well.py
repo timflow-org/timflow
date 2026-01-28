@@ -6,8 +6,8 @@ import numpy as np
 # from scipy.special import iv  # Needed for K1 in Well class, and in CircInhom
 from scipy.special import kv
 
-from .element import Element
-from .equation import HeadEquation, WellBoreStorageEquation
+from timflow.transient.element import Element
+from timflow.transient.equation import HeadEquation, WellBoreStorageEquation
 
 
 class WellBase(Element):

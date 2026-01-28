@@ -8,4 +8,4 @@ Mark Bakker, Delft University of Technology mark dot bakker at tudelft dot nl.
 
 # ruff : noqa: F401
 from timflow import steady, transient
-from timflow.version import __version__
+from timflow.version import __version__, show_versions

@@ -12,8 +12,8 @@ import inspect  # Used for storing the input
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .element import Element
-from .equation import (
+from timflow.steady.element import Element
+from timflow.steady.equation import (
     DisvecDiffEquation,
     HeadDiffEquation,
     HeadEquation,

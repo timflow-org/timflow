@@ -18,11 +18,11 @@ from warnings import warn
 
 import numpy as np
 
-from .aquifer import AquiferData
-from .aquifer_parameters import param_3d, param_maq
-from .constant import ConstantInside, ConstantStar
-from .element import Element
-from .intlinesink import (
+from timflow.steady.aquifer import AquiferData
+from timflow.steady.aquifer_parameters import param_3d, param_maq
+from timflow.steady.constant import ConstantInside, ConstantStar
+from timflow.steady.element import Element
+from timflow.steady.intlinesink import (
     IntFluxDiffLineSink,
     IntFluxLineSink,
     IntHeadDiffLineSink,
