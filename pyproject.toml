@@ -41,7 +41,8 @@ documentation = "https://github.com/timflow-org/timflow"  # TODO: update
 
 [project.optional-dependencies]
 lint = ["ruff"]
-ci = ["timflow[lint]", "pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely",]
+optional = ["lmfit"]
+ci = ["timflow[lint,optional]", "pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely",]
 docs = [
     "timflow[ci]",
     "sphinx",
