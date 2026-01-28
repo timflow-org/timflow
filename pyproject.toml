@@ -6,10 +6,104 @@ build-backend = "setuptools.build_meta"
 name = "timflow"
 description = "Analytic element modeling of groundwater flow"
 readme = "README.md"
-requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Mark Bakker" }, { name = "Davíd Brakenhoff" }]
+maintainers = [
+    { name = "Mark Bakker", email = "markbak@gmail.com" },
+    { name = "Davíd Brakenhoff", email = "d.brakenhoff@artesia-water.nl" },
+]
 dynamic = ["version"]
-dependencies = []
+keywords = ["hydrology", "groundwater", "model", "analytic element method"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Hydrology",
+]
+requires-python = ">=3.11"
+dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas"]
 
+[project.urls]
+homepage = "https://github.com/timflow-org/timflow"
+repository = "https://github.com/timflow-org/timflow"
+documentation = "https://github.com/timflow-org/timflow"  # TODO: update
+
+[project.optional-dependencies]
+ci = ["pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely", "ruff"]
+docs = [
+    "timflow[ci]",
+    "sphinx",
+    "sphinx-design",
+    "pydata-sphinx-theme",
+    "numpydoc",
+    "myst_nb",
+    "sphinxcontrib-bibtex",
+    "sphinx-autoapi",
+]
+dev = ["timflow[docs]"]
 
 [tool.setuptools.dynamic]
 version = { attr = "timflow.version.__version__" }
+
+[tool.ruff]
+line-length = 90
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+# See: https://docs.astral.sh/ruff/rules/
+select = [
+    "C4",  # flake8-comprehensions
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "PT",  # pytest-style
+    "D",   # pydocstyle
+    "B",   # flake8-bugbear
+    "NPY", # numpy
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D105", # Missing docstring in magic method
+    "D401", # First line should be in imperative mood
+    "B006", # Do not use mutable data structures as default arguments
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--durations=0",
+    "--cov=timflow",
+    "--cov-report=lcov:.coverage/lcov.info",
+    "--cov-report=term",
+    "--ignore=docs/steady/02examples/vertical_anisotropy.ipynb",
+    "--ignore=docs/steady/04tests/benchmarking_besselaes.ipynb",
+]
+markers = [
+    "notebooks: run notebooks",
+]
+
+[tool.coverage.run]
+omit = [
+    "*/steady/besselaesnumba/besselaesnumba_old.py",
+    "*/steady/circinhom.py",
+    "*/transient/circinhom.py",
+    "*/transient/besselnumba_total.py",
+    "*/transient/aquifernew.py",
+    "*/transient/kuhlman_invlap.py",
+]

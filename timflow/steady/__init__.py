@@ -8,13 +8,10 @@ analytic elements and consists of a library of Python scripts and FORTRAN extens
 """
 
 # ruff: noqa: F401
-# --version number
-__author__ = "Mark Bakker"
-# Import all classes and functions
-from timml import bessel
-from timml.circareasink import CircAreaSink
-from timml.constant import Constant, ConstantStar
-from timml.inhomogeneity import (
+from timflow.steady import bessel
+from timflow.steady.circareasink import CircAreaSink
+from timflow.steady.constant import Constant, ConstantStar
+from timflow.steady.inhomogeneity import (
     BuildingPit3D,
     BuildingPitMaq,
     LeakyBuildingPit3D,
@@ -22,15 +19,20 @@ from timml.inhomogeneity import (
     PolygonInhom3D,
     PolygonInhomMaq,
 )
-from timml.inhomogeneity1d import StripInhom3D, StripInhomMaq, Xsection3D, XsectionMaq
-from timml.linedoublet import (
+from timflow.steady.inhomogeneity1d import (
+    StripInhom3D,
+    StripInhomMaq,
+    Xsection3D,
+    XsectionMaq,
+)
+from timflow.steady.linedoublet import (
     ImpLineDoublet,
     ImpLineDoubletString,
     LeakyLineDoublet,
     LeakyLineDoubletString,
 )
-from timml.linedoublet1d import ImpLineDoublet1D, LeakyLineDoublet1D
-from timml.linesink import (
+from timflow.steady.linedoublet1d import ImpLineDoublet1D, LeakyLineDoublet1D
+from timflow.steady.linesink import (
     CollectorWell,
     Ditch,
     DitchString,
@@ -45,13 +47,12 @@ from timml.linesink import (
     River,
     RiverString,
 )
-from timml.linesink1d import HeadLineSink1D, LineSink1D
-from timml.model import Model, Model3D, ModelMaq, ModelXsection
-from timml.stripareasink import XsectionAreaSink
-from timml.trace import timtraceline, timtracelines
-from timml.uflow import Uflow
-from timml.version import __version__, show_versions
-from timml.well import (
+from timflow.steady.linesink1d import HeadLineSink1D, LineSink1D
+from timflow.steady.model import Model, Model3D, ModelMaq, ModelXsection
+from timflow.steady.stripareasink import XsectionAreaSink
+from timflow.steady.trace import timtraceline, timtracelines
+from timflow.steady.uflow import Uflow
+from timflow.steady.well import (
     HeadWell,
     HeadWellString,
     LargeDiameterWell,

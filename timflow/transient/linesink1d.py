@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ttim.element import Element
-from ttim.equation import (
+from timflow.transient.element import Element
+from timflow.transient.equation import (
     FluxDiffEquation,
     HeadDiffEquation,
     HeadEquation,

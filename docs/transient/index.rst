@@ -42,12 +42,6 @@ point in the aquifer system and at any time.
 
         Comparing TTim to known solutions.
 
-    .. grid-item-card:: Code reference
-        :link: 05api/index
-        :link-type: doc
-
-        TTim code reference.
-
 
 Quick Example
 -------------
@@ -62,7 +56,7 @@ Quick Example
 
             # Import python packages
             import numpy as np
-            import ttim
+            from timflow import transient as ttim
 
             # Create model
             ml = ttim.ModelMaq(kaq=10, z=[20, 0], Saq=[0.1], phreatictop=True, tmin=1e-3, tmax=100)
@@ -106,5 +100,4 @@ approximated as vertical.
     Examples <02examples/index>
     Pumping tests <03pumpingtests/index>
     Benchmarks <04benchmarks/index>
-    Code reference <05api/index>
     Cite <06about/index>

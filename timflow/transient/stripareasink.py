@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ttim.element import Element
+from timflow.transient.element import Element
 
 
 class AreaSinkXsection(Element):

@@ -12,7 +12,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timml.element import Element
+from timflow.steady.element import Element
 
 __all__ = ["XsectionAreaSinkInhom", "XsectionAreaSink"]
 

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from .invlapnumba import invlapcomp
+from timflow.transient.invlapnumba import invlapcomp
 
 
 class Element(ABC):

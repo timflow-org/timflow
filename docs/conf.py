@@ -5,21 +5,20 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+# import os
+# import sys
 
-project = "TTim"
-copyright = "2023, Mark Bakker"
-author = "Mark Bakker"
+project = "timflow"
+copyright = "2026, Mark Bakker, Davíd Brakenhoff"
+author = "Mark Bakker, Davíd Brakenhoff"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autodoc",
     "autoapi.extension",
-    # "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx.ext.doctest",
-    # "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
@@ -31,7 +30,7 @@ extensions = [
     "sphinxcontrib.bibtex",
 ]
 
-templates_path = ["_templates"]
+# templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
@@ -39,32 +38,25 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
-html_short_title = "ttim"
+html_short_title = "timflow"
 html_css_files = ["css/custom.css"]
 html_show_sphinx = True
 html_show_copyright = True
-htmlhelp_basename = "ttimdoc"  # Output file base name for HTML help builder.
+htmlhelp_basename = "timflow"  # Output file base name for HTML help builder.
 html_use_smartypants = True
 html_show_sourcelink = True
 
 html_theme_options = {
-    "github_url": "https://github.com/mbakker7/ttim",
+    "github_url": "https://github.com/timflow-org/timflow",
     "use_edit_page_button": True,
-    "header_links_before_dropdown": 7,
-    # "icon_links": [
-    #     {
-    #         "name": "GitHub",  # Label for this link
-    #         "url": "https://github.com/mbakker7/ttim",  # required
-    #         "icon": "fab fa-github-square",
-    #         "type": "fontawesome",  # Default is fontawesome
-    #     }
-    # ],
+    "header_links_before_dropdown": 6,
+    "show_nav_level": 2,
 }
 
 html_context = {
-    "github_user": "mbakker7",
-    "github_repo": "ttim",
-    "github_version": "master",
+    "github_user": "timflow-org",
+    "github_repo": "timflow",
+    "github_version": "main",
     "doc_path": "docs",
 }
 
@@ -72,27 +64,28 @@ html_context = {
 
 napoleon_include_init_with_doc = False
 napoleon_use_param = True
-napoleon_type_aliases = {"ml": "ttim.Model"}
 
-# -- Autodoc, autosummary, and autosectionlabel settings ------------------------------
+# -- Autosectionlabel settings --------------------------------------------------------
 
-autodoc_typehints = "description"
-autodoc_typehints_format = "short"
-# autosummary_generate = True
-# autoclass_content = "class"
 autosectionlabel_prefix_document = True
 
 # -- AutoAPI settings -----------------------------------------------------------------
-
-autoapi_dirs = ["../ttim"]
-autoapi_root = "05api"
+autoapi_dirs = ["../timflow/steady", "../timflow/transient"]
+autoapi_root = "api"
+autoapi_options = [
+    "show-module-summary",
+    "inherited-members",
+    "show-inheritance",
+]
+autoapi_own_page_level = "method"
+autoapi_template_dir = "_templates/autoapi"
 
 # -- Numpydoc settings ----------------------------------------------------------------
 
 numpydoc_class_members_toctree = True
 numpydoc_show_class_members = False
 
-# -- Intersphinx settings -------------------------------------------------------------
+# -- Set intersphinx Directories ------------------------------------------------------
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -105,13 +98,32 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "auto"
+nb_execution_mode = "off"
 nb_merge_streams = True
+
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
+nb_render_markdown_format = "myst"  # Enable MyST markdown parsing in notebooks
+nb_render_text_lexer = "myst-ansi"  # Better rendering of ANSI output
+nb_render_priority = {
+    "html": (
+        "application/vnd.jupyter.widget-view+json",
+        "application/javascript",
+        "text/html",
+        "image/svg+xml",
+        "image/png",
+        "image/jpeg",
+        "text/markdown",
+        "text/latex",
+        "text/plain",
+    )
+}
 
 # -- bibtex options ------------------------------------------------------------------
 
 # Add some settings for bibtex
-bibtex_bibfiles = ["06about/publications.bib"]
+bibtex_bibfiles = [
+    "steady/06about/publications.bib",
+    "transient/06about/publications.bib",
+]
 bibtex_reference_style = "author_year"
