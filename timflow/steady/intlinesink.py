@@ -6,14 +6,14 @@ Used by inhomogeneities.
 
 import numpy as np
 
-from .controlpoints import controlpoints
-from .equation import (
+from timflow.steady.controlpoints import controlpoints
+from timflow.steady.equation import (
     DisvecDiffEquation2,
     HeadDiffEquation2,
     IntDisVecEquation,
     IntLeakyWallEquation,
 )
-from .linesink import LineSinkHoBase
+from timflow.steady.linesink import LineSinkHoBase
 
 
 class IntHeadDiffLineSink(LineSinkHoBase, HeadDiffEquation2):

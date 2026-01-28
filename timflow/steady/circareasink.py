@@ -12,7 +12,7 @@ import inspect  # Used for storing the input
 import numpy as np
 from scipy.special import i0, i1, k0, k1
 
-from .element import Element
+from timflow.steady.element import Element
 
 __all__ = ["CircAreaSink"]
 

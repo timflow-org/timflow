@@ -34,7 +34,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run tests
-        run: uv run pytest ./tests/transient
+        run: uv run pytest --cov-append ./tests/transient
 
       - name: Numba coverage
         run: |
