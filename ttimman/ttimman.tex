@@ -1,0 +1,881 @@
+%=============================================================================
+% Packages
+
+\NeedsTeXFormat{LaTeX2e} [1994/06/01]
+\documentclass [10pt,letterpaper] {article}
+\usepackage[reqno,intlimits,sumlimits]{amsmath}
+\usepackage{fancyhea}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{url}
+
+
+%\numberwithin{equation}{section}
+\renewcommand{\baselinestretch}{1.2}
+\renewcommand{\arraystretch}{1}
+
+%-----------------------------------------------------------------------------
+%  Define the page layout.
+
+\setlength{\oddsidemargin}{0.0in} \setlength{\hoffset}{0in}
+\setlength{\textwidth}{6.5in}
+
+\setlength{\topmargin}{-0.2cm} \setlength{\voffset}{0.0in}
+%\setlength{\topmargin}{0cm} \setlength{\voffset}{0.0in}
+\setlength{\textheight}{8.5in}
+
+%-----------------------------------------------------------------------------
+%  Define the page headers.
+
+\pagestyle{fancy}
+
+\lhead{\it TTim} \chead{} \rhead{\thepage} \lfoot{Mark Bakker}
+\rfoot{\today} \cfoot{}
+
+\setlength{\headrulewidth}{0.0pt}
+\setlength{\footrulewidth}{0.0pt}
+
+%-----------------------------------------------------------------------------
+% Pull in all of the necessary macros.
+
+%=============================================================================
+\begin{document}
+%=============================================================================
+
+\title{TTim\\A Multi-Aquifer Transient Analytic Element Model\\Version 0.3\\DRAFT}
+\author{{\bf Mark Bakker}\\Water Resources Section, Civil Engineering and Geosciences\\
+Delft University of Technology, Delft, The Netherlands
+\\mark.bakker@tudelft.nl
+}
+\date{\today}
+\maketitle
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+TTim (pronounce "Tee Tim") is a solver for transient multi-layer flow based on the
+Laplace-transform analytic element method and is developed at the Delft University of Technology in Delft, The Netherlands.
+
+\section{Funding}
+Version 0.3 was funded by Intera, Inc., Austin, TX.
+Version 0.01-0.23 was funded by  Layne
+Hydro, a division of the Layne Christensen Company, in
+Bloomington, IN. Version 0.01 of TTim was funded by the US EPA
+Ecosystems Research division on contract QT-RT-10-000812 to S.S.
+Papadopulos and Associates in Bethesda, MD. Version 0.01 was developed  in collaboration
+with S.S. Papadopulos and Associates in Bethesda, MD, and Layne Hydro in Bloomington, IN.
+
+\section{License}
+Copyright \copyright 2010-2015, Mark Bakker
+\\Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+\\The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+\\THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+\section{TTim website}
+To be added.
+
+\section{Installation}
+The following free, open-source software is required to run TTim:
+Python version 2.X, the packages numpy, scipy, and matplotlib. The shapely package is needed for the use of Lake elements (optional). TTim uses a FORTRAN extension which means that TTim is unfortunately both platform dependent
+and Python version dependent. 
+
+Although it is possible to download all required Python packages separately, it is much easier to install one of the Python installers that comes with a large selection of popular packages. Three main options are Anaconda, Enthought, and PythonXY. This manual is written for Anaconda users. Use of the other distributions only differs in how IPython is started.
+
+\subsection{Running TTim on a platform other than Windows or Mac}
+The only reason TTim is platform dependent is that some functions
+are coded in FORTRAN and compiled as FORTRAN extensions to improve
+performance. Compiled versions are included in the Windows and Mac installers. The FORTRAN files {\tt
+bessel.f95} and {\tt invlap.f90} may be compiled to Python extensions on any other
+platform with f2py.
+
+\subsection{Differences with versions before 0.3}
+TTim version 0.3 is not compatible with previous versions. The most important change is that the numbering of layers starts with 0 (zero) for the top layer, where previous versions started at 1. The zero-based numbering is consistent with the numbering of indices in Python.
+
+\subsection{Release history}
+\noindent Verison 0.01. November 2010.
+\\ Version 0.02. October 2011.
+\\ Version 0.1. February 2012.
+\\ Version 0.11. April 2012.
+\\ Version 0.2. July 2012.
+\\ Version 0.23. September 2013.
+\\ Version 0.3. May 2015.
+
+\section{Main approximations}
+The theory behind TTim is described in detail in Bakker (2013a), while a more applied discussion, including a practical example, is published in Bakker (2013b). Benchmark problems for wells are published in Louwyck et al. (2012).
+
+TTim is developed to simulate transient flow in an aquifer system consisting of an arbitrary number of layers.
+The term layers refers to both aquifer layers and leaky layers
+(also referred to as aquitard layers). Aquifer system properties
+are homogeneous within an aquifer (hydraulic conductivity,
+thickness, and storage), even when a phreatic surface is modeled in the top layer, and within a leaky layer
+(thickness, resistance, and specific storage).
+Both aquifer layers and leaky layers are numbered from the top of the aquifer system to
+the bottom, starting with leaky layer 0 on top of aquifer layer 0 (Yes, they start at zero, just like the index of arrays in numpy).
+
+Vertical resistance to flow is neglected within an aquifer layer, in accordance with the Dupuit approximation. Flow in leaky layers is vertical. Heads are computed in aquifer layers
+only. The governing system of differential equations is presented in Hemker and Maas (1987). 
+Principles of the Laplace-transform analytic element method are outlined
+in Kuhlman and Neuman (2009) and Bakker and Kuhlman (2011).
+
+Boundary
+conditions specified for each element (for example, specified head or
+discharge) are zero for $t<0$. Conditions in the aquifer at $t=0$ are approximated as steady-state. TTim computes heads with respect to this steady-state situation. This means that the head along a stream with a constant water level needs to be specified as zero.
+Analytic elements may start, stop or change at any time and are constant for each specified period. Analytic
+element solutions are computed in the Laplace domain. A solution
+in the physical domain is obtained through numerical inversion
+using the algorithm of De Hoog et al. (1982). The aquifer domain
+is infinite with the head at infinity equal to zero in all aquifer layers.
+
+Units are not specified in the model. The user must use consistent
+units when specifying aquifer properties and interpreting model
+results.
+
+
+
+\section{Types of elements and their practical application}
+Five kinds of elements are implemented: wells, line-sinks, line-doublets, and circular area-sinks. Most elements have a number of types.
+\renewcommand{\labelitemi}{$\circ$}
+\renewcommand{\labelitemii}{$\circ$}
+\subsection{Wells}
+For wells, the following types of elements are implemented:
+\begin{itemize}
+\item Wells that are screened in multiple layers for which only the total discharge is known. Command: {\tt Well}. Practical application: The {\tt Well} is used to simulate flow to a well that is screened in multiple layers; only the total discharge of the well is specified. TTim distributes the discharge across the screens such that the head inside the well is the same in all layers. Well bore storage and skin effect may be taken into account.
+\item Wells that are screened in multiple layers for which the total discharge is zero. Command: {\tt ZeroMscreenWell}. Practical application: A {\tt ZeroMscreenWell} represents an abandoned well or an observation well that is screened in multiple layers. If the abandoned well is filled up with material, a resistance to vertical flow may be specified, equal to the distance between the centers of two screens divided by the vertical hydraulic conductivity of the fill material. In case of an observation well that is screened in multiple layers, the vertical resistance is commonly zero.
+\item 
+Wells with a specified head. The same head is used for each layer that the well is screened in. Command: {\tt HeadWell}. Practical application: {\tt HeadWell} elements may be used to compute the discharge of a well for a desired drawdown or injection head. 
+\item Wells with a specified discharge. The discharge is specified and is the same for each layer that the well is screened in. Command: {\tt DischargeWell}. Practical application: this element is used to simulate flow to a well that pumps with a known discharge. It is not common to use this element for a well that is screened in multiple layers, as the discharge is the same in each layer. Hence, when a discharge $Q$ is specified, $Q$ is taken from each layer that the well is screened in. This may be useful, however, when comparing to an exact solution for a well with a uniform inflow along the screen.
+\item 
+Wells with a specified head equal to zero. Command: {\tt ZeroHeadWell}. Practical application: {\tt ZeroHeadWell} elements are not used much in practice. 
+\end{itemize}
+
+All wells  may, optionally, have an entry resistance. For wells the entry resistance represent the skin effect of the well. The discharge $Q$ for a layer is computed as:
+\begin{equation}
+Q = 2\pi r_w H \frac{h_\text{out}-h_\text{in}}{c}
+\end{equation}
+where $r_w$ is the radius of the well, $H$ is the aquifer thickness, $c$ is the entry resistance (with units of time), and $h_\text{out}$ and $h_\text{in}$ are the head just outside and just inside the well, respectively.
+Kruseman and De Ridder (1990) and some others define the skin effect slightly differently. Their additional drawdown due to the skin effect $s_s$ is defined as
+\begin{equation}
+s_s = \frac{Q}{2\pi T}c_s
+\end{equation}
+where $c_s$ [-] is their coefficient for the skin effect. For the case of a single well in an infinite aquifer, the skin effect parameter $c_s$ may be expressed in terms of $c$ as
+\begin{equation}
+c_s = \frac{k}{r_w}c
+\end{equation}
+
+\subsection{Line-sinks}
+Line-sinks are commonly entered as strings, which are discussed in the next section, but may also be entered as individual elements. 
+For line-sinks, the following types of elements are implemented:
+\begin{itemize}
+\item 
+Line-sinks with a specified head. The same head is used for each layer that the line-sink is screened in. Command: {\tt HeadLineSink}. Practical application: {\tt HeadLineSink} may be used to simulate flow to rivers and streams with a known and variable water level.
+\item 
+Line-sinks with a specified head equal to zero. Command: {\tt ZeroHeadLineSink}. Practical application: {\tt ZeroHeadLineSink} may be used to simulate flow to rivers and streams with a fixed water level.
+\item Line-sinks that are screened in multiple layers for which the total discharge is zero. Command:  {\tt ZeroMscreenLineSink}.  Practical application: A {\tt ZeroMscreenLineSink} represents a vertical fault with a high vertical hydraulic conductivity. A vertical resistance to flow inside the fault and a width of the fault may be specified. The vertical resistance equals the distance between the centers of two adjacent layers divided by the vertical hydraulic conductivity of the fill material.
+\item Elements with specified discharge. The discharge is specified and is the same for each layer that the element is screened in. Command: {\tt LineSink}. Practical application: The {\tt LineSink} is not used much in practice, as the inflow is rarely known.
+\item Elements that are screened in multiple layers for which only the total discharge is known. Command: {\tt McreenLineSink}. Practical application: The {\tt MscreenLineSink} is not used much in practice, as the inflow is rarely known.
+\end{itemize}
+
+An entry resistance may be specified, optionally, for each line-sink type. 
+The entry resistance may represent a clogged streambed or the resistance encountered by three-dimensional path lines, for example. The total discharge of a line-sink is computed as
+\begin{equation}\label{Qls}
+Q = Lw \frac{h_\text{out}-h_\text{in}}{c}
+\end{equation}
+where $L$ is the strength of a line-sink, $w$ is the distance over which water enters the line-sink, $c$ is the entry resistance (with units of time), and $h_\text{out}$ and $h_\text{in}$ are the head just outside and just inside the line-sink, respectively. The distance $w$ may be the width of the stream, for example, in case of a partially penetrating stream. In case the stream penetrates the aquifer layer fully, the distance $w$ may equal the thickness of the aquifer layer (if water enters primarily from one side), or twice the aquifer thickness (if water enters from both sides). Note that the quantity that matters is really $w/c$. 
+
+\subsection{Line-sink strings}
+The following line-sink string types have been implemented:
+\begin{itemize}
+\item 
+A string of line-sinks with a specified head. Command: {\tt HeadLineSinkString}. A string of {\tt HeadLineSink} elements all with the same head variation.
+\item 
+A string of line-sinks with a specified head equal to zero. Command: {\tt ZeroHeadLineSinkString}. A string of {\tt ZeroHeadLineSink} elements.
+\item A string of  line-sinks that are screened in multiple layers for which the total discharge of each line-sink in the string is zero. Command:  {\tt ZeroMscreenLineSinkString}.  A string of {\tt ZeroMscreenLineSink} elements. 
+\item A string of  line-sinks that is screened in one or multiple layers for which the total discharge of \emph{the entire} string is specified. Command: {\tt MscreenLineSinkDitchString}. The discharge is distributed across the elements (and also across the layers in case of multiple-layers) such that the total discharge of the string equals the specified discharge. Practical application: Simulation of a ditch or horizontal well for which the total discharge is known.
+\end{itemize}
+
+\subsection{Line-doublet strings}
+A line-doublet string may be used to simulate an impermeable or leaky wall. The wall consists of a polyline. The flow through the wall, $Q_n$ is computed as
+\begin{equation} \label{Qnleakywall}
+Q_n = H\frac{h_\text{left}-h_\text{right}}{c_w}
+\end{equation}
+where $H$ is the thickness of the aquifer layer, $h_\text{left}$ and $h_\text{right}$ are the heads on either side of the wall and $c_w$ [T] is the resistance of the wall defined as 
+\begin{equation}
+c_w=\frac{w_w}{k_w}
+\end{equation}
+where $w_w$ is the width of the wall and $k_w$ is the hydraulic conductivity of the wall. The wall becomes impermeable when the resistance is set to infinity.
+
+\subsection{Circular area-sinks}
+Circular area-sinks are used to simulate transient recharge. The recharge is uniform inside the circle but may vary through time.
+
+\section{Model commands}
+
+There are two types of models that may be created: multi-aquifer models consisting of a sequence of aquifers and leaky layers and quasi-three-dimensional models in which an aquifer is divided into a number of sublayers to simulate three-dimensional flow.
+\subsection{Regular multi-aquifer model}
+A multi-aquifer model consists of a regular sequence of aquifer - leaky layer - aquifer - leaky layer - aquifer, etc. For the current implementation, the bottom model layer is an aquifer, which is bounded at the bottom by an impermeable layer. The top model layer may be either an aquifer or leaky layer. The top model boundary may either be impermeable or a fixed water table.
+\begin{description}
+\item[{\tt In []:}] {\tt ml =
+ModelMaq(kaq=[1],z=[1,0],c=[],Saq=[],Sll=[],topboundary='imp',phreatictop=False,\\
+tmin=1,tmax=10,M=20)} where
+    \begin{description}
+    \item {\tt kaq} is a list\footnote{A list is a sequence separated by commas and between square brackets,
+    such as: [1,2,3]} or an array\footnote{Arrays are defined in the {\tt numpy} package} of hydraulic conductivities of the aquifers starting
+    from the top down.
+    \item {\tt z} is a list or array of top and bottom elevations of the model layers
+    from the top down. (Note: this may be counter intuitive, so be
+    careful.) The last value is the bottom elevation of the bottom aquifer. The elevations need to be chosen such that the thicknesses of the aquifer layers are all larger than zero; the thickness of a leaky layer may be zero.    
+    \item {\tt c} is a list or array of the vertical resistances of
+    the leaky layers, starting from the top down. The resistance must always be larger than zero.
+    \item {\tt Saq} is a list or array of the specific storage coefficients of the aquifers. When the keyword {\tt phreatictop} is set to {\tt True}, the first value is the phreatic storage coefficient (unless the {\tt topboundary} is set to {\tt 'semi'}).
+    \item {\tt Sll} is a list or array of the specific storage coefficients of the leaky layers. The first value needs to
+    be the phreatic storage coefficient in case the keyword {\tt phreatictop} is set to {\tt True} and the {\tt topboundary} is set to {\tt 'leaky'}.
+    \item {\tt topboundary} indicates the boundary condition at the top of the aquifer system.  Options are {\tt 'standard'} (used to be the somewhat confusing {\tt 'impermeable'}, which still works) which means no transient leakage is induced through the top of aquifer layer 0 by the elements in the model, {\tt 'leaky'} which means aquifer 0 is covered by a leaky layer and water may flow from the leaky layer into aquifer 0 through the release or increase of storage in the leaky layer, or {\tt 'semi'} which means aquifer 0 is covered by a leaky layer which is bounded on top by a fixed head equal to zero.
+    \item {\tt phreatictop} is set to {\tt True} when the top model layer contains a phreatic surface.  When {\tt topboundary='imp'} this means the the first value of {\tt Saq} is interpreted as the phreatic storage coefficient. When {\tt topboundary='leaky'} this means the the first value of {\tt Sll} is interpreted as the phreatic storage coefficient.  When {\tt topboundary='semi'} this keyword is ignored as a phreatic surface is not possible in the top model layer.
+       \item{\tt tmin} is the minimum time for which heads can be computed after any change in boundary condition.
+    \item {\tt tmax} is the maximum time for which heads can be computed.
+    \item {\tt M} is the number of terms to be used in the numerical inversion algorithm. 20 is usually sufficient. If drawdown curves appear to oscillate, more terms may be needed, but this seldom happens. 
+    \end{description}
+\end{description}
+As an example, when the number of aquifers is $N$, then both {\tt
+kaq} and {\tt Saq} need to contain $N$ values. When {\tt
+topboundary} is set to {\tt 'imp'} then {\tt z} contains $2N$
+values, and {\tt c} and {\tt Sll} contain $N-1$ values.   When
+{\tt topboundary} is not {\tt 'imp'} then there exists an
+additional leaky layer on top of aquifer 1, so that {\tt z}
+contains $2N+1$ values, and {\tt c} and {\tt Sll} contain $N$
+values.
+
+
+\subsection{Quasi three-dimensional model}
+A quasi three-dimensional model consists of one aquifer which is subdivided into an arbitrary number of model layers, each with its own hydraulic conductivity, vertical anisotropy, and storage coefficient. The top and bottom of the aquifer are impermeable.
+\begin{description}
+\item[{\tt In []:}] {\tt ml =
+Model3D(kaq=[1,1,1],z=[4,3,2,1],Saq=[0.3,0.001,0.001],kzoverkh=[.1,.1,.1],\\
+phreatictop=True,tmin=1,tmax=10,M=20)} where
+    \begin{description}
+    \item {\tt kaq} is a list or an array of horizontal hydraulic conductivities of the aquifer layers starting
+    from the top down. One value may be entered when the hydraulic conductivity is the same in all layers.
+    \item {\tt z} is a list or array of top elevations of the model layers
+    from the top down. (Note: this may be counter intuitive, so be
+    careful.) The last value is the bottom elevation of the bottom model layer. The elevations need to be chosen such that the thicknesses of the aquifer layers are all larger than zero.
+    \item {\tt Saq} is a list or array of the specific storage coefficients of the model layers. One value may be entered when the specific storage coefficient is the same in all layers.
+When the keyword {\tt phreatictop} is set to {\tt True}, the first value is the phreatic storage coefficient.
+    \item {\tt kzoverkh} is a list or an array of vertical anisotropy values. One value may be entered when the vertical anisotropy is the same in all layers.
+        \item {\tt phreatictop} is set to {\tt True} when the top model layer contains a phreatic surface, which means that  the first value of {\tt Saq} is interpreted as the phreatic storage coefficient.
+       \item{\tt tmin} is the minimum time for which heads can be computed after any change in boundary condition.
+           \item {\tt tmax} is the maximum time for which heads can be computed.
+    \item {\tt M} is the number of terms to be used in the numerical inversion algorithm. 15 is usually sufficient. If drawdown curves appear to oscillate, 20 terms may need to be used, but this seldom happens. On very rare occasions, more terms may be needed.
+    \end{description}
+\end{description}
+As an example, when the aquifer is divided into $N$ model layers,
+then {\tt z} needs to contain $N+1$ values.
+
+\subsection{Cylindrical inhomogeneities}
+Cylindrical inhomogeneities in all aquifer properties may be added with one of the following commands (depending on whether there is a Multi-Aquifer model or a 3D model)
+\begin{description}
+\item[{\tt In []:}] {\tt CircInhomMaq(model,x0=0,y0=0,R=1,order=1,kaq=[1],z=[1,0],c=[],Saq=[0.001],Sll=[0],\\ topboundary='imp',phreatictop=False,label=None)} or
+\item[{\tt In []:}] {\tt CircInhom3D(self,model,x0=0,y0=0,R=1,order=1,kaq=[1,1,1],z=[4,3,2,1],\\
+Saq=[0.3,0.001,0.001],kzoverkh=[.1,.1,.1],phreatictop=True,label=None)} where
+\begin{description}
+   \item {\tt model} is the model to which the inhomogeneity is added
+   \item {\tt x0,y0} is the location of the center of the cylinder
+   \item {\tt R} is the radius of the cylinder
+       \item {\tt order} is the order of the inhomogeneity. The boundary condition is met at {\tt 2*order+1} control points along the cylindrical inhomogeneity and approximately between the control points.
+    \item {\tt label} is a string with a unique label for the cylinder. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message.
+    \item Aquifer parameters are defined as described for the {\tt ModelMaq} and {\tt Model3D} commands.
+        \end{description}
+\end{description}
+Cylinders may be nested but may not overlap (TTim does not check whether they overlap, but an invalid solution will be obtained).
+
+%\subsection{Elliptical inhomogeneities}
+%Elliptical inhomogeneities in all aquifer properties may be added with one of the following commands (depending on whether there is a Multi-Aquifer model or a 3D model)
+%\begin{description}
+%\item[{\tt In []:}] {\tt EllipseInhomMaq(model,x0=0,y0=0,along=2.0,bshort=1.0,angle=0.0,order=1,kaq=[1],z=[1,0],\\ c=[],Saq=[0.001],Sll=[0],topboundary='imp',phreatictop=False,label=None)} or
+%\item[{\tt In []:}] {\tt EllipseInhom3D(self,model,x0=0,y0=0,along=2.0,bshort=1.0,angle=0.0,order=1,kaq=[1,1,1],\\ z=[4,3,2,1],Saq=[0.3,0.001,0.001],kzoverkh=[.1,.1,.1],phreatictop=True,label=None)} where
+%\begin{description}
+%   \item {\tt model} is the model to which the inhomogeneity is added
+%   \item {\tt x0,y0} is the location of the center of the ellipse
+%   \item {\tt along,bshort} are the length of the long and short semi-axes of the ellipse
+%   \item {\tt angle} is the angle (in radians) that the long axis makes with the positive $x$-direction (straight East)
+%    \item {\tt order} is the order of the elliptical inhomogeneity. The number of control points along the elliptical inhomogeneity is {\tt 2*order+1}.   
+%     \item {\tt label} is a string with a unique label for the ellipse. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message.
+%    \item Aquifer parameters are defined as described for the {\tt ModelMaq} and {\tt Model3D} commands.
+%        \end{description}
+%\end{description}
+%Ellipses may not be nested\footnote{This is different than for cylinders, which may be nested} nor may they overlap (TTim does not check whether they overlap, but an invalid solution will be obtained). Elliptical inhomogeneities make use of of Mathieu functions, which are difficult to calculate, especially for complex argument. Use is made of the  Python library of Mathieu functions developed by Kris Kuhlman: klkuhlm $<$at$>$ sandia $<$dot$>$ gov from September 2009 - February 2010. Although the library is highly sophisticated, it is not particularly fast; a FORTRAN implementation, which is expected to improve performance significantly is currently under development. The user should be aware the the generation of contour plots of models with elliptical inhomogeneities is not recommended as they may take a very large time. Time variations of the head at a point may be computed in a timely manner for most settings.
+
+\clearpage
+\section{Analytic element commands}
+The following elements may be added to the model:
+\subsection{Wells}
+There are five types of wells:
+\begin{description}
+\item[{\tt In []:}] {\tt Well(model,xw=0,yw=0,rw=0.1,tsandQ=[(0.0,1.0)],}\\{\tt res=0.0,layers=0,rc=None,wbstype='pumping',label=None)}
+\item[{\tt In []:}] {\tt ZeroMscreenWell(model,xw=0,yw=0,rw=0.1,res=0.0,layers=[0,1],vres=0.0,label=None)}
+\item[{\tt In []:}] {\tt DischargeWell(model,xw=0,yw=0,rw=0.1,tsandQ=[(0.0,1.0)],res=0.0,layers=0,label=None)}
+\item[{\tt In []:}] {\tt HeadWell(model,xw=0,yw=0,rw=0.1,tsandh=[(0.0,1.0)],res=0.0,layers=0,label=None)}
+\item[{\tt In []:}] {\tt ZeroHeadWell(model,xw=0,yw=0,rw=0.1,res=0.0,layers=0,label=None)}
+
+\end{description}
+where
+\begin{description}
+    \item {\tt model} is the model to which the element is
+    added
+    \item {\tt xw,yw} is the location of the well
+    \item {\tt rw} is the radius of the well
+    \item {\tt tsandQ} is a list of {\tt (time,Q)} values, where {\tt Q} is the discharge of the well, positive for taking water out. A 2D array may be entered as well. For example, {\tt tsandQ=[(5,10),(8,0),(14,20)]} means that the discharge is $Q=10$ starting at time $t=5$, the discharge is $Q=0$ starting at time $t=8$ and $Q=20$ starting at time $t=14$.
+    \item {\tt tsandh} is a list of {\tt (time,h)} values, similar to entering {\tt tsandQ}. A 2D array may be entered as well.
+    \item {\tt res} is the entry resistance of the well, also referred to as the skin effect.
+    \item {\tt vres} is the vertical resistance to flow inside the well, which may be zero (for {\tt ZeroMscreenWell} elements only).
+    \item {\tt rc} is the radius of the caisson to simulate well bore storage. When the radius is set to {\tt None} or 0, well bore storage is not taken into account.      
+    \item {\tt layers} is either the layer number where the well is screened or is a list or array with
+    multiple layer numbers in case there are multiple screens. The layer numbers may contain gaps (e.g., {\tt layers=[2,3,6]} may be used for a well screened in layers 2, 3, and 6).
+    \item {\tt wbstype} is the well type, either {\tt 'pumping'} (default), or {\tt 'slug'}.
+    \item {\tt label} is a string with the unique label for the well. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message. It is useful to enter a label to compute, for example, the head inside a well.
+\end{description}
+
+\subsection{Line-sinks}
+There are five types of line-sinks:
+\begin{description}
+\item[{\tt In []:}] {\tt HeadLineSink}\\{\tt(model,x1=-1,y1=0,x2=1,y2=0,tsandh=[(0.0,1.0)],res=0.0,wh='H',layers=0,label=None)}
+\item[{\tt In []:}] {\tt ZeroHeadLineSink}\\{\tt(model,x1=-1,y1=0,x2=1,y2=0,res=0.0,wh='H',layers=0,label=None)}
+\item[{\tt In []:}] {\tt ZeroMscreenLineSink}\\{\tt(model,x1=-1,y1=0,x2=1,y2=0,res=0.0,wh='H',layers=[0,1],vres=0.0,wv=1.0,label=None)}
+\item[{\tt In []:}] {\tt LineSink}\\{\tt(model,x1=-1,y1=0,x2=1,y2=0,tsandQ=[(0.0,1.0)],res=0.0,wh='H',layers=0,label=None)}
+\item[{\tt In []:}] {\tt MscreenLineSink}\\{\tt(model,x1=-1,y1=0,x2=1,y2=0,tsandQ=[(0.0,1.0)],res=0.0,wh='H',layers=[0,1],label=None)}
+
+\end{description}
+where
+\begin{description}
+    \item {\tt model} is the model to which the element is
+    added
+    \item {\tt x1,y1,x2,y2} are the left and right end points of
+    the line-sink
+    \item {\tt tsandQ} is a list of {\tt (time,Q)} values, where {\tt Q} is the discharge of the line-sink, positive for taking water out of the aquifer; the inflow or outflow $\sigma$ is uniform along the line-sink so that the discharge $Q$ is equal to $Q=\sigma L$. A 2D array may be entered as well. For example, {\tt tsandQ=[(5,10),(8,0),(14,20)]} means that the discharge is $Q=10$ starting at time $t=5$, the discharge is $Q=0$ starting at time $t=8$ and $Q=20$ starting at time $t=14$.
+    \item {\tt tsandh} is a list of {\tt (time,h)} values, similar to entering {\tt tsandQ}. A 2D array may be entered as well.    
+    \item {\tt res} is the entry resistance of the line-sink, also referred to as the stream bed resistance.
+    \item {\tt wh} is the distance over which flow enters the line-sink ($w$ in Eq. \ref{Qls}). Values may be {\tt 'H'} (default) when the distance is equal to the thickness of the aquifer layer (when flow comes mainly from one side), {\tt '2H'} when the distance is twice the thickness of the aquifer layer (when flow comes from both sides), or a number, for example, the width of the stream that partially penetrates the aquifer.
+    \item {\tt layers} is either the layer number where the line-sink is positioned or is a list or array with
+    multiple layer numbers in case the line-sink is open to multiple layers.
+    \item {\tt vres} is the vertical resistance inside the line-sink (only for {\tt ZeroMscreenLineSink} elements)    
+    \item {\tt wv} is the width of a {\tt ZeroMscreenLineSink}, commonly used to simulate a vertical fault. 
+    \item {\tt label} is a string with the unique label for the line-sink. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message. It is useful to enter a label to compute, for example, the inflow into a line-sink.
+\end{description}
+
+\subsection{Strings of line-sinks}
+The following line-sink string elements have been implemented:
+\begin{description}
+\item[{\tt In []:}]{\tt HeadLineSinkString}\\{\tt (model,xy=[(-1,0),(1,0)],tsandh=[(0.0,1.0)],wh='H',res=0.0,layers=0,label=None)}
+\item[{\tt In []:}]{\tt ZeroHeadLineSinkString(model,xy=[(-1,0),(1,0)],res=0.0,wh='H',layers=0,label=None)}
+\item[{\tt In []:}]{\tt ZeroMscreenLineSinkString}\\{\tt (model,xy=[(-1,0),(1,0)],res=0.0,wh='H',layers=[0,`],vres=0.0,wv=1.0,label=None)}
+\item[{\tt In []:}]{\tt MscreenLineSinkDitchString}\\{\tt (model,xy=[(-1,0),(1,0)],tsandQ=[(0.0,1.0)],res=0.0,wh='H',layers=[0,1],label=None)}
+\end{description}
+where {\tt xy} is a list or 2D array of {\tt (x,y)} pairs of the vertices of the line-sink string. All other variables are the same as for the line-sink types defined above. 
+
+\subsection{Strings of line-doublets}
+The following line-doublet string element has been implemented:
+\begin{description}
+\item[{\tt In []:}]{\tt LeakyLineDoubletString(model,xy=[(-1,0),(1,0)],res='imp',order=0,layers=0,label=None)}
+\end{description}
+where
+\begin{description}
+    \item {\tt model} is the model to which the element is
+    added
+    \item {\tt xy} is a list or 2D array of {\tt (x,y)} pairs of the vertices of the string 
+    \item {\tt res} is the resistance of the leaky wall. Enter {\tt 'imp'} for an impermeable wall.
+    \item {\tt order} is the order of each leaky wall segment. Condition (\ref{Qnleakywall}) is applied at {\tt order+1} points along each segment. A good order is 2. It is not advised to increase the order beyond 8 or so. If more control is needed, it is better to use shorter segments. 
+    \item {\tt layers} is either the layer number where the wall is positioned or is a list or array with
+    multiple layer numbers in case the wall is positioned in multiple layers. The layer numbers may contain gaps (although that doesn't seem to be very useful for leaky walls).
+    \item {\tt label} is a string with the unique label for the line-sink. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message. It is useful to enter a label to compute, for example, the inflow into a line-sink.
+\end{description}
+
+\subsection{Circular area-sinks}
+Circular area-sinks are always added to layer 0. They may be added to a model with the following command:
+\begin{description}
+\item[{\tt In []:}]{\tt CircAreaSink(self,model,xc=0,yc=0,R=0.1,tsandbc=[(0.0,1.0)],label=None)}
+\end{description}
+where
+\begin{description}
+    \item {\tt model} is the model to which the element is
+    added
+    \item {\tt xc,yc} is the center of the circular area-sink
+    \item {\tt R} is the radius of the circular area-sink
+    \item {\tt tsandbc} is a list of {\tt (time,N)} values, where {\tt N} is the recharge (dimension: length per time), positive for adding water to the aquifer. A 2D array may be entered as well. For example, {\tt tsandbc=[(5,0.001),(8,0),(14,0.002)]} means that the recharge is $N=0.001$ (in m/d when units of meters and days are used) starting at time $t=5$, the recharge is $N=0$ starting at time $t=8$ and $N=0.002$ starting at time $t=14$.
+    \item {\tt label} is a string with the unique label for the area-sink. The default is {\tt None}, which means there is no label. When a label is entered that already exists, TTim throws an error message. It is useful to enter a label to compute, for example, the cumulative recharge of the area-sink.
+\end{description}
+
+\section{Functions}
+\begin{description}
+\item[{\tt In []:}] {\tt ml.solve()} Solve the model.
+
+\item[{\tt In []:}] {\tt ml.head(x,y,t,layers=None)} returns an array with size {\tt (Naq,Ntimes)} or {\tt (Nlayers,Ntimes)} of heads where
+    \begin{description}
+    \item {\tt x,y} are the coordinates of the point where the head is computed.
+    \item {\tt t} is either one value or a list or array with {\tt Ntimes} ordered values. Zero is returned for {\tt t} values outside {\tt tmin} and {\tt tmax}. Note that it is generally much quicker to compute the head for a number of times in one command than to call the {\tt head} function multiple times for the same location but with a different time.
+    \item {\tt layers} is an optional argument. When it is set to {\tt None} (default), the head is computed at all {\tt Naq} aquifers of the model. Optionally, the desired layer number or a list or array of not-necessarily consecutive layer numbers may be specified, in which case the head is computed at {\tt (Nlayers,Ntimes)} points.
+    \end{description}
+
+\item[{\tt In []:}] {\tt ml.headalongline(self,x,y,t,layers=None)} returns an array with size {\tt (Naq,Ntimes,Npoints)} or {\tt (Nlayers,Ntimes,Npoints)} of heads where
+    \begin{description}
+    \item {\tt x} is an array with the x values of the line.
+    \item {\tt y} is an array of the same length as {\tt x} with the y values of the line, or it is one value in which case
+    all y values will be the same along the line.
+    \item {\tt t} is either one value or a list or array of values and must be ordered. Zero is returned for {\tt t} values outside {\tt tmin} and {\tt tmax}.
+    \item {\tt layers} is an optional argument. When it is set to {\tt None} (default), the head is computed at all {\tt Naq} aquifers of the model. Optionally, the desired layer number or a list or array of not-necessarily consecutive layer numbers may be specified, in which case the head is computed at {\tt (Nlayers,Ntimes,Npoints)} points.
+    \end{description}
+
+\item[{\tt In []:}] {\tt ml.headgrid(x1,x2,nx,y1,y2,ny,t,layers=None)} returns an array with size {\tt (Naq,Ntimes,ny,nx)} or {\tt (Nlayers,Ntimes,ny,nx)} of heads where
+    \begin{description}
+    \item {\tt x1,x2} are minimum and maximum $x$-coordinates of the gridding window.
+    \item {\tt nx} is the number of evenly spaced points in $x$ direction where heads are computed.
+    \item {\tt y1,y2} are minimum and maximum $y$-coordinates of the gridding window.
+    \item {\tt ny} is the number of evenly spaced points in $y$ direction where heads are computed.
+    \item {\tt t} is either one value or a list or array of values and must be ordered. Zero is returned for {\tt t} values outside {\tt tmin} and {\tt tmax}.
+    \item {\tt layers} is an optional argument. When it is set to {\tt None} (default), the head is computed at all {\tt Naq} aquifers of the model. Optionally, the desired layer number or a list or array of not-necessarily consecutive layer numbers may be specified, in which case the head is computed at {\tt (Nlayers,Ntimes,ny,nx)} points.
+    \end{description}
+    
+\item[{\tt In []:}] {\tt e.strength(t)} or {\tt ml.strength(elabel,t)} returns an array with size {\tt (Nlayers,Ntimes)} of the strength of element {\tt e} or with label {\tt elabel}  (for a well
+this is the discharge (units L$^3$/T), for a line-sink this is the discharge of the line-sink (units L$^3$/T), for a string of line-sinks this is the discharge of the entire string (units L$^3$/T)) where {\tt Nlayers} is the number of layers that the element is screened in and where 
+ {\tt t} is either one value or a list or array of values and must be ordered. Zero is returned for {\tt t} values outside {\tt tmin} and {\tt tmax}.
+ 
+\item[{\tt In []:}] {\tt e.headinside(t)} or {\tt ml.headinside(elabel,t)} returns an array with size {\tt (Nlayers,Ntimes)} of the head inside element {\tt e} or with label {\tt elabel}  where {\tt Nlayers} is the number of layers that the element is screened in and where 
+ {\tt t} is either one value or a list or array of values and must be ordered. Zero is returned for {\tt t} values outside {\tt tmin} and {\tt tmax}.
+ 
+\item[{\tt In []:}] {\tt ml.writemodel(filename)}. Writes the entire model to the specified filename. This is especially useful if TTim input is created interactively or with a GUI.
+
+
+
+\end{description}
+
+\section{Interactive plotting}
+
+\begin{description}
+\item[{\tt In []:}] {\tt xsection(ml,x1=0,x2=1,y1=0,y2=0,N=100,t=1,layers=0,color=None,lw=1,newfig=True)} plot heads in a cross-section where the coordinate along the horizontal axis is the distance from {\tt x1,y1} and where
+    \begin{description}
+    \item {\tt x1,x2} are beginning and end $x$-coordinates of the cross section.
+    \item {\tt y1,y2} are beginning and end $y$-coordinates of the cross section.
+    \item {\tt N} is the number of points where the head is computed along the cross-section.
+    \item {\tt t} is either one value or a list or array of time values and must be ordered.
+    \item {\tt layers} is either one value or a list or array of layer numbers and must be ordered.
+    \item {\tt color} is the line color. Default is {\tt None} in which case matplotlib will choose a nice color.
+    \item {\tt lw} is the line width. Default is 1.
+    \item {\tt newfig} indicates whether a new figure is opened (default {\tt True}) or whether the results are added to the existing open figure when {\tt False}.
+        \end{description}
+
+\item[{\tt In []:}] {\tt timcontour( ml, xmin, xmax, nx, ymin, ymax, ny, levels = 10, t=0, layers = 0,
+           color = 'k', lw = 0.5, style = 'solid',layout = True, newfig = True, \\
+           labels = False, labelfmt = '\%1.2f') } create contour plot where
+    \begin{description}
+        \item {\tt xmin,xmax} are minimum and maximum $x$-coordinates of the gridding window.
+    \item {\tt nx} is the number of points in $x$ direction where heads are computed.
+    \item {\tt ymin,ymax} are minimum and maximum $y$-coordinates of the gridding window.
+    \item {\tt ny} is the number of points in $y$ direction where heads are computed.
+    \item {\tt levels} is used to specify the head values to contour. There are three options:
+    \begin{itemize}
+    %\item {\tt "ask"}. Ask Tim to print the minimum and maximum head values to the screen after which
+    %the minimum, maximum, and step needs to be entered.
+    \item {\tt [hmin,hmax,step]} A list with the minimum, maximum and step size of the head contours you
+    want to see
+    \item {\tt number}. Show {\tt number} contours and let TTim figure out which values to contour.
+    \item {\tt array}. Show contours for the head values in the array.
+\end{itemize}
+\item {\tt t} is the time for which contours are plotted.
+\item {\tt layers} is the layer number for which contours are plotted.
+\item {\tt color} is the color of the contours. When the default {\tt None} is used, the colors will vary with the values.
+\item{\tt lw} the line width of all contours. Default is 0.5.
+\item{\tt style} the line style ({\tt '-'} is a solid line).
+\item{\tt layout} A layout of all elements is shown if this keyword is {\tt True}.
+\item{\tt newfig} A new figure is created when this keyword is {\tt True}. Otherwise, the contours are added to the active figure.
+\item{\tt labels} Labels are shown on the contours if this keyword is {\tt True}.
+\item{\tt labelfmt} Is the format of the numbers of the labels. The default {\tt '\%1.2f'} means two numbers behind the decimal.
+\end{description}
+\end{description}
+
+
+
+
+\section{References}
+\begin{description}
+\item M. Bakker. 2013a. Analytic modeling of transient multi-layer flow. In: {\it Advances in Hydrogeology}, edited by P Mishra and K Kuhlman, Springer, Heidelberg, 95-114.
+\item M. Bakker. 2013b. Semi-analytic modeling of transient multi-layer flow with TTim.  {\it Hydrogeology Journal} 21: 935-943.
+\item M. Bakker and K.L. Kuhlman. 2011. Computational issues and applications of line-elements to model subsurface flow governed by the modified Helmholtz equation. {\it Advances in Water Resources} 34: 1186-1194.
+\item F.R. De Hoog, J.H. Knight, and A.N. Stokes. 1982. An improved method for numerical inversion of Laplace transforms. {\it SIAM Journal on Scienti�c and Statistical Computing}, 3(3):357-366. 
+\item C.J. Hemker and C. Maas. 1987. Unsteady �ow to wells in layered and �ssured aquifer systems. 
+{\it Journal of Hydrology}, 90:231-249.
+\item G.P. Kruseman and N.A. de Ridder. 1990. Analysis and evaluation
+of pumping test data. International Institute for Land Reclamation and Improvement (ILRI) Bulletin 11, Wageningen.
+\item  K.L. Kuhlman and S.P. Neuman. 2009. Laplace-transform analytic-element method for transient 
+porous-media �ow. {\it Journal of Engineering Mathematics}, 64(2):113-130. 
+\item A. Louwyck, A. Vandenbohede, M. Bakker, L. Lebbe. 2012. Simulation of axi-symmetric flow towards wells: A finite-difference approach. {\it Computers \& Geosciences}, 44, 136-145.
+\item S.P. Neuman. 1972. Theory flow in unconfined aquifers considering delayed response of the water table. {\it Water Resources Research}, 8(4):1031-1045. 
+
+\end{description}
+
+\section{Acknowledgement}
+Validation tests 1-3 were carried out by Erik Anderson, who also carefully reviewed this document.
+
+\end{document}
+
+
+
+\section{Validation tests}
+Four code validation tests are described here, along with results.
+The first test is a check of the inversion algorithm used by TTim,
+by comparison with results from a commercially available software
+package, MLU (www.microfem.com/products/mlu.html). The second test
+is an internal check of the TTim line-sink elements:  TTim results
+for a discharge-specified line-sink are compared to results where
+the line-sink is approximated as a string of wells. The third test
+compares TTim results with MODFLOW results for an injection well
+operating near a crack or fracture connecting two aquifers.  The
+final test is a comparison between TTim results and the analytical
+solution of Neuman (1972) for drawdown near a well in an unconfined
+aquifer.
+
+Model files for all of the tests are provided with this
+documentation, each file named according to the validation test
+number (ttimtest1.py, ttimtest2.py, ttimtest3.py, ttimtest4.py).  The model data
+sets may be viewed and modified using any ASCII editor. Model data
+may be entered interactively at the IPython prompt, or the data
+files may be run from the prompt, as will be explained for test 1,
+below.
+
+\subsection{Test 1:  Comparison with the MLU model}
+TTim results for radial flow to a pumping well screened in one or
+more aquifers in a multi-aquifer system are exact in the Laplace
+domain.  TTim uses the algorithm of DeHoog et al. (1982) to invert
+numerically the solution to the time domain. This validation test
+compares results from TTim to results from the commercial software
+MLU. MLU uses a similar formulation for radial flow as TTim, but
+the numerical inversion is performed with the Stehfest algorithm.
+This validation test verifies the general implementation of pumping wells in TTim and the performance of the
+inversion algorithm used in TTim vs. the inversion algorithm used in MLU. A free version of MLU (MLU Lite) is available
+for modeling two-aquifer systems; MLU Lite was used for the
+comparison described here.
+
+
+\begin{table}
+\begin{center}
+\caption{Aquifer data for Validation Test 1} \vskip 0.5cm
+\label{table:VT1aq}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+& kaq (m/day) &bottom elev. (m) & top elev. (m) &  c (days) & Saq (1/m) & Sll (1/m)  \\
+\hline
+Aquifer 1 & 1 & 2 & 3  && 0.3& \\
+Leaky layer 1 && 1 & 2  & 10&&0.001\\
+Aquifer 2 & 5 & 0 & 1 & & 0.01 &\\
+\hline
+\end{tabular}
+\end{center}
+
+\end{table}
+
+The aquifer system examined consists of two aquifer layers
+separated by a leaky layer. Aquifer properties specified in
+this validation test are provided in Table \ref{table:VT1aq}.
+Comparisons of results for a well pumping at 1 m$^3/$day in aquifer 1 are
+presented in Figure \ref{test1fig}, which
+includes plots of drawdown at increasing radial distances from the
+well. The well is given a negligible radius so that MLU and TTim solve
+the same mathematical problem. 
+ 
+\begin{figure}
+\centering
+\includegraphics[width=7in,draft=false]{ttimtest1.eps}
+\caption{Comparison of drawdown between TTim and MLU at four radial distances: TTim results for the upper aquifer (blue +)
+and lower aquifer (green +), and MLU results for the upper aquifer
+(blue line) and lower aquifer (green line). The horizontal axis is
+in days and the vertical axis in meters.} \label{test1fig}
+\end{figure}
+
+\subsection{Running the model}It is explained here how to run the
+TTim model for validation test 1, both by entering data at the
+IPython prompt and by reading the model file included with this
+documentation.
+
+In this manual, TTim is run from the IPython prompt. On Windows,
+when using the PythonXY distribution, go to Start and choose the
+PythonXY option with a little triangle behind it. When the mouse
+is positioned on the triangle, multiple options appear. Choose
+Enhanced Console and then IPython. This starts the IPython
+interface, which is used in this manual. At startup, you will see something like this:
+\begin{verbatim}
+Executing Python(x,y) 2.6.5.3 profile startup script: default.py
+  Loading NumPy
+  Loading SciPy
+  Importing all NumPy functions, modules and classes
+  Logging to C:\Documents and Settings\erik\.xy\logs\2010-11-10.py
+
+Python 2.6.5 (r265:79096, Mar 19 2010, 21:48:26) [MSC v.1500 32
+bit (Intel)] Type "copyright", "credits" or "license" for more
+information.
+
+IPython 0.10 -- An enhanced Interactive Python. ?         ->
+Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help      -> Python's own help system. object?   -> Details about
+'object'. ?object also works, ?? prints more.
+
+IPython profile: xy
+
+  Welcome to pylab, a matplotlib-based Python environment.
+  For more information, type 'help(pylab)'.
+
+In [1]:
+\end{verbatim}
+At the Python command prompt, import the ttim.py file:
+\begin{verbatim}
+In [1]: import ttim
+\end{verbatim}
+Now we can begin to enter model data. First define the model:
+\begin{verbatim}
+In [2]: ml = ttim.ModelMaq(kaq=[1.0,5.0],z=[3,2,1,0],c=[10.],
+Saq=[0.3,0.01], Sll=[0.001], tmin=0.001, tmax=1000000.0, M=20)
+\end{verbatim}
+Next enter the data for the pumping well:
+\begin{verbatim}
+In [3]: ttim.Well(ml,xw=0.,yw=0,rw=1e-5,tsandQ=[(0,1)],layers=[1],label='well 1')
+\end{verbatim}
+Finally solve the model:
+\begin{verbatim}
+In [4]: ml.solve()
+\end{verbatim}
+TTim responds with information indicating that a
+solution is obtained:
+\begin{verbatim}
+self.Neq  0
+No unknowns. Solution complete
+\end{verbatim}
+Once the solution is obtained you can use the TTim functions
+described in this manual to evaluate heads, and the interactive
+plotting functions to evaluate model results graphically.
+
+Alternatively, model data may be stored in a file with extension {\tt .py}, which can be
+run from the IPython prompt.  For validation test 1, the model
+data is contained in the file {\tt ttimtest1.py} and is stored, for example, in the directory {\tt c:\textbackslash ttim\_model}. 
+First, change the working directory:
+\begin{verbatim}
+In [1]: cd c:\ttim_model
+\end{verbatim}
+Then run the ttimtest1 file:
+\begin{verbatim}
+In [2]: run ttimtest1
+\end{verbatim}
+
+The blue crosses in Fig. \ref{test1fig} may be obtained, for example, as follows. Create an array of 50 
+evenly spaced in log10 space from 1E-3 till 1E4
+\begin{verbatim}
+In [3]: t = logspace(-3,4,50)
+\end{verbatim}
+Compute the heads at {\tt (x,y) = (1,0)} for all aquifers and all times in {\tt t}
+\begin{verbatim}
+In [4]: h = ml.head(1,0,t)  \end{verbatim}
+The array {\tt h} will have 2 rows (one for each layer) and 50 columns (one for each time). 
+Plot the drawdown (minus the head) vs. time for aquifer 1 (rows and columns in arrays start to count at 0) with blue crosses and a log time axis
+\begin{verbatim}
+In [5]: semilogx(t,-h[0],'b+')
+\end{verbatim}
+
+\subsection{Test 2:  Comparison of line-sink element with multiple wells}
+This test is a validation of the line-sink function in TTim.   A
+comparison is made between TTim results for a line-sink in the top
+aquifer of a two-aquifer system, and TTim results where the
+line-sink is modeled as a series of wells of specified discharge, screened in the upper aquifer.
+This is a discrete form of a line-sink; increasing the number of
+wells, while maintaining the total discharge of the wells results
+in a better approximation of the line-sink.  In the limit as the
+distribution of wells becomes continuous, the exact solution for
+the line-sink is produced.
+
+\begin{table}
+\begin{center}
+\caption{Aquifer data for Validation Test 2} \vskip 0.5cm
+\label{VT2aq}
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+& kaq (m/day) &bottom elev. (m) & top elev. (m) &  c (days) & Saq (1/m) & Sll (1/m)  \\
+\hline
+Aquifer 1 & 1 & 2 & 3  && 0.3& \\
+Leaky layer 1 && 1 & 2  & 1000&&0.001\\
+Aquifer 2 & 5 & 0 & 1 & & 0.003 &\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+Properties of the aquifer used for the example are shown in
+Table \ref{VT2aq}. The strength of the line-sink is 1 m$^2/$day, and the
+line-sink is 10 m long for a total discharge of 10 m$^3/$day.
+The model of the line-sink is approximated with a model of 10
+wells spaced 1 m apart, each pumping at a rate of 1 m$^3/$day.
+
+Results from the
+two models are compared at various locations near and far from the line-sink in Fig. \ref{testfig2}.
+Only the upper-left hand graph in Fig. \ref{testfig2} indicates a difference between results
+of the two models; we note that results presented for the multiple
+well model are for a point mid-way between two wells, where the
+difference should be greatest. Contours of
+drawdown in the upper aquifer layer at $t=40$ days are shown in the bottom-right hand corner of Fig. \ref{testfig2}.
+
+\begin{figure}
+\centering
+\includegraphics[width=7in,draft=false]{ttimtest2.eps}
+\caption{Comparison of drawdown for the line-sink and the
+discretized line-sink at three (x,y) locations at a contour plot. Results for the
+upper aquifer are in blue and results for the lower aquifer are in green.
+The horizontal axis is in days and the vertical axis in meters, except for the
+contour plot in the bottom right-hand corner where both axes are meters.}
+\label{testfig2}
+\end{figure}
+
+\subsection{Test 3:  Comparison with a MODFLOW model}
+Validation test 3 investigates an injection well pumping at a rate
+of 10 m$^3/$day into a two aquifer and one leaky layer system. The
+well lies near a vertical, linear crack through the aquifer
+system that hydraulically links the two aquifer layers. The well
+is at the origin of the system with the crack lying 5 m to the
+west of the well and extending 10 m in a north-south direction.
+The tips of the crack are at coordinates (-5 m,-5 m) and (-5 m , 5 m).
+
+Properties of the aquifer defined in the TTim model are presented
+in Table \ref{VT3aq}. The crack is modeled with 10
+MscreenLineSinks, each of 1 m in length, and each with a total
+strength of zero. There is no vertical resistance to flow along
+the line-sink, and thus the drawdown along the line-sink is the
+same in the upper and lower layers at the control points. Note that
+the crack could have also been modeled in an alternate fashion as
+10 HconnLineSinks with zero specified resistance.
+
+\begin{table}
+\begin{center}
+\caption{Aquifer data for TTim model, Validation Test 3} 
+\label{VT3aq}
+\vskip 0.5cm
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+& kaq (m/day) &bottom elev. (m) & top elev. (m) &  c (days) & Saq (1/m) & Sll (1/m)  \\
+\hline
+Aquifer 1 & 1 & 2 & 3  && 0.03& \\
+Leaky layer 1 && 1 & 2  & 10&&0.001\\
+Aquifer 2 & 5 & 0 & 1 & & 0.03 &\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The MODFLOW model consists of a three-layer system; properties of
+the aquifer system defined in the MODFLOW model are presented in
+Table \ref{VT3modaq}. The layers are each 1 m thick, as in the
+TTim model. The model consists of a circular domain 200 m in
+diameter, bounded by no-flow cells. The majority of the domain
+consists of cells 0.2 m by 0.2 m, with the maximum cell size being
+2.0 m by 2.0 m.
+
+\begin{table}
+\begin{center}
+\caption{Aquifer data for MODFLOW model, Validation Test 3} 
+\label{VT3modaq}
+\vskip 0.5cm
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+& k$_x$ (m/day) & k$_y$ (m/day) & k$_z$ (m/day) &  Saq (1/m)  \\
+\hline
+Layer 1 & 1 & 1 & 1 & 0.03 \\
+Layer 2 & 0.1& 0.1 & 0.1 & 0.001\\
+Layer 3 & 5 & 5 & 5 & 0.03 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The crack is modeled with MODFLOW as a thin zone 0.4 m (2 cells) wide, of different
+conductivity and storativity cutting through all three model
+layers. Properties of the crack are presented in Table \ref{VT3modcrack}; the
+assigned properties are intended to simulate the conditions of the
+TTim model. For example, the high vertical conductivity in each of
+the layers of the crack is defined to simulate negligible vertical resistance
+within the crack.
+
+\begin{table}
+\begin{center}
+\caption{Crack data for MODFLOW model, Validation Test 3}
+\label{VT3modcrack}
+\vskip 0.5cm
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+& k$_x$ (m/day) & k$_y$ (m/day) & k$_z$ (m/day) &  Saq (1/m)  \\
+\hline
+Layer 1 & 1 & 1 & 100 & 1e-05 \\
+Layer 2 & 0.1& 0.1 & 100 & 1e-05\\
+Layer 3 & 5 & 5 & 500 & 1e-05 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Comparisons of drawdown at the
+north tip, the center, and the south tip of the crack are shown in Fig. \ref{testfig3}. The graphs
+show little head difference between the upper and lower aquifers
+in both the TTim and MODFLOW models, indicating that the crack is modeled accurately in both models.
+In the Figures, the MODFLOW results begin to diverge from the TTim results after approximately
+40 days: the slope of the drawdown curve increases. This is due to the effects of the finite domain in the MODFLOW
+model; the no-flow condition specified at the perimeter of the model begin to affect the results near the crack.
+
+Drawdown, at $t=10$ days, along an west to east section passing through both
+the crack and the well is shown in Fig. \ref{testfig3}. The crack is located at 5 m and the well
+at 10 m from the left end of the section.
+
+\begin{figure}
+\centering
+\includegraphics[width=7in,draft=false]{ttimtest3.eps}
+\caption{Drawdown at the center of the crack at three different locations and heads along a cross-section.
+Results for the upper aquifer are in blue and for the lower
+aquifer are in green. The horizontal axis is in days and the
+vertical axis in meters, except for the cross-sectional figure, where both axes are in meters.} \label{testfig3}
+\end{figure}
+
+
+\subsection{Test 4: Comparison with analytic solution for unconfined flow}
+Consider flow to a pumping well in an unconfined aquifer. The drawdown vs. time curves will show the effect of the delayed response of the water table. Neuman (1972) published a transient three-dimensional well solution for the case that the aquifer thickness may be approximated as constant, which is reasonable when the drawdown is small compared to the saturated thickness. Phreatic storage is taken into account through the boundary condition at the top of the aquifer. The same problem may be solved with TTim. An unconfined aquifer is divided into ten model layers of 1 meter thickness and with elastic storage. A thin eleventh layer is added on top of the aquifer and has phreatic storage. The values are summarized in Table \ref{VT4neuman}. One well is screened in layers 2 through 11. As the {\tt Well} element is used, the discharge is specified for each layer to be 1 m$^3$/d for a total of 10 m$^3$/d. This facilitates comparison with the solution of Neuman, who specifies a uniform inflow along the well face. (In reality it would be better to use an {\tt MscreenWell} so that the head is uniform along the well screen and the inflow varies.) The effect of the delayed response of the water table is clearly visible in Fig. \ref{Neuman}, but it is noted that this effect is much less pronounced when the curves are plotted on a linear scale rather than a log scale.
+
+\begin{table}
+\begin{center}
+\caption{Aquifer data for comparison to Neuman solution, Validation Test 4} 
+\label{VT4neuman}
+\vskip 0.5cm
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+& kaq (m/day) & thickness (m) & Saq $(\sigma=0.1)$ & Saq $(\sigma=0.01)$ & Saq $(\sigma=0.001)$  \\
+\hline
+Layer 1      & 1 & 0.01 &  0.1&  0.1&  0.1 \\
+Layer 2-11 & 1 & 1      &  0.001 m$^{-1}$&  0.0001 m$^{-1}$&  0.00001 m$^{-1}$\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{figure}
+\centering
+  \includegraphics[width=12cm]{ttimtest4.eps}
+  \caption{Dimensionless drawdown vs. dimensionless time at one aquifer thickness from a well in an unconfined aquifer. $\sigma=S_\text{elastic}/S_\text{phreatic}$. Black lines are copied from Fig. 2 of Neuman (1972), while the crosses are computed with TTim.}
+  \label{Neuman}
+\end{figure}
+
+A comparison is made for several curves of Fig. 2 in Neuman (1972). This graph (shown in Fig. \ref{Neuman}) shows dimensionless drawdown vs. dimensionless time, both on a log scale, at the bottom of the aquifer at a distance of one aquifer thickness from the well for an isotropic aquifer. The curves represent different values of $\sigma$, defined as the ratio of the total elastic storage of the aquifer divided by the phreatic storage. The same problem is solved with TTim for three values of $\sigma$. The crosses in Fig. \ref{Neuman} represent the drawdown computed with TTim in the bottom layer of the model. This test validates the accuracy of TTim for modeling quasi three-dimensional flow {using \tt Model3D} in combination with phreatic storage and a {\tt Well} element screened in multiple aquifer layers.
+

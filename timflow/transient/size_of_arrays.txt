@@ -1,0 +1,8 @@
+self.parameters = model.ngvbc, self.nparam, model.npval
+
+self.potinf = self.nparam, aq.naq, self.model.npval
+
+self.potential = np.sum(self.parameters[:, :, np.newaxis, :] * self.potinf(x, y, aq), 1)
+ngvbc, naq, npval
+
+self.lab2.shape = (self.naq, self.model.nint, self.model.npint)
