@@ -1,3 +1,9 @@
+[![General](https://github.com/timflow-org/timflow/actions/workflows/ci-general.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-general.yml)
+[![Steady](https://github.com/timflow-org/timflow/actions/workflows/ci-steady.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-steady.yml)
+[![Transient](https://github.com/timflow-org/timflow/actions/workflows/ci-transient.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-transient.yml)
+[![Documentation Status](https://readthedocs.org/projects/timflow/badge/?version=latest)](https://timflow.readthedocs.io/en/latest/?badge=latest)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 # timflow, a multi-layer analytic element model
 
 `timflow` is a Python package for the modeling of multi-layer flow with analytic
