@@ -1,25 +1,37 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-    - family-names: "Bakker"
-      given-names: "Mark"
-      orcid: "https://orcid.org/0000-0002-5629-2861"
-title: "TimML"
-url: "https://github.com/mbakker7/timml"
+  - family-names: "Bakker"
+    given-names: "Mark"
+    orcid: "https://orcid.org/0000-0002-5629-2861"
+title: "timflow"
+url: "https://github.com/timflow-org/timflow"
 
-preferred-citation:
-  type: article
-  authors:
-    - family-names: "Bakker"
-      given-names: "Mark"
-      orcid: "https://orcid.org/0000-0002-5629-2861"
-    - family-names: "Strack"  
-      given-names: "Otto D.L."
-  doi: "10.1016/S0022-1694(02)00319-0"
-  journal: "Journal of Hydrology"
-  title: "Analytic elements for multiaquifer flow"
-  volume: 271
-  number: 1
-  start: 119
-  end: 129
-  year: 2003
+references:
+  - type: article
+    authors:
+      - family-names: "Bakker"
+        given-names: "Mark"
+        orcid: "https://orcid.org/0000-0002-5629-2861"
+      - family-names: "Strack"
+        given-names: "Otto D.L."
+    doi: "10.1016/S0022-1694(02)00319-0"
+    journal: "Journal of Hydrology"
+    title: "Analytic elements for multiaquifer flow"
+    volume: 271
+    number: 1
+    start: 119
+    end: 129
+    year: 2003
+  - type: article
+    authors:
+      - family-names: "Bakker"
+        given-names: "Mark"
+        orcid: "https://orcid.org/0000-0002-5629-2861"
+    doi: "10.1007/s10040-013-0975-2"
+    journal: "Hydrogeology Journal"
+    title: "Semi-analytic modeling of transient multi-layer flow with TTim"
+    volume: 21
+    start: 935
+    end: 943
+    year: 2013

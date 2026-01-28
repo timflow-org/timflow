@@ -11,7 +11,7 @@ def set_bessel_method(method="numba"):
     global bessel
     if method == "fortran":
         try:
-            besselaesnew = import_module("timml.src.besselaesnew")
+            besselaesnew = import_module("timflow.steady.src.besselaesnew")
             bessel = besselaesnew.besselaesnew
             bessel.initialize()
         except ImportError:
@@ -20,9 +20,9 @@ def set_bessel_method(method="numba"):
                 category=ImportWarning,
                 stacklevel=1,
             )
-            bessel = import_module("timml.besselaesnumba.besselaesnumba")
+            bessel = import_module("timflow.steady.besselaesnumba.besselaesnumba")
     elif method == "numba":
-        bessel = import_module("timml.besselaesnumba.besselaesnumba")
+        bessel = import_module("timflow.steady.besselaesnumba.besselaesnumba")
     else:
         raise ValueError("method must be one of ['fortran', 'numba']")
 

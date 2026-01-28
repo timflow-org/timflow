@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
 
-from timml.aquifer import SimpleAquifer
-from timml.trace import timtraceline
+from timflow.steady.aquifer import SimpleAquifer
+from timflow.steady.trace import timtraceline
 
 plt.rcParams["contour.negative_linestyle"] = "solid"
 

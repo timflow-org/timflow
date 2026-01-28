@@ -44,12 +44,6 @@ direction is neglected), while flow in leaky layers is approximated as vertical.
 
         Notebooks testing/benchmarking TimML implementations.
 
-    .. grid-item-card:: Code reference
-        :link: 05api/index
-        :link-type: doc
-
-        TimML code reference.
-
 
 Quick Example
 -------------
@@ -64,7 +58,7 @@ Quick Example
 
             # import python packages
             import numpy as np
-            import timml
+            from timflow import steady as timml
 
             # create model
             ml = timml.ModelMaq(kaq=10, z=[20, 0]) # single layer model
@@ -101,5 +95,4 @@ Quick Example
     Examples <02examples/index>
     Cross-sections <03xsections/index>
     Benchmarks <04tests/index>
-    Code reference <05api/index>
     Cite <06about/index>

@@ -70,8 +70,8 @@ napoleon_use_param = True
 autosectionlabel_prefix_document = True
 
 # -- AutoAPI settings -----------------------------------------------------------------
-autoapi_dirs = ["../timflow"]
-autoapi_root = "05api"
+autoapi_dirs = ["../timflow/steady", "../timflow/transient"]
+autoapi_root = "api"
 autoapi_options = [
     "show-module-summary",
     "inherited-members",
@@ -98,7 +98,7 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "auto"
+nb_execution_mode = "off"
 nb_merge_streams = True
 
 myst_enable_extensions = ["dollarmath", "amsmath"]

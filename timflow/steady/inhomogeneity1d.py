@@ -16,11 +16,11 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timml.aquifer import AquiferData
-from timml.aquifer_parameters import param_3d, param_maq
-from timml.constant import ConstantStar
-from timml.linesink1d import FluxDiffLineSink1D, HeadDiffLineSink1D
-from timml.stripareasink import XsectionAreaSinkInhom
+from timflow.steady.aquifer import AquiferData
+from timflow.steady.aquifer_parameters import param_3d, param_maq
+from timflow.steady.constant import ConstantStar
+from timflow.steady.linesink1d import FluxDiffLineSink1D, HeadDiffLineSink1D
+from timflow.steady.stripareasink import XsectionAreaSinkInhom
 
 __all__ = ["XsectionMaq", "Xsection3D", "Xsection"]
 

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ttim.element import Element
-from ttim.equation import LeakyWallEquation
+from timflow.transient.element import Element
+from timflow.transient.equation import LeakyWallEquation
 
 
 class LineDoublet1DBase(Element):

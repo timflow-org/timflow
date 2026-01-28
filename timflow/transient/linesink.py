@@ -3,9 +3,9 @@ import inspect  # Used for storing the input
 import matplotlib.pyplot as plt
 import numpy as np
 
-from . import besselnumba
-from .element import Element
-from .equation import (
+from timflow.transient import besselnumba
+from timflow.transient.element import Element
+from timflow.transient.equation import (
     HeadEquation,
     HeadEquationNores,
     MscreenDitchEquation,

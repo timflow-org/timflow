@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ttim.aquifer import AquiferData
-from ttim.aquifer_parameters import param_3d, param_maq
-from ttim.linesink1d import FluxDiffLineSink1D, HeadDiffLineSink1D
-from ttim.stripareasink import AreaSinkXsection, HstarXsection
+from timflow.transient.aquifer import AquiferData
+from timflow.transient.aquifer_parameters import param_3d, param_maq
+from timflow.transient.linesink1d import FluxDiffLineSink1D, HeadDiffLineSink1D
+from timflow.transient.stripareasink import AreaSinkXsection, HstarXsection
 
 
 class Xsection(AquiferData):

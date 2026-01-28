@@ -3,7 +3,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ttim.aquifer import SimpleAquifer
+from timflow.transient.aquifer import SimpleAquifer
 
 
 class PlotTtim:

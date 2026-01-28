@@ -1,17 +1,26 @@
-.. timflow documentation master file, created by
-   sphinx-quickstart on Wed Jan 28 11:33:06 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+timflow
+=======
 
-timflow documentation
-=====================
+timflow is a Python package for the modeling of multi-layer groundwater flow
+with analytic elements.
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+.. grid::
 
+    .. grid-item-card:: Steady-state flow
+        :link: steady/index
+        :link-type: doc
+
+        Steady-state multi-layer groundwater flow.
+
+    .. grid-item-card:: Transient flow
+        :link: transient/index
+        :link-type: doc
+
+        Transient multi-layer groundwater flow.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+   :hidden:
 
+   Steady <steady/index.rst>
+   Transient <transient/index.rst>

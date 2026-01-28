@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import iv, kv
 
-from .element import Element
+from timflow.transient.element import Element
 
 
 class CircAreaSink(Element):

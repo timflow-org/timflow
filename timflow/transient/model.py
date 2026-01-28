@@ -4,10 +4,14 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 
-from ttim.aquifer import Aquifer, SimpleAquifer
-from ttim.aquifer_parameters import param_3d, param_maq
-from ttim.invlapnumba import compute_laplace_parameters_numba, invlap, invlapcomp
-from ttim.plots import PlotTtim
+from timflow.transient.aquifer import Aquifer, SimpleAquifer
+from timflow.transient.aquifer_parameters import param_3d, param_maq
+from timflow.transient.invlapnumba import (
+    compute_laplace_parameters_numba,
+    invlap,
+    invlapcomp,
+)
+from timflow.transient.plots import PlotTtim
 
 
 class TimModel:
@@ -663,7 +667,7 @@ class TimModel:
     def writemodel(self, fname):
         self.initialize()  # So that model can be written without solving first
         f = open(fname, "w")
-        f.write("from ttim import *\n")
+        f.write("from timflow.transient import *\n")
         f.write(self.write())
         for e in self.elementlist:
             f.write(e.write())

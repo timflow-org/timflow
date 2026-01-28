@@ -3,9 +3,9 @@ import numpy as np
 from scipy.special import iv  # Needed for K1 in Well class, and in CircInhom
 from scipy.special import kv
 
-from .aquifer import AquiferData
-from .element import Element
-from .equation import InhomEquation
+from timflow.transient.aquifer import AquiferData
+from timflow.transient.element import Element
+from timflow.transient.equation import InhomEquation
 
 
 class CircInhomData(AquiferData):
