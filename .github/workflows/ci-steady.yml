@@ -1,0 +1,56 @@
+name: Test Steady
+
+on:
+  workflow_run:
+    workflows: ["Lint"]
+    types: [completed]
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-steady:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv with Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the project
+        run: uv sync --all-extras
+
+      - name: Run tests
+        run: uv run pytest -v ./tests/steady/
+
+      - name: Numba coverage
+        run: |
+          NUMBA_DISABLE_JIT=1 uv run pytest --cov-append ./tests/steady/test_besselaes.py
+
+      - name: Test tutorial notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/00userguide/
+
+      - name: Test example notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/02examples/
+
+      - name: Test cross-section notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/03xsections/
+
+      - name: Test benchmark notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/04tests/
