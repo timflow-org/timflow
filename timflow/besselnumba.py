@@ -1746,6 +1746,7 @@ def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
     return pot
 
 
+@numba.njit(nogil=True, cache=True)
 def disbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
     """Disvec of line-doublet for use in timml."""
     z = x + y * 1j
