@@ -8,7 +8,6 @@ analytic elements and consists of a library of Python scripts and FORTRAN extens
 """
 
 # ruff: noqa: F401
-from timflow.steady import bessel
 from timflow.steady.circareasink import CircAreaSink
 from timflow.steady.constant import Constant, ConstantStar
 from timflow.steady.inhomogeneity import (
@@ -63,6 +62,3 @@ from timflow.steady.well import (
     WellString,
     WellStringBase,
 )
-
-# default bessel module is numba
-bessel.set_bessel_method(method="numba")

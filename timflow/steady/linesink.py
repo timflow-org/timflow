@@ -13,8 +13,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-# from timflow.steady import bessel
-from timflow.steady.besselnumba import disbeslsv, potbeslsv
+from timflow.besselnumba import disbeslsv, potbeslsv
 from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 from timflow.steady.element import Element
 from timflow.steady.equation import HeadEquation
