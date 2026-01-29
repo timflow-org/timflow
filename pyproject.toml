@@ -37,7 +37,7 @@ dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas"]
 [project.urls]
 homepage = "https://github.com/timflow-org/timflow"
 repository = "https://github.com/timflow-org/timflow"
-documentation = "https://github.com/timflow-org/timflow"  # TODO: update
+documentation = "https://timflow.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 lint = ["ruff"]
