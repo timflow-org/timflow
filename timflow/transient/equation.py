@@ -1,3 +1,8 @@
+"""Equation assembly helpers for transient flow.
+
+Defines mixins to build linear systems of equations for transient problems.
+"""
+
 import numpy as np
 
 

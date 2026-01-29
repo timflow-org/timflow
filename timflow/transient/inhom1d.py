@@ -1,3 +1,13 @@
+"""1D inhomogeneity elements for transient flow.
+
+Defines cross-section inhomogeneities with different aquifer properties
+for transient cross-section models.
+
+Example::
+
+    XsectionMaq(ml, x1=-100, x2=100, kaq=[5], z=[10, 0])
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

@@ -1,3 +1,9 @@
+"""Parameter helpers for transient aquifer models.
+
+Utilities to compute derived parameters for multi-layer and 3D aquifer setups
+for transient flow simulations.
+"""
+
 import numpy as np
 
 

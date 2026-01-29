@@ -1,3 +1,13 @@
+"""Plot helpers for TTim.
+
+Provides top-view, contours, and tracing visualization functions
+for transient flow simulations.
+
+Example::
+
+    ml.plots.topview()
+"""
+
 from typing import Optional
 
 import matplotlib.pyplot as plt

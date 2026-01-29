@@ -1,3 +1,13 @@
+"""Well elements for TTim.
+
+Provides classes to model wells with specified discharge or head in
+transient simulations.
+
+Example::
+
+    Well(ml, xw=100, yw=200, tsandbc=[(0, 1000)], layers=[0])
+"""
+
 import inspect  # Used for storing the input
 
 import matplotlib.pyplot as plt

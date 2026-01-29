@@ -1,3 +1,16 @@
+"""Calibration and parameter estimation tools.
+
+Provides `Calibrate` class for fitting transient model parameters to
+observed data.
+
+Example::
+
+    cal = Calibrate(ml)
+    cal.series(name, x, y, layer, t, h)
+    cal.set_parameter(name='kaq', layers=0, initial=10, pmin=1, pmax=100)
+    cal.fit()
+"""
+
 import re
 import warnings
 from typing import Iterable
