@@ -1,3 +1,13 @@
+"""Aquifer data structures and helpers for transient flow.
+
+Defines `AquiferData` and `Aquifer` used to store aquifer properties
+and derived parameters used for computations throughout TTim.
+
+Example::
+
+    aq = SimpleAquifer(naq=2)
+"""
+
 import numpy as np
 import pandas as pd
 

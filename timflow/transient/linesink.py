@@ -1,3 +1,13 @@
+"""Line-sink elements for transient flow.
+
+Implements line-sinks and line-sink strings for head- or discharge-specified
+features in transient simulations.
+
+Example::
+
+    HeadLineSink(ml, x1=-10, y1=0, x2=10, y2=0, tsandbc=[(0, 5)], layers=0)
+"""
+
 import inspect  # Used for storing the input
 
 import matplotlib.pyplot as plt

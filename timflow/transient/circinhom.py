@@ -1,3 +1,13 @@
+"""Circular inhomogeneity elements for transient flow.
+
+Defines circular inhomogeneities with different aquifer properties
+for transient simulations.
+
+Example::
+
+    CircInhom(ml, xc=0, yc=0, R=100, kaq=[5], Haq=[10])
+"""
+
 # flake8: noqa
 import numpy as np
 from scipy.special import iv  # Needed for K1 in Well class, and in CircInhom

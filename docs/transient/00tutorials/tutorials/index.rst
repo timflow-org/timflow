@@ -7,13 +7,10 @@ Tutorials for getting started with TTim.
     :maxdepth: 4
     :hidden:
 
-    tutorial_model
+    tutorial_0_models
 
 
-* `tutorial_model`_
-
-
-.. _tutorial_model: tutorial_0_models.html
+- :doc:`tutorial_0_models`
 
     
 

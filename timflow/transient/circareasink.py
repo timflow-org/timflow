@@ -1,3 +1,13 @@
+"""Circular area-sink element for transient flow.
+
+Defines `CircAreaSink` to model uniform infiltration over a circular area
+in transient simulations.
+
+Example::
+
+    CircAreaSink(ml, xc=0, yc=0, R=50, tsandN=[(0, 0.001)], layers=0)
+"""
+
 import inspect  # Used for storing the input
 
 import matplotlib.pyplot as plt

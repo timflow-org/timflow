@@ -1,3 +1,13 @@
+"""1D line-doublet elements for transient flow.
+
+Doublet features for modeling barriers in a transient cross-section.
+
+Example::
+
+    LeakyLineDoublet1D(ml, xld=0, layers=0)
+
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
