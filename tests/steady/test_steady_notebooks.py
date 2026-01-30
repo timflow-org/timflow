@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import nbformat
@@ -6,11 +5,11 @@ import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 
 nbdirs = [
-    os.path.join("docs/steady/00userguide/tutorials"),
-    os.path.join("docs/steady/00userguide/howtos"),
-    os.path.join("docs/steady/02examples"),
-    os.path.join("docs/steady/03xsections"),
-    os.path.join("docs/steady/04benchmarks"),
+    Path("docs/steady/00userguide/tutorials"),
+    Path("docs/steady/00userguide/howtos"),
+    Path("docs/steady/02examples"),
+    Path("docs/steady/03xsections"),
+    Path("docs/steady/04benchmarks"),
 ]
 
 
@@ -32,7 +31,7 @@ def test_notebook_py(pth):
         ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
         try:
             assert ep.preprocess(nb, {"metadata": {"path": pth.parent}}) is not None, (
-                f"Got empty notebook for {os.path.basename(pth)}"
+                f"Got empty notebook for {pth.name}"
             )
         except Exception as e:
-            pytest.fail(reason=f"Failed executing {os.path.basename(pth)}: {e}")
+            pytest.fail(reason=f"Failed executing {pth.name}: {e}")
