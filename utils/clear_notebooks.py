@@ -11,8 +11,12 @@ nbdirs = [
     Path("docs/steady/00userguide/howtos"),
     Path("docs/steady/02examples"),
     Path("docs/steady/03xsections"),
-    Path("docs/steady/04tests"),
+    Path("docs/steady/04benchmarks"),
+    Path("docs/transient/00userguide/tutorials"),
+    Path("docs/transient/00userguide/howtos"),
     Path("docs/transient/02examples"),
+    Path("docs/transient/03xsections"),
+    Path("docs/transient/05benchmarks"),
 ]
 
 skip = {
