@@ -3,7 +3,6 @@
 import numba
 import numpy as np
 
-
 # real(kind=8) :: pi, tiny
 # real(kind=8), dimension(0:20) :: a, b, afar, a1, b1
 # real(kind=8), dimension(0:20) :: nrange
