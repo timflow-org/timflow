@@ -1,21 +1,22 @@
+"""Bessel functions for line elements with numba acceleration."""
+
 import numba
 import numpy as np
 
-"""
-real(kind=8) :: pi, tiny
-real(kind=8), dimension(0:20) :: a, b, afar, a1, b1
-real(kind=8), dimension(0:20) :: nrange
-real(kind=8), dimension(0:20,0:20) :: gam
-real(kind=8), dimension(8) :: xg, wg
 
-initialize
-----------
-implicit none
-real(kind=8) :: c, fac, twologhalf
-real(kind=8), dimension(0:20) :: bot
-real(kind=8), dimension(1:21) :: psi
-integer :: n,m
-"""
+# real(kind=8) :: pi, tiny
+# real(kind=8), dimension(0:20) :: a, b, afar, a1, b1
+# real(kind=8), dimension(0:20) :: nrange
+# real(kind=8), dimension(0:20,0:20) :: gam
+# real(kind=8), dimension(8) :: xg, wg
+#
+# initialize
+# ----------
+# implicit none
+# real(kind=8) :: c, fac, twologhalf
+# real(kind=8), dimension(0:20) :: bot
+# real(kind=8), dimension(1:21) :: psi
+# integer :: n,m
 
 tiny = 1e-10
 c = np.log(0.5) + 0.577215664901532860
