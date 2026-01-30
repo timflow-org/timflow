@@ -99,7 +99,8 @@ class PlotBase:
         ----------
         xy : list of tuples, optional
             list of tuples with coordinates of the form [(x0, y0), (x1, y1)]. If not
-            provided, a cross section with length 1 is plotted.
+            provided, a cross section with length 1 is plotted for 3D models.
+            For cross-section models the left and right are derived from the elements.
         labels : bool, optional
             add layer numbering labels to plot
         params : bool, optional
@@ -243,20 +244,25 @@ class PlotBase:
     def _xsection_simple_aquifer(self, xy, labels, params, ax, fmt, units=None):
         """Handle cross-section plotting for SimpleAquifer models."""
         # Default implementation - can be overridden
+        # Plot elements
+        x_min = np.inf
+        x_max = -np.inf
+        for e in self._ml.elementlist:
+            x_min = min([getattr(e, "xls", np.inf), getattr(e, "xld", np.inf), x_min])
+            x_max = max([getattr(e, "xls", -np.inf), getattr(e, "xld", -np.inf), x_max])
+            e.plot(ax=ax)
+
         if xy is not None:
             (x1, _), (x2, _) = xy
         else:
-            x1, x2 = ax.get_xlim()
+            dx = x_max - x_min
+            x1 = x_min - 0.25 * dx
+            x2 = x_max + 0.25 * dx
 
         # Plot inhoms (implementation differs between steady/transient)
         self._xsection_plot_inhoms(
             ax=ax, labels=labels, params=params, x1=x1, x2=x2, fmt=fmt, units=units
         )
-
-        # Plot elements
-        for e in self._ml.elementlist:
-            e.plot(ax=ax)
-
         ax.set_xlim(x1, x2)
         ax.set_ylabel("elevation")
         ax.set_xlabel("x")

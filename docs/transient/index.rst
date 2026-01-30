@@ -43,7 +43,7 @@ point in the aquifer system and at any time.
         Pumping test benchmark notebooks.
     
     .. grid-item-card:: Benchmarks
-        :link: 04benchmarks/index
+        :link: 05benchmarks/index
         :link-type: doc
 
         Comparing timflow transient to known solutions.
