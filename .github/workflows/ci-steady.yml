@@ -54,4 +54,4 @@ jobs:
 
       - name: Test benchmark notebooks
         run: |
-          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/04tests/
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/steady/04benchmarks/

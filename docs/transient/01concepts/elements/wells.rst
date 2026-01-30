@@ -13,12 +13,12 @@ of layer :math:`i`:
         
 The following types of wells are implemented:
 
-1. :class:`~ttim.well.Well` is a well for which the total discharge is specified. The
+1. :class:`~timflow.transient.well.Well` is a well for which the total discharge is specified. The
    discharge may be continuous between specified times or may be a slug. The total
    discharge is distributed across the layers in which the well is screened such that the
    head inside the well is the same in each screened layer. Skin effect and wellbore
    storage may be included.
 
-2. :class:`~ttim.well.HeadWell` is a well for which the head inside the well is
+2. :class:`~timflow.transient.well.HeadWell` is a well for which the head inside the well is
    specified. The discharge in each layer is computed such that the head in all screened
    layers is equal to the specified head. Skin effect may be included.

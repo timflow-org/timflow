@@ -1,5 +1,4 @@
 import os
-import tempfile
 from pathlib import Path
 
 import nbformat
@@ -11,22 +10,15 @@ nbdirs = [
     os.path.join("docs/steady/00userguide/howtos"),
     os.path.join("docs/steady/02examples"),
     os.path.join("docs/steady/03xsections"),
-    os.path.join("docs/steady/04tests"),
+    os.path.join("docs/steady/04benchmarks"),
 ]
-
-testdir = tempfile.mkdtemp()
 
 
 def get_notebooks():
     skip = ["benchmarking_besselaes.ipynb", "vertical_anisotropy.ipynb"]
     nblist = []
     for nbdir in nbdirs:
-        nblist += [
-            os.path.join(nbdir, f)
-            for f in os.listdir(nbdir)
-            if f.endswith(".ipynb") and f not in skip
-        ]
-    # nblist = ["notebooks/test_plot.ipynb"]
+        nblist += [nb for nb in nbdir.glob("*.ipynb") if nb.name not in skip]
     return nblist
 
 

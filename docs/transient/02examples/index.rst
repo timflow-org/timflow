@@ -1,7 +1,7 @@
 Examples
 ========
 
-TTim example notebooks.
+Timflow transient example notebooks.
 
 .. toctree::
     :maxdepth: 4

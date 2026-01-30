@@ -22,9 +22,9 @@ stream penetrates the aquifer layer fully, the distance may equal the thickness 
 aquifer layer (if water enters primarily from one side), or twice the aquifer thickness
 (if water enters from both sides).
 
-1. :class:`~ttim.linesink.HeadLineSink` is a line-sink for which the head is specified
+1. :class:`~timflow.transient.linesink.HeadLineSink` is a line-sink for which the head is specified
    along the line-sink.
 
-2. :class:`~ttim.linesink.HeadLineSinkString` is a string of head-specified line-sinks
+2. :class:`~timflow.transient.linesink.HeadLineSinkString` is a string of head-specified line-sinks
 
-3. :class:`~ttim.linesink.LineSinkDitchString` is a string of line-sink ditches
+3. :class:`~timflow.transient.linesink.LineSinkDitchString` is a string of line-sink ditches

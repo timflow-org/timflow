@@ -22,5 +22,6 @@ with analytic elements.
    :maxdepth: 1
    :hidden:
 
-   Steady <steady/index.rst>
-   Transient <transient/index.rst>
+   Steady <steady/index>
+   Transient <transient/index>
+   Cite <about/index>

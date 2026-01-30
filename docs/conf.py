@@ -122,8 +122,5 @@ nb_render_priority = {
 # -- bibtex options ------------------------------------------------------------------
 
 # Add some settings for bibtex
-bibtex_bibfiles = [
-    "steady/06about/publications.bib",
-    "transient/06about/publications.bib",
-]
+bibtex_bibfiles = ["about/publications.bib"]
 bibtex_reference_style = "author_year"

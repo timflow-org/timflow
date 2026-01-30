@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import exp1
 
-from timflow import transient as ttim
+from timflow import transient as ft
 
 
 def theis(r, t, T, S, Q):
@@ -24,8 +24,8 @@ Q = 788
 
 h1 = theis(r, t, T, S, Q)
 
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
 ml.solve()
 h2 = ml.head(r, 0, t)[0]
 
@@ -37,8 +37,8 @@ t = np.logspace(-1, 1, 10)
 h1 = theis(r, t, T, S, Q)
 h1[t > 5] -= theis(r, t[t > 5] - 5, T, S, Q)
 
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
 ml.solve()
 h2 = ml.head(r, 0, t)[0]
 
@@ -49,8 +49,8 @@ t = np.array([0.08, 0.09, 0.1, 1, 5, 9])
 h1 = theis(r, t, T, S, Q)
 
 tmin = 0.1
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
 ml.solve()
 h2 = ml.head(r, 0, t)[0]
 
@@ -67,8 +67,8 @@ h1 = theis(r, t, T, S, Q)
 h1[t > 5] -= theis(r, t[t > 5] - 5, T, S, Q)
 
 tmin = 0.1
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
 ml.solve()
 h2 = ml.head(r, 0, t)[0]
 
@@ -82,8 +82,8 @@ assert np.allclose(h1[~b], h2[~b], atol=1e-4)
 
 Qr1 = theisQr(r, t, T, S, Q)
 
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
 ml.solve()
 Qr2 = ml.disvec(r, 0, t)[0][0]
 
@@ -95,8 +95,8 @@ t = np.logspace(-1, 1, 10)
 Qr1 = theisQr(r, t, T, S, Q)
 Qr1[t > 5] -= theisQr(r, t[t > 5] - 5, T, S, Q)
 
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=1e-4, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
 ml.solve()
 Qr2 = ml.disvec(r, 0, t)[0][0]
 
@@ -107,8 +107,8 @@ t = np.array([0.08, 0.09, 0.1, 1, 5, 9])
 Qr1 = theisQr(r, t, T, S, Q)
 
 tmin = 0.1
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q)])
 ml.solve()
 Qr2 = ml.disvec(r, 0, t)[0][0]
 
@@ -125,8 +125,8 @@ Qr1 = theisQr(r, t, T, S, Q)
 Qr1[t > 5] -= theisQr(r, t[t > 5] - 5, T, S, Q)
 
 tmin = 0.1
-ml = ttim.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
-w = ttim.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
+ml = ft.ModelMaq(kaq=50, z=[10, 0], Saq=S / 10, tmin=tmin, tmax=10)
+w = ft.Well(ml, 0, 0, rw=0.3, tsandQ=[(0, Q), (5, 0)])
 ml.solve()
 Qr2 = ml.disvec(r, 0, t)[0][0]
 
