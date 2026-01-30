@@ -1,51 +1,62 @@
 Examples
 ========
 
-Timflow transient example notebooks.
-
-.. toctree::
-    :maxdepth: 4
-    :hidden:
-
-    well_near_wall
-    well_near_river_or_wall
-    line_sink_well_sol
-    wells_in_different_systems
-    ttim_exercise1_sol
-    meandering_river
-    circareasink_example
-    pathline_trace
+This section contains a collection of example notebooks demonstrating various modeling
+scenarios and timflow features. These examples show complete workflows from problem
+setup to visualization and can serve as templates for your own models.
 
 Modeling wells
 --------------
 
-* `well_near_wall`_
-* `well_near_river_or_wall`_
-* `line_sink_well_sol`_
-* `wells_in_different_systems`_
-* `ttim_exercise1_sol`_
+- :doc:`well_near_wall`
+- :doc:`line_sink_well_sol`
+- :doc:`wells_in_different_systems`
+- :doc:`well_in_multilayer_system`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Modeling wells
+    :hidden:
+
+    well_near_wall
+    line_sink_well_sol
+    wells_in_different_systems
+    well_in_multilayer_system
 
 Modeling rivers
 ---------------
 
-* `meandering_river`_
+- :doc:`meandering_river`
+- :doc:`higher_order_head_linesink`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Modeling rivers
+    :hidden:
+
+    meandering_river
+    higher_order_head_linesink
 
 Recharge
 --------
 
-* `circareasink_example`_
+- :doc:`circareasink_example`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Recharge
+    :hidden:
+
+    circareasink_example
 
 Pathlines
 ---------
 
-* `pathline_trace`_
+- :doc:`pathline_trace`
 
+.. toctree::
+    :maxdepth: 2
+    :caption: Pathlines
+    :hidden:
 
-.. _circareasink_example: circareasink_example.html
-.. _line_sink_well_sol: line_sink_well_sol.html
-.. _meandering_river: meandering_river.html
-.. _pathline_trace: pathline_trace.html
-.. _ttim_exercise1_sol: ttim_exercise1_sol.html
-.. _well_near_river_or_wall: well_near_river_or_wall.html
-.. _well_near_wall: well_near_wall.html
-.. _wells_in_different_systems: wells_in_different_systems.html
+    pathline_trace
