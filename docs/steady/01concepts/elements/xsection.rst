@@ -15,6 +15,11 @@ Inhomogeneities
 2. :class:`~timml.inhomogeneity1d.Xsection3D` is a strip aquifer consisting of a stack of
    aquifer layers.
 
+Area-sinks
+----------
+
+1. :class:`~timml.stripareasink.XsectionAreaSink` is a strip area-sink for cross-section
+   models to simulate infiltration along a strip.
 
 Line-sinks
 ----------
