@@ -6,7 +6,8 @@ TimML.py file for more details. (c) Mark Bakker, 2002-2007
 
 import numpy as np
 import scipy.special
-from element import Element
+
+from timflow.steady.element import Element
 
 
 class CircleInhom(Element):
