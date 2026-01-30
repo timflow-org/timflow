@@ -1,3 +1,10 @@
+"""Inverse Laplace transform implementations.
+
+Provides multiple inverse Laplace transform algorithms including
+Talbot and Stehfest methods for transient flow computations.
+
+Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
+"""
 # Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this

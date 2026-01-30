@@ -62,9 +62,8 @@ class Model:
         self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
-        
-        self.plots = PlotSteady(self)
 
+        self.plots = PlotSteady(self)
 
     def initialize(self):
         # remove inhomogeneity elements (they are added again)

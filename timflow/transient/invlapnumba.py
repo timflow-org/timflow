@@ -1,3 +1,10 @@
+"""Inverse Laplace transform implementation using Numba.
+
+Provides optimized inverse Laplace transform functions using the
+De Hoog, Knight and Stokes algorithm, accelerated with Numba JIT compilation.
+
+Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
+"""
 # Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy

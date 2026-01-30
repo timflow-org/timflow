@@ -1,3 +1,12 @@
+"""1D line-sink elements for transient flow.
+
+Implements simplified line-sinks for transient cross-section (1D) models.
+
+Example::
+
+    HeadLineSink1D(ml, xls=0, tsandbc=[(0, 1)], layers=0)
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

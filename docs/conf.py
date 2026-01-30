@@ -105,19 +105,19 @@ myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
 nb_render_markdown_format = "myst"  # Enable MyST markdown parsing in notebooks
 nb_render_text_lexer = "myst-ansi"  # Better rendering of ANSI output
-nb_render_priority = {
-    "html": (
-        "application/vnd.jupyter.widget-view+json",
-        "application/javascript",
-        "text/html",
-        "image/svg+xml",
-        "image/png",
-        "image/jpeg",
-        "text/markdown",
-        "text/latex",
-        "text/plain",
-    )
-}
+# nb_mime_priority_overrides = {
+#     "html": (
+#         "application/vnd.jupyter.widget-view+json",
+#         "application/javascript",
+#         "text/html",
+#         "image/svg+xml",
+#         "image/png",
+#         "image/jpeg",
+#         "text/markdown",
+#         "text/latex",
+#         "text/plain",
+#     )
+# }
 
 # -- bibtex options ------------------------------------------------------------------
 

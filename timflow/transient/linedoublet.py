@@ -1,3 +1,12 @@
+"""Line-doublet elements for transient flow.
+
+Implements line doublets used to model barriers in transient simulations.
+
+Example::
+
+    LeakyLineDoublet(ml, x1=-10, y1=0, x2=10, y2=0, layers=0)
+"""
+
 import inspect  # Used for storing the input
 
 import matplotlib.pyplot as plt

@@ -1,3 +1,15 @@
+"""Models for transient flow.
+
+Defines `ModelMaq` and `Model3D` to construct transient aquifer systems
+and solve for heads and flows over time.
+
+Example::
+
+    ml = ModelMaq(kaq=[10, 20], z=[20, 12, 10, 0], c=[1000], Saq=[1e-4, 1e-4])
+    # ... add elements
+    ml.solve()
+"""
+
 import inspect  # Used for storing the input
 from warnings import warn
 
