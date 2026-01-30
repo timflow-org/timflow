@@ -36,10 +36,6 @@ jobs:
       - name: Run tests
         run: uv run pytest --cov-append ./tests/transient
 
-      - name: Numba coverage
-        run: |
-          NUMBA_DISABLE_JIT=1 uv run pytest --cov-append ./tests/transient/test_bessel.py
-
       - name: Test userguide notebooks
         run: |
           uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/00userguide/howtos/
