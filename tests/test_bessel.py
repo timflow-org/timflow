@@ -1,7 +1,7 @@
 import numpy as np
 
-from timflow import besselnumba
-from timflow.besselnumba import (
+from timflow.bessel import besselnumba
+from timflow.bessel.besselnumba import (
     besselld_gauss_ho_d1d2,
     besselld_gauss_ho_qxqy_d1d2,
     besselld_int_ho,

@@ -12,7 +12,7 @@ import inspect  # Used for storing the input
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timflow.besselnumba import disbesldv, potbesldv
+from timflow.bessel.besselnumba import disbesldv, potbesldv
 from timflow.steady.controlpoints import controlpoints
 from timflow.steady.element import Element
 from timflow.steady.equation import DisvecEquation, LeakyWallEquation
