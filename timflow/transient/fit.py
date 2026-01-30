@@ -14,7 +14,7 @@ class Calibrate:
 
         Parameters
         ----------
-        model : ttim.Model
+        model : timflow.transient.Model
             model to calibrate
         """
         self.model = model
@@ -82,7 +82,7 @@ class Calibrate:
                 "Setting layers in the parameter name is deprecated. "
                 f"Set the layers= keyword argument for parameter '{name}' to silence "
                 "this warning. The parameter name can still include layer info, but "
-                "this will be ignored in a future version of TTim.",
+                "this will be ignored in a future version of timflow.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -400,6 +400,7 @@ class Calibrate:
         """
         if ax is None:
             _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
             # self.model.plots.topview(ax=ax)
         for key, s in self.seriesdict.items():
             if layers is None or s.layer in layers:
