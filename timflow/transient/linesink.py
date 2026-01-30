@@ -13,7 +13,7 @@ import inspect  # Used for storing the input
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timflow.transient import besselnumba
+from timflow.bessel import besselnumba
 from timflow.transient.element import Element
 from timflow.transient.equation import (
     HeadEquation,

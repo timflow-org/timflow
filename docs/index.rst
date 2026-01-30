@@ -18,10 +18,17 @@ with analytic elements.
 
         Transient multi-layer groundwater flow.
 
+    .. grid-item-card:: Bessel functions
+        :link: bessel/index
+        :link-type: doc
+
+        Bessel implementations for line elements.
+
 .. toctree::
    :maxdepth: 1
    :hidden:
 
    Steady <steady/index>
    Transient <transient/index>
+   Bessel <bessel/index.rst>
    Cite <about/index>
