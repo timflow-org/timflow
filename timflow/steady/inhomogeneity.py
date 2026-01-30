@@ -298,12 +298,13 @@ class PolygonInhom3D(PolygonInhom):
                 "Error: infiltration can only be added if topboundary='conf'"
             )
         self.storeinput(inspect.currentframe())
-        kaq, c, npor, ltype = param_3d(kaq, z, kzoverkh, npor, topboundary, topres)
+        kaq, kzoverkh, c, npor, ltype = param_3d(
+            kaq, z, kzoverkh, npor, topboundary, topres
+        )
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
-        PolygonInhom.__init__(
-            self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg
-        )
+        super().__init__(model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg)
+        self.kzoverkh = kzoverkh  # add kzoverkh to inhomogeneity object
 
 
 def compute_z1z2(xy):

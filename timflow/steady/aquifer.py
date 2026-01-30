@@ -1,7 +1,7 @@
 """Aquifer data structures and helpers.
 
 Defines `AquiferData` and `Aquifer` used to store aquifer properties
-and derived parameters used for computations throughout TimML.
+and derived parameters used for computations throughout timflow.
 
 Example::
 
@@ -147,17 +147,19 @@ class AquiferData:
             Summary of aquifer parameters including layer type, thickness,
             hydraulic conductivity, and resistance.
         """
+        if self.nlayers == self.naq:
+            model3d = True
+            add_cols = ["kzoverkh"]
+        else:
+            model3d = False
+            add_cols = []
         summary = pd.DataFrame(
             index=range(self.nlayers),
-            columns=["layer", "layer_type", "H", "k_h", "c"],
+            columns=["layer", "layer_type", "H", "k_h", "c"] + add_cols,
         )
         summary.index.name = "#"
         layertype = {"a": "aquifer", "l": "leaky layer"}
         summary["layer_type"] = [layertype[lt] for lt in self.ltype]
-        if self.nlayers == self.naq:
-            model3d = True
-        else:
-            model3d = False
         maskaq = self.ltype == "a"
         if self.ilap == 1:  # confined on top
             summary.iloc[maskaq, 2] = self.Haq
@@ -165,6 +167,7 @@ class AquiferData:
             if model3d:
                 summary.iloc[maskaq, 4] = self.c
                 summary.iloc[0, 4] = np.nan  # reset confined resistance to nan
+                summary.iloc[maskaq, 5] = self.kzoverkh
             else:
                 summary.iloc[~maskaq, 2] = self.Hll[1:]
                 summary.iloc[~maskaq, 4] = self.c[1:]
@@ -174,6 +177,7 @@ class AquiferData:
             if model3d:
                 summary.iloc[~maskaq, 2] = self.Hll[0]
                 summary.iloc[maskaq, 4] = self.c
+                summary.iloc[maskaq, 5] = self.kzoverkh
             else:
                 summary.iloc[~maskaq, 2] = self.Hll
                 summary.iloc[~maskaq, 4] = self.c
