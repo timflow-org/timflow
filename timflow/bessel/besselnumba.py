@@ -130,7 +130,6 @@ def besselk0cheb(z, Nt):
     real(kind=8) :: a, b, c, A3, u
     complex(kind=8) :: A1, A2, cn, cnp1, cnp2, cnp3
     complex(kind=8) :: z1, z2, S, T
-
     """
     cnp1 = complex(1.0, 0.0)
     cnp2 = complex(0.0, 0.0)
@@ -1167,7 +1166,6 @@ def besselldqxqy(x, y, z1, z2, lab, order, d1in, d2in):
     integer :: Nls, n
     real(kind=8) :: Lnear, L, d1, d2, delta
     complex(kind=8) :: z, delz, za, zb
-
     """
     Lnear = 3
     z = complex(x, y)
@@ -1569,8 +1567,7 @@ def Fp(x, y, z1, z2, biga, order, d1, d2, a, b, nt):
 
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
-    """
-    Docs.
+    """Docs.
 
     To come here
     """
@@ -1588,8 +1585,7 @@ def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
 
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
-    """
-    Docs.
+    """Docs.
 
     To come here
     """
@@ -1628,8 +1624,7 @@ def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
 
 @numba.njit(nogil=True, cache=True)
 def besselld_int_ho(x, y, z1, z2, lab, order, d1, d2):
-    """
-    Docs.
+    """Docs.
 
     To come here
     """
@@ -1657,8 +1652,7 @@ def besselld_int_ho(x, y, z1, z2, lab, order, d1, d2):
 
 @numba.njit(nogil=True, cache=True)
 def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
-    """
-    Docs.
+    """Docs.
 
     To come here
     """
@@ -1702,7 +1696,7 @@ def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
 
 @numba.njit(nogil=True, cache=True)
 def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Potential of line-sink for use in timml."""
+    """Potential of line-sink for use in timflow."""
     z = x + y * 1j
     pot = np.zeros((order + 1, naq))
     if ilap:
@@ -1716,7 +1710,7 @@ def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def disbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Disvec of line-sink for use in timml."""
+    """Disvec of line-sink for use in timflow."""
     z = x + y * 1j
     qxqy = np.zeros((2 * (order + 1), naq))
     if ilap:
@@ -1734,7 +1728,7 @@ def disbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Potential of line-doublet for use in timml."""
+    """Potential of line-doublet for use in timflow."""
     z = x + y * 1j
     pot = np.zeros((order + 1, naq))
     if ilap:
@@ -1748,7 +1742,7 @@ def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def disbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Disvec of line-doublet for use in timml."""
+    """Disvec of line-doublet for use in timflow."""
     z = x + y * 1j
     qxqy = np.zeros((2 * (order + 1), naq))
     if ilap:

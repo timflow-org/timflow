@@ -3,8 +3,8 @@
 Mark Bakker, Delft University of Technology
 mark dot bakker at tudelft dot nl
 
-TimML is a computer program for the simulation of steady-state multi-aquifer flow with
-analytic elements and consists of a library of Python scripts and FORTRAN extensions.
+Timflow is a Python package for the simulation of steady-state multi-aquifer flow with
+analytic elements.
 """
 
 # ruff: noqa: F401

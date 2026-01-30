@@ -9,6 +9,3 @@ the far field is not modeled explicitly.
 
 1. :class:`~timml.constant.Constant` is an element that specifies the head at a specific
    location.
-
-2. :class:`~timml.constant.ConstantStar` is a constant element for semi-confined aquifers
-   that fixes the head at a reference point. 

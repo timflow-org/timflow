@@ -36,6 +36,18 @@ jobs:
       - name: Run tests
         run: uv run pytest --cov-append ./tests/transient
 
+      - name: Test userguide notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/00userguide/howtos/
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/00userguide/tutorials/
       - name: Test example notebooks
         run: |
           uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/02examples/
+
+      - name: Test xsection notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/03xsections/
+
+      - name: Test benchmark notebooks
+        run: |
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto --ignore=docs/transient/05benchmarks/besselnumbanew_timing.ipynb docs/transient/05benchmarks/

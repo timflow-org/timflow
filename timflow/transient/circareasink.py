@@ -134,9 +134,11 @@ class CircAreaSink(Element):
             qy[:] = qr * (y - self.yc) / r
         return qx, qy
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, layer=None):
         if ax is None:
             _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+        # layer is ignored for circ area sink
         ax.plot(
             self.xc + self.R * np.cos(np.linspace(0, 2 * np.pi, 100)),
             self.yc + self.R * np.sin(np.linspace(0, 2 * np.pi, 100)),

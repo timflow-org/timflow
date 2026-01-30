@@ -1,8 +1,4 @@
-"""mlcircinhom.py contains the CircleInhom class.
-
-This file is part of the TimML library and is distributed under the GNU LPGL. See the
-TimML.py file for more details. (c) Mark Bakker, 2002-2007
-"""
+"""Circle Inhomogeneity."""
 
 import numpy as np
 import scipy.special
@@ -31,7 +27,7 @@ class CircleInhom(Element):
         self.aqin = aqin
         self.aqout = aqout
         assert aqin.Naquifers == aqout.Naquifers, (
-            "TimML Input error: Number of aquifers inside and outside must be equal"
+            "Timflow Input error: Number of aquifers inside and outside must be equal"
         )
         self.label = label
         self.type = "circleinhom"

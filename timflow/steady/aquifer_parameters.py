@@ -134,4 +134,4 @@ def param_3d(kaq, z, kzoverkh, npor, top="conf", topres=0):
         c = np.hstack((1e100, c))
     elif top == "semi":
         c = np.hstack((topres + 0.5 * H[0] / (kzoverkh[0] * kaq[0]), c))
-    return kaq, c, npor, ltype
+    return kaq, kzoverkh, c, npor, ltype

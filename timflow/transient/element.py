@@ -69,7 +69,7 @@ class Element(ABC):
         self.label = label
         if self.label is not None:
             assert self.label not in self.model.elementdict.keys(), (
-                "TTim error: label " + self.label + " already exists"
+                "Timflow error: label " + self.label + " already exists"
             )
         self.rzero = 30
 

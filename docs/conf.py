@@ -70,7 +70,7 @@ napoleon_use_param = True
 autosectionlabel_prefix_document = True
 
 # -- AutoAPI settings -----------------------------------------------------------------
-autoapi_dirs = ["../timflow/steady", "../timflow/transient"]
+autoapi_dirs = ["../timflow/steady", "../timflow/transient", "../timflow/bessel"]
 autoapi_root = "api"
 autoapi_options = [
     "show-module-summary",
@@ -98,7 +98,7 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "off"
+nb_execution_mode = "auto"
 nb_merge_streams = True
 
 myst_enable_extensions = ["dollarmath", "amsmath"]
@@ -122,8 +122,5 @@ nb_render_text_lexer = "myst-ansi"  # Better rendering of ANSI output
 # -- bibtex options ------------------------------------------------------------------
 
 # Add some settings for bibtex
-bibtex_bibfiles = [
-    "steady/06about/publications.bib",
-    "transient/06about/publications.bib",
-]
+bibtex_bibfiles = ["about/publications.bib"]
 bibtex_reference_style = "author_year"
