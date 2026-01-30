@@ -1,4 +1,4 @@
-"""Well elements for TimML.
+"""Well elements for timflow.steady.
 
 Provides classes to model wells with specified discharge or head, including
 multi-well strings.
@@ -253,9 +253,9 @@ class WellBase(Element):
         zstart = zstart * np.ones(nt)
         return xstart, ystart, zstart
 
-    def plot(self, layer=None):
+    def plot(self, ax=None, layer=None):
         if (layer is None) or np.isin(layer, self.layers).any():
-            plt.plot(self.xw, self.yw, "k.")
+            ax.plot(self.xw, self.yw, "k.")
 
     def plotcapzone(
         self,
@@ -269,7 +269,7 @@ class WellBase(Element):
         color=None,
         orientation="hor",
         win=None,
-        newfig=False,
+        axes=None,
         figsize=None,
         *,
         return_traces=False,
@@ -299,10 +299,19 @@ class WellBase(Element):
             'hor' for horizontal, 'ver' for vertical, or 'both' for both
         win : array_like (length 4)
             [xmin, xmax, ymin, ymax]
-        newfig : boolean (default False)
-            boolean indicating if new figure should be created
+        axes : matplotlib.Axes, tuple of 2 matplotlib.Axes, or None
+            axes to plot on, default is None which creates a new figure
         figsize : tuple of integers, optional, default: None
             width, height in inches.
+        return_traces : boolean (default False)
+            return the traces instead of plotting
+        metadata : boolean (default False)
+            return metadata along with traces
+
+        Returns
+        -------
+        traces : list of arrays of x, y, z, and t values
+            only if return_traces is True
         """
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
@@ -321,7 +330,7 @@ class WellBase(Element):
             color=color,
             orientation=orientation,
             win=win,
-            newfig=newfig,
+            axes=axes,
             figsize=figsize,
             return_traces=return_traces,
             metadata=metadata,
@@ -867,10 +876,14 @@ class WellStringBase(Element):
             j += w.nlayers
         return Q
 
-    def plot(self, layer=None):
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+            ax.set_aspect("equal", adjustable="datalim")
         for iw, w in enumerate(self.wlist):
             if (layer is None) or (layer in self.layers[iw]):
-                plt.plot(w.xw, w.yw, "k.")
+                ax.plot(w.xw, w.yw, "k.")
 
     def equation(self):
         mat = np.zeros((self.nunknowns, self.model.neq))

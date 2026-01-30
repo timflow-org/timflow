@@ -1,4 +1,4 @@
-"""TimML Models.
+"""Timflow steady-state models.
 
 Defines `Model`, `ModelMaq`, and `Model3D` to construct aquifer systems
 and solve for heads and flows.
@@ -21,7 +21,7 @@ from scipy.integrate import quad_vec
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
-from timflow.steady.plots import PlotTim
+from timflow.steady.plots import PlotSteady
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
@@ -61,10 +61,10 @@ class Model:
         self.aq = Aquifer(self, kaq, c, z, npor, ltype)
         self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
+        self.model_type = "steady"  # Model type for plotting and other purposes
+        
+        self.plots = PlotSteady(self)
 
-        self.plots = PlotTim(self)
-
-        self.plots = PlotTim(self)
 
     def initialize(self):
         # remove inhomogeneity elements (they are added again)
@@ -279,7 +279,7 @@ class Model:
 
         See Also
         --------
-        :func:`~timml.model.Model.headgrid2`
+        :func:`~timflow.steady.Model.headgrid2`
         """
         nx, ny = len(xg), len(yg)
         if layers is None:
@@ -316,7 +316,7 @@ class Model:
 
         See Also
         --------
-        :func:`~timml.model.Model.headgrid`
+        :func:`~timflow.steady.Model.headgrid`
         """
         xg, yg = np.linspace(x1, x2, nx), np.linspace(y1, y2, ny)
         return self.headgrid(xg, yg, layers=layers, printrow=printrow)
@@ -762,10 +762,13 @@ class Model3D(Model):
         if z is None:
             z = [1, 0]
         self.storeinput(inspect.currentframe())
-        kaq, c, npor, ltype = param_3d(kaq, z, kzoverkh, npor, topboundary, topres)
+        kaq, kzoverkh, c, npor, ltype = param_3d(
+            kaq, z, kzoverkh, npor, topboundary, topres
+        )
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
         super().__init__(kaq, c, z, npor, ltype)
+        self.aq.kzoverkh = kzoverkh  # add kzoverkh to aquifer object
         self.name = "Model3D"
         if self.aq.ltype[0] == "l":
             ConstantStar(self, hstar, aq=self.aq)
@@ -784,8 +787,9 @@ class ModelXsection(Model):
         self.aq = SimpleAquifer(naq)
         self.modelname = "ml"  # Used for writing out input
 
-        self.plots = PlotTim(self)
+        self.plots = PlotSteady(self)
         self.name = "ModelXsection"
+        self.model_type = "steady"
 
     def check_inhoms(self):
         """Check if number of aquifers in inhoms matches number of aquifers in model."""

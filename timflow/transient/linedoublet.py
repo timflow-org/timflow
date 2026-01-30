@@ -177,10 +177,12 @@ class LineDoubletHoBase(Element):
         rvy.shape = (self.nparam, aq.naq, self.model.npval)
         return rvx, rvy
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, layer=None):
         if ax is None:
             _, ax = plt.subplots()
-        ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
+            ax.set_aspect("equal", adjustable="datalim")
+        if layer is None or np.isin(self.layers, layer).any():
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
 class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
@@ -380,7 +382,9 @@ class LeakyLineDoubletString(Element, LeakyWallEquation):
             rvy[i * ld.nparam : (i + 1) * ld.nparam, :] = qy
         return rvx, rvy
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, layer=None):
         if ax is None:
             _, ax = plt.subplots()
-        ax.plot(self.xldlayout, self.yldlayout, "k")
+            ax.set_aspect("equal", adjustable="datalim")
+        for ld in self.ldlist:
+            ld.plot(ax=ax, layer=layer)

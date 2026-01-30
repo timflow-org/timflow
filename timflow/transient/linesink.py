@@ -183,10 +183,12 @@ class LineSinkBase(Element):
             :, np.newaxis
         ] * self.discharge(t)
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, layer=None):
         if ax is None:
             _, ax = plt.subplots()
-        ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
+            ax.set_aspect("equal", adjustable="datalim")
+        if layer is None or np.isin(self.layers, layer).any():
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
 class LineSink(LineSinkBase):
@@ -458,8 +460,12 @@ class LineSinkStringBase(Element):
             )
         return rv
 
-    def plot(self, ax):
-        ax.plot(self.xlslayout, self.ylslayout, "k")
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+        for ls in self.lslist:
+            ls.plot(ax=ax, layer=layer)
 
     def run_after_solve(self):
         for i in range(self.nls):
@@ -1015,10 +1021,12 @@ class LineSinkHoBase(Element):
             :, np.newaxis
         ] * self.discharge(t)
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, layer=None):
         if ax is None:
             _, ax = plt.subplots()
-        ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
+            ax.set_aspect("equal", adjustable="datalim")
+        if layer is None or np.isin(self.layers, layer).any():
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
 class HeadLineSinkHo(LineSinkHoBase, HeadEquationNores):

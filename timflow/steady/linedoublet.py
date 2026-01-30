@@ -174,9 +174,12 @@ class LineDoubletHoBase(Element):
             )
         return rv
 
-    def plot(self, layer=None):
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
         if (layer is None) or (layer in self.layers):
-            plt.plot([self.x1, self.x2], [self.y1, self.y2], "k")
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
 class ImpLineDoublet(LineDoubletHoBase, DisvecEquation):
@@ -413,9 +416,12 @@ class LineDoubletStringBase(Element):
         rv.shape = (2, self.nparam, aq.naq)
         return rv
 
-    def plot(self, layer=None):
-        if (layer is None) or (layer in self.layers):
-            plt.plot(self.x, self.y, "k")
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+        if (layer is None) or np.isin(layer, self.layers).any():
+            ax.plot(self.x, self.y, "k")
 
 
 class ImpLineDoubletString(LineDoubletStringBase, DisvecEquation):

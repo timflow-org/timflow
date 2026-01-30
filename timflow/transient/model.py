@@ -11,7 +11,7 @@ from timflow.transient.invlapnumba import (
     invlap,
     invlapcomp,
 )
-from timflow.transient.plots import PlotTtim
+from timflow.transient.plots import PlotTransient
 
 
 class TimModel:
@@ -67,11 +67,12 @@ class TimModel:
         self.compute_laplace_parameters()
         self.name = "TimModel"
         self.modelname = "ml"  # Used for writing out input
+        self.model_type = "transient"  # Model type for plotting and other purposes
         self.timmlmodel = timmlmodel
         if self.timmlmodel is not None:
             self.timmlmodel.solve()
 
-        self.plots = PlotTtim(self)
+        self.plots = PlotTransient(self)
         self.plot = self.plots.topview
 
         # NOTE: reinstate later, after deprecation below is removed?
@@ -530,7 +531,7 @@ class TimModel:
 
         See Also
         --------
-        :func:`~ttim.model.Model.headgrid2`
+        :func:`~timflow.transient.Model.headgrid2`
         """
         nx = len(xg)
         ny = len(yg)
@@ -569,7 +570,7 @@ class TimModel:
 
         See Also
         --------
-        :func:`~ttim.model.Model.headgrid`
+        :func:`~timflow.transient.Model.headgrid`
         """
         xg = np.linspace(x1, x2, nx)
         yg = np.linspace(y1, y2, ny)
@@ -946,7 +947,7 @@ class ModelXsection(TimModel):
         if self.timmlmodel is not None:
             self.timmlmodel.solve()
 
-        self.plots = PlotTtim(self)
+        self.plots = PlotTransient(self)
         self.plot = self.plots.topview
         self.name = "ModelXsection"
 
