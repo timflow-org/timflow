@@ -236,7 +236,7 @@ class PlotSteady(PlotBase):
         color=None,
         orientation: Literal["hor", "ver", "both"] = "hor",
         win=None,
-        axes=None,
+        ax=None,
         figsize=None,
         *,
         return_traces=False,
@@ -271,7 +271,7 @@ class PlotSteady(PlotBase):
             'both' for horizontal above vertical
         win : list
             list with [xmin, xmax, ymin, ymax]
-        axes : matplotlib.Axes or array of Axes
+        ax : matplotlib.Axes or list of Axes
             axes to plot on, default is None which creates a new figure
         return_traces : boolean
             return traces if True
@@ -299,24 +299,32 @@ class PlotSteady(PlotBase):
             c = n * c
 
         axes_dict = {}
+
+        # Check if ax is iterable; if not, make it a single entry list
+        if ax is not None:
+            try:
+                iter(ax)
+            except TypeError:
+                ax = [ax]
+
         if orientation == "both":
-            if axes is None:
-                axes = self.topview_and_xsection(win=win, figsize=figsize)
-            axes_dict["hor"] = axes[0]
-            axes_dict["ver"] = axes[1]
+            if ax is None:
+                ax = self.topview_and_xsection(win=win, figsize=figsize)
+            axes_dict["hor"] = ax[0]
+            axes_dict["ver"] = ax[1]
         elif orientation[:3] == "hor":
-            if axes is None:
+            if ax is None:
                 axes_dict["hor"] = self.topview(win=win, figsize=figsize)
             else:
-                axes_dict["hor"] = axes[0]
+                axes_dict["hor"] = ax[0]
         elif orientation[:3] == "ver":
-            if axes is None:
+            if ax is None:
                 axes_dict["ver"] = self.xsection(
                     xy=[(win[0], np.mean(win[2:])), (win[1], np.mean(win[2:]))],
                     figsize=figsize,
                 )
             else:
-                axes_dict["ver"] = axes[-1]
+                axes_dict["ver"] = ax[-1]
 
         if return_traces:
             traces = []
