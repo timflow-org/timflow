@@ -9,6 +9,7 @@ Example::
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -313,6 +314,11 @@ class WellBase(Element):
         traces : list of arrays of x, y, z, and t values
             only if return_traces is True
         """
+        warnings.warn(
+            "Well.plotcapzone is deprecated. Use Model.plots.plotcapzone instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
         if not return_traces:

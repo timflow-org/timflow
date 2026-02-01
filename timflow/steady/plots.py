@@ -465,3 +465,87 @@ class PlotSteady(PlotBase):
                 horizontal_axis=horizontal_axis,
             )
         return ax
+
+    def plotcapzone(
+        self,
+        well,
+        nt=10,
+        zstart=None,
+        hstepmax=20,
+        vstepfrac=0.2,
+        tmax=365,
+        nstepmax=100,
+        silent=".",
+        color=None,
+        orientation="hor",
+        win=None,
+        ax=None,
+        figsize=None,
+        *,
+        return_traces=False,
+        metadata=False,
+    ):
+        """Plot a capture zone.
+
+        Parameters
+        ----------
+        well : Well object
+            well element from which capture zone is started
+        nt : int
+            number of path lines
+        zstart : scalar
+            starting elevation of the path lines
+        hstepmax : scalar
+            maximum step in horizontal space
+        vstepfrac : float
+            maximum fraction of aquifer layer thickness during one step
+        tmax : scalar
+            maximum time
+        nstepmax : scalar(int)
+            maximum number of steps
+        silent : boolean or string
+            True (no messages), False (all messages), or '.'
+            (print dot for each path line)
+        color : color
+        orientation : string
+            'hor' for horizontal, 'ver' for vertical, or 'both' for both
+        win : array_like (length 4)
+            [xmin, xmax, ymin, ymax]
+        axes : matplotlib.Axes, tuple of 2 matplotlib.Axes, or None
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of integers, optional, default: None
+            width, height in inches.
+        return_traces : boolean (default False)
+            return the traces instead of plotting
+        metadata : boolean (default False)
+            return metadata along with traces
+
+        Returns
+        -------
+        traces : list of arrays of x, y, z, and t values
+            only if return_traces is True
+        """
+        if win is None:
+            win = [-1e30, 1e30, -1e30, 1e30]
+        if not return_traces:
+            metadata = True  # suppress future warning from timtraceline
+        xstart, ystart, zstart = well.capzonestart(nt, zstart)
+        traces = self.tracelines(
+            xstart,
+            ystart,
+            zstart,
+            hstepmax=-abs(hstepmax),
+            vstepfrac=vstepfrac,
+            tmax=tmax,
+            nstepmax=nstepmax,
+            silent=silent,
+            color=color,
+            orientation=orientation,
+            win=win,
+            ax=ax,
+            figsize=figsize,
+            return_traces=return_traces,
+            metadata=metadata,
+        )
+        if return_traces:
+            return traces
