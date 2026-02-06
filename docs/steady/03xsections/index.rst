@@ -24,10 +24,10 @@ elements are available:
 3. :class:`~timml.linesink1d.LineSink1D` is an infinitely long line-sink for which the
    discharge per unit length is specified
 
-4. :class:`~timml.linesink1d.HeadLineSink1D` is an infinitely long line-sink for which
+4. :class:`~timml.linesink1d.River1D` is an infinitely long line-sink for which
    the head and (optionally) a resistance is specified
 
-5. :class:`~timml.linedoublet1d.LeakyLineDoublet1D` is an infinitely long leaky wall.
+5. :class:`~timml.linedoublet1d.LeakyWall1D` is an infinitely long leaky wall.
    An impermeable wall is created by specifying an infinitely large resistance
 
 6. :class:`~timml.stripareasink.XsectionAreaSink` is a strip area-sink, which can only be

@@ -10,22 +10,32 @@ Mark Bakker, Delft University of Technology mark dot bakker at tudelft dot nl.
 from timflow.transient.circareasink import CircAreaSink
 from timflow.transient.fit import Calibrate
 from timflow.transient.inhom1d import Xsection3D, XsectionMaq
-from timflow.transient.linedoublet import LeakyLineDoublet, LeakyLineDoubletString
-from timflow.transient.linedoublet1d import LeakyLineDoublet1D, LineDoublet1DBase
+from timflow.transient.linedoublet import (
+    LeakyLineDoublet,  # deprecated
+    LeakyLineDoubletString,  # deprecated
+    LeakyWall,
+    LeakyWallString,
+)
+from timflow.transient.linedoublet1d import LeakyLineDoublet1D, LeakyWall1D
 from timflow.transient.linesink import (
-    HeadLineSink,
-    HeadLineSinkHo,
-    HeadLineSinkString,
+    DitchString,
+    HeadLineSink,  # deprecated
+    HeadLineSinkHo,  # deprecated
+    HeadLineSinkString,  # deprecated
     LineSink,
-    LineSinkDitchString,
+    LineSinkDitchString,  # deprecated
+    River,
+    RiverHo,
+    RiverString,
 )
 from timflow.transient.linesink1d import (
     DischargeLineSink1D,
     FluxDiffLineSink1D,
     HeadDiffLineSink1D,
-    HeadLineSink1D,
+    HeadLineSink1D,  # deprecated
     LineSink1D,
     LineSink1DBase,
+    River1D,
 )
 
 # Import all classes and functions

@@ -962,6 +962,7 @@ class ModelXsection(TimModel):
         self.plots = PlotTransient(self)
         self.plot = self.plots.topview
         self.name = "ModelXsection"
+        self.model_type = "transient"
 
     def check_inhoms(self):
         """Check if number of aquifers in inhoms matches number of aquifers in model."""

@@ -4,10 +4,11 @@ Implements simplified line-sinks for cross-section (1D) models.
 
 Example::
 
-    HeadLineSink1D(ml, xls=0, hls=1, layers=0)
+    River1D(ml, xls=0, hls=1, layers=0)
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,7 +21,7 @@ from timflow.steady.equation import (
     MscreenWellEquation,
 )
 
-__all__ = ["LineSink1D", "HeadLineSink1D"]
+__all__ = ["LineSink1D", "River1D", "HeadLineSink1D"]
 
 
 class LineSink1DBase(Element):
@@ -196,7 +197,7 @@ class LineSink1D(LineSink1DBase, MscreenWellEquation):
         self.parameters[:, 0] = sol
 
 
-class HeadLineSink1D(LineSink1DBase, HeadEquation):
+class River1D(LineSink1DBase, HeadEquation):
     """Create an infinitely long line-sink with a given head.
 
     Parameters
@@ -222,7 +223,6 @@ class HeadLineSink1D(LineSink1DBase, HeadEquation):
         if list or array: element is placed in all these layers
     label: str or None
         label of element
-
     """
 
     def __init__(self, model, xls=0, hls=1, res=0, wh=1, layers=0, label=None):
@@ -233,7 +233,7 @@ class HeadLineSink1D(LineSink1DBase, HeadEquation):
             xls,
             sigls=0,
             layers=layers,
-            name="HeadLinesink1D",
+            name="River1D",
             label=label,
             addtomodel=True,
             res=res,
@@ -249,6 +249,23 @@ class HeadLineSink1D(LineSink1DBase, HeadEquation):
 
     def setparams(self, sol):
         self.parameters[:, 0] = sol
+
+
+class HeadLineSink1D(River1D):
+    """Deprecated alias for :class:`.River1D`.
+
+    .. deprecated::
+        Use :class:`.River1D` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "HeadLineSink1D is deprecated. Use River1D instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 class HeadDiffLineSink1D(LineSink1DBase, HeadDiffEquation):

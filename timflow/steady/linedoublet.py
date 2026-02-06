@@ -8,6 +8,7 @@ Example::
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +19,10 @@ from timflow.steady.element import Element
 from timflow.steady.equation import DisvecEquation, LeakyWallEquation
 
 __all__ = [
+    "ImpermeableWall",
+    "ImpermeableWallString",
+    "LeakyWall",
+    "LeakyWallString",
     "ImpLineDoublet",
     "ImpLineDoubletString",
     "LeakyLineDoublet",
@@ -181,7 +186,7 @@ class LineDoubletHoBase(Element):
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
-class ImpLineDoublet(LineDoubletHoBase, DisvecEquation):
+class ImpermeableWall(LineDoubletHoBase, DisvecEquation):
     """Create a segment of an impermeable wall, which is simulated with a line-doublet.
 
     Parameters
@@ -208,7 +213,7 @@ class ImpLineDoublet(LineDoubletHoBase, DisvecEquation):
 
     See Also
     --------
-    :class:`.ImpLineDoubletString`
+    :class:`.ImpermeableWallString`
     """
 
     def __init__(
@@ -235,7 +240,7 @@ class ImpLineDoublet(LineDoubletHoBase, DisvecEquation):
             res=np.inf,
             layers=layers,
             order=order,
-            name="ImpLineDoublet",
+            name="ImpermeableWall",
             label=label,
             addtomodel=addtomodel,
         )
@@ -248,7 +253,7 @@ class ImpLineDoublet(LineDoubletHoBase, DisvecEquation):
         self.parameters[:, 0] = sol
 
 
-class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
+class LeakyWall(LineDoubletHoBase, LeakyWallEquation):
     """Create a segment of a leaky wall, which is simulated with a line-doublet.
 
     The specific discharge through the wall is equal to the head difference across the
@@ -281,7 +286,7 @@ class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
 
     See Also
     --------
-    :class:`.LeakyLineDoubletString`
+    :class:`.LeakyWallString`
     """
 
     def __init__(
@@ -309,7 +314,7 @@ class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
             res=res,
             layers=layers,
             order=order,
-            name="ImpLineDoublet",
+            name="LeakyWall",
             label=label,
             addtomodel=addtomodel,
         )
@@ -423,7 +428,7 @@ class LineDoubletStringBase(Element):
             ax.plot(self.x, self.y, "k")
 
 
-class ImpLineDoubletString(LineDoubletStringBase, DisvecEquation):
+class ImpermeableWallString(LineDoubletStringBase, DisvecEquation):
     """Create a string of impermeable wall segments consisting of line-doublets.
 
     Parameters
@@ -445,7 +450,7 @@ class ImpLineDoubletString(LineDoubletStringBase, DisvecEquation):
 
     See Also
     --------
-    :class:`.ImpLineDoublet`
+    :class:`.ImpermeableWall`
     """
 
     def __init__(self, model, xy=None, layers=0, order=0, label=None):
@@ -460,21 +465,21 @@ class ImpLineDoubletString(LineDoubletStringBase, DisvecEquation):
             res=np.inf,
             layers=layers,
             order=order,
-            name="ImpLineDoubletString",
+            name="ImpermeableWallString",
             label=label,
             aq=None,
         )
         self.model.add_element(self)
 
     def initialize(self):
-        LineDoubletStringBase.initialize(self)
+        LeakyWallString.initialize(self)
         self.aq.add_element(self)
 
     def setparams(self, sol):
         self.parameters[:, 0] = sol
 
 
-class LeakyLineDoubletString(LineDoubletStringBase, LeakyWallEquation):
+class LeakyWallString(LineDoubletStringBase, LeakyWallEquation):
     """Create a string of leaky wall segments consisting of line-doublets.
 
     Parameters
@@ -498,7 +503,7 @@ class LeakyLineDoubletString(LineDoubletStringBase, LeakyWallEquation):
 
     See Also
     --------
-    :class:`.ImpLineDoublet`
+    :class:`.LeakyWall`
     """
 
     def __init__(self, model, xy=None, res=np.inf, layers=0, order=0, label=None):
@@ -513,7 +518,7 @@ class LeakyLineDoubletString(LineDoubletStringBase, LeakyWallEquation):
             layers=layers,
             order=order,
             res=res,
-            name="ImpLineDoubletString",
+            name="LeakyWallString",
             label=label,
             aq=None,
         )
@@ -525,3 +530,71 @@ class LeakyLineDoubletString(LineDoubletStringBase, LeakyWallEquation):
 
     def setparams(self, sol):
         self.parameters[:, 0] = sol
+
+
+class ImpLineDoublet(ImpermeableWall):
+    """Deprecated alias for :class:`.ImpermeableWall`.
+
+    .. deprecated::
+        Use :class:`.ImpermeableWall` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "ImpLineDoublet is deprecated. Use ImpermeableWall instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class ImpLineDoubletString(ImpermeableWallString):
+    """Deprecated alias for :class:`.ImpermeableWallString`.
+
+    .. deprecated::
+        Use :class:`.ImpermeableWallString` instead. This alias will be removed
+        in a future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "ImpLineDoubletString is deprecated. Use ImpermeableWallString instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LeakyLineDoublet(LeakyWall):
+    """Deprecated alias for :class:`.LeakyWall`.
+
+    .. deprecated::
+        Use :class:`.LeakyWall` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoublet is deprecated. Use LeakyWall instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LeakyLineDoubletString(LeakyWallString):
+    """Deprecated alias for :class:`.LeakyWallString`.
+
+    .. deprecated::
+        Use :class:`.LeakyWallString` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoubletString is deprecated. Use LeakyWallString instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

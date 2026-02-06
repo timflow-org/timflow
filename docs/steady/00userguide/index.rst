@@ -31,6 +31,7 @@ features. These guides assume you have basic familiarity with timflow steady and
 deeper into particular topics.
 
 - :doc:`howtos/howto_select_a_model`
+- :doc:`howtos/howto_convert_timml_model`
 
 .. toctree::
     :maxdepth: 3
@@ -38,3 +39,4 @@ deeper into particular topics.
     :caption: How-to Guides
 
     howtos/howto_select_a_model
+    howtos/howto_convert_timml_model

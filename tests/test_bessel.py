@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import numpy as np
+import pytest
 
 from timflow.bessel import besselnumba
 from timflow.bessel.besselnumba import (
@@ -11,6 +14,9 @@ from timflow.bessel.besselnumba import (
     bessells_int_ho,
     bessells_int_ho_qxqy,
 )
+
+TEST_DATA_DIR = Path(__file__).parent / "bessel_test_data"
+ATOL = 1e-10
 
 
 def test_variables():
@@ -929,3 +935,171 @@ def test_besselldlap():
     lapnum = (pot1 + pot2 + pot3 + pot4 - 4 * pot0) / (d**2)
     lap = pot0 / (lab**2)
     assert np.allclose(lapnum, lap, atol=1e-8), "not equal"
+
+
+# %%
+def potlstest(order, nx=20, ny=20):
+    z1 = -2 - 4j
+    z2 = 3 + 1j
+    lab = np.array([0, 0.4, 4])
+    ilap = 1
+    naq = 3
+    x, y = np.meshgrid(np.linspace(-10, 10, nx), np.linspace(-10, 10, ny))
+    pot = np.empty((naq, ny, nx))
+    for i in range(ny):
+        for j in range(nx):
+            pot[:, i, j] = besselnumba.potbeslsv(
+                x[i, j], y[i, j], z1, z2, lab, order, ilap, naq
+            )[order]
+    return pot
+
+
+def qxqylstest(order, nx=20, ny=20):
+    z1 = -2 - 4j
+    z2 = 3 + 1j
+    lab = np.array([0, 0.4, 4])
+    ilap = 1
+    naq = 3
+    x, y = np.meshgrid(np.linspace(-10, 10, nx), np.linspace(-10, 10, ny))
+    qx, qy = np.empty((naq, ny, nx)), np.empty((naq, ny, nx))
+    for i in range(ny):
+        for j in range(nx):
+            qxqy = besselnumba.disbeslsv(x[i, j], y[i, j], z1, z2, lab, order, ilap, naq)
+            qx[:, i, j] = qxqy[: order + 1][order]
+            qy[:, i, j] = qxqy[order:][order]
+    return qx, qy
+
+
+def potldtest(order, nx=20, ny=20):
+    z1 = -2 - 4j
+    z2 = 3 + 1j
+    lab = np.array([0, 0.4, 4])
+    ilap = 1
+    naq = 3
+    x, y = np.meshgrid(np.linspace(-10, 10, nx), np.linspace(-10, 10, ny))
+    pot = np.empty((naq, ny, nx))
+    for i in range(ny):
+        for j in range(nx):
+            pot[:, i, j] = besselnumba.potbesldv(
+                x[i, j], y[i, j], z1, z2, lab, order, ilap, naq
+            )[order]
+    return pot
+
+
+def qxqyldtest(order, nx=20, ny=20):
+    z1 = -2 - 4j
+    z2 = 3 + 1j
+    lab = np.array([0, 0.4, 4])
+    ilap = 1
+    naq = 3
+    x, y = np.meshgrid(np.linspace(-10, 10, nx), np.linspace(-10, 10, ny))
+    qx, qy = np.empty((naq, ny, nx)), np.empty((naq, ny, nx))
+    for i in range(ny):
+        for j in range(nx):
+            qxqy = besselnumba.disbesldv(x[i, j], y[i, j], z1, z2, lab, order, ilap, naq)
+            qx[:, i, j] = qxqy[: order + 1][order]
+            qy[:, i, j] = qxqy[order:][order]
+    return qx, qy
+
+
+def compute_data(nx=20, ny=20):
+    for order in range(3):
+        pot = potlstest(order, nx, ny)
+        for i in range(3):
+            np.savetxt(
+                TEST_DATA_DIR / ("potls_order" + str(order) + "_lab" + str(i) + ".txt"),
+                pot[i],
+            )
+    for order in range(3):
+        qx, qy = qxqylstest(order, nx, ny)
+        for i in range(3):
+            np.savetxt(
+                TEST_DATA_DIR / ("qxls_order" + str(order) + "_lab" + str(i) + ".txt"),
+                qx[i],
+            )
+            np.savetxt(
+                TEST_DATA_DIR / ("qyls_order" + str(order) + "_lab" + str(i) + ".txt"),
+                qy[i],
+            )
+    for order in range(3):
+        pot = potldtest(order, nx, ny)
+        for i in range(3):
+            np.savetxt(
+                TEST_DATA_DIR / ("potld_order" + str(order) + "_lab" + str(i) + ".txt"),
+                pot[i],
+            )
+    for order in range(3):
+        qx, qy = qxqyldtest(order, nx, ny)
+        for i in range(3):
+            np.savetxt(
+                TEST_DATA_DIR / ("qxld_order" + str(order) + "_lab" + str(i) + ".txt"),
+                qx[i],
+            )
+            np.savetxt(
+                TEST_DATA_DIR / ("qyld_order" + str(order) + "_lab" + str(i) + ".txt"),
+                qy[i],
+            )
+
+
+@pytest.mark.parametrize("order", [0, 1, 2])
+def test_potbeslsv(order):
+    pot = potlstest(order)
+    passed = np.zeros(3, dtype=bool)
+    for i in range(3):
+        potfor = np.loadtxt(
+            TEST_DATA_DIR / ("potls_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed[i] = np.allclose(pot[i], potfor, atol=ATOL)
+
+    assert all(passed), f"pot[{np.arange(3)[~passed]}] not equal"
+
+
+@pytest.mark.parametrize("order", [0, 1, 2])
+def test_disbeslsv(order):
+    qx, qy = qxqylstest(order)
+    passed_x = np.zeros(3, dtype=bool)
+    passed_y = np.zeros(3, dtype=bool)
+    for i in range(3):
+        qxfor = np.loadtxt(
+            TEST_DATA_DIR / ("qxls_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed_x[i] = np.allclose(qx[i], qxfor, atol=ATOL)
+        qyfor = np.loadtxt(
+            TEST_DATA_DIR / ("qyls_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed_y[i] = np.allclose(qy[i], qyfor, atol=ATOL)
+
+    assert all(passed_x), f"qx[{np.arange(3)[~passed_x]}] not equal"
+    assert all(passed_y), f"qy[{np.arange(3)[~passed_y]}] not equal"
+
+
+@pytest.mark.parametrize("order", [0, 1, 2])
+def test_potbesldv(order):
+    pot = potldtest(order)
+    passed = np.zeros(3, dtype=bool)
+    for i in range(3):
+        potfor = np.loadtxt(
+            TEST_DATA_DIR / ("potld_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed[i] = np.allclose(pot[i], potfor, atol=ATOL)
+
+    assert all(passed), f"pot[{np.arange(3)[~passed]}] not equal"
+
+
+@pytest.mark.parametrize("order", [0, 1, 2])
+def test_disbesldv(order):
+    qx, qy = qxqyldtest(order)
+    passed_x = np.zeros(3, dtype=bool)
+    passed_y = np.zeros(3, dtype=bool)
+    for i in range(3):
+        qxfor = np.loadtxt(
+            TEST_DATA_DIR / ("qxld_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed_x[i] = np.allclose(qx[i], qxfor, atol=ATOL)
+        qyfor = np.loadtxt(
+            TEST_DATA_DIR / ("qyld_order" + str(order) + "_lab" + str(i) + ".txt")
+        )
+        passed_y[i] = np.allclose(qy[i], qyfor, atol=ATOL)
+
+    assert all(passed_x), f"qx[{np.arange(3)[~passed_x]}] not equal"
+    assert all(passed_y), f"qy[{np.arange(3)[~passed_y]}] not equal"

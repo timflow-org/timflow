@@ -685,7 +685,7 @@ class Ditch(River):
             layers=layers,
             dely=dely,
             label=label,
-            name="HeadLineSinkDitch",
+            name="Ditch",
             addtomodel=addtomodel,
         )
         self.Qls = Qls

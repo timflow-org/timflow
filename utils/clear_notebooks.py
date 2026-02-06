@@ -24,7 +24,7 @@ nbdirs = [
 skip = [
     "benchmarking_besselaes.ipynb",
     "vertical_anisotropy.ipynb",
-    "besselnumbanew_timing.ipynb",
+    "besselnumba_timing.ipynb",
 ]
 
 

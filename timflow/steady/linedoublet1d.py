@@ -9,6 +9,7 @@ Example::
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +17,12 @@ import numpy as np
 from timflow.steady.element import Element
 from timflow.steady.equation import DisvecEquation, LeakyWallEquation
 
-__all__ = ["ImpLineDoublet1D", "LeakyLineDoublet1D"]
+__all__ = [
+    "ImpermeableWall1D",
+    "LeakyWall1D",
+    "ImpLineDoublet1D",
+    "LeakyLineDoublet1D",
+]
 
 
 class LineDoublet1D(Element):
@@ -117,7 +123,7 @@ class LineDoublet1D(Element):
         )
 
 
-class ImpLineDoublet1D(LineDoublet1D, DisvecEquation):
+class ImpermeableWall1D(LineDoublet1D, DisvecEquation):
     """Create 1D impermeable wall."""
 
     def __init__(self, model, xld=0, layers=0, label=None):
@@ -128,7 +134,7 @@ class ImpLineDoublet1D(LineDoublet1D, DisvecEquation):
             xld,
             delp=0,
             layers=layers,
-            name="ImpLineDoublet1D",
+            name="ImpermeableWall1D",
             label=label,
             addtomodel=True,
             res=np.inf,
@@ -143,7 +149,7 @@ class ImpLineDoublet1D(LineDoublet1D, DisvecEquation):
         self.parameters[:, 0] = sol
 
 
-class LeakyLineDoublet1D(LineDoublet1D, LeakyWallEquation):
+class LeakyWall1D(LineDoublet1D, LeakyWallEquation):
     """Create an infinitely long leaky or impermeable wall.
 
     Parameters
@@ -174,7 +180,7 @@ class LeakyLineDoublet1D(LineDoublet1D, LeakyWallEquation):
             xld,
             delp=0,
             layers=layers,
-            name="LeakyLineDoublet1D",
+            name="LeakyWall1D",
             label=label,
             addtomodel=True,
             res=res,
@@ -191,3 +197,37 @@ class LeakyLineDoublet1D(LineDoublet1D, LeakyWallEquation):
 
     def setparams(self, sol):
         self.parameters[:, 0] = sol
+
+
+class ImpLineDoublet1D(ImpermeableWall1D):
+    """Deprecated alias for :class:`.ImpermeableWall1D`.
+
+    .. deprecated::
+        Use :class:`.ImpermeableWall1D` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "ImpLineDoublet1D is deprecated. Use ImpermeableWall1D instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LeakyLineDoublet1D(LeakyWall1D):
+    """Deprecated alias for :class:`.LeakyWall1D`.
+
+    .. deprecated::
+        Use :class:`.LeakyWall1D` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoublet1D is deprecated. Use LeakyWall1D instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

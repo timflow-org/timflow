@@ -58,18 +58,18 @@ Quick Example
 
             # import python packages
             import numpy as np
-            from timflow import steady as fs
+            import timflow.steady as tfs
 
             # create model
-            ml = fs.ModelMaq(kaq=10, z=[20, 0]) # single layer model
+            ml = tfs.ModelMaq(kaq=10, z=[20, 0]) # single layer model
             
             # add a river with a fixed water level
             yls = np.arange(-100, 101, 20) # 20 points, so 19 segments
             xls = 50 * np.ones_like(yls)
-            river = fs.RiverString(ml, xy=list(zip(xls, yls)), hls=0.0)
+            river = tfs.RiverString(ml, xy=list(zip(xls, yls)), hls=0.0)
             
             # add a well
-            well = fs.Well(ml, 0, 0, rw=0.3, Qw=1000)
+            well = tfs.Well(ml, 0, 0, rw=0.3, Qw=1000)
             
             # solve model
             ml.solve()
@@ -82,7 +82,7 @@ Quick Example
 
         In this example a well is modelled near a river in a single aquifer.
 
-        .. figure:: _static/example_output_steady.png
+        .. figure:: ../_static/example_output_steady.png
             :figwidth: 500px
 
 

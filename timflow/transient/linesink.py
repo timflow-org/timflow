@@ -5,10 +5,11 @@ features in transient simulations.
 
 Example::
 
-    HeadLineSink(ml, x1=-10, y1=0, x2=10, y2=0, tsandbc=[(0, 5)], layers=0)
+    River(ml, x1=-10, y1=0, x2=10, y2=0, tsandbc=[(0, 5)], layers=0)
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -256,7 +257,7 @@ class LineSink(LineSinkBase):
 #                                self.model.npval), 'D')
 
 
-class HeadLineSink(LineSinkBase, HeadEquation):
+class River(LineSinkBase, HeadEquation):
     r"""Create a head-specified line-sink with optional width and resistance.
 
     Inflow per unit length of line-sink is computed as:
@@ -305,7 +306,7 @@ class HeadLineSink(LineSinkBase, HeadEquation):
 
     See Also
     --------
-    :class:`.HeadLineSinkString`
+    :class:`.RiverString`
     """
 
     def __init__(
@@ -339,7 +340,7 @@ class HeadLineSink(LineSinkBase, HeadEquation):
             wh=wh,
             layers=layers,
             type=etype,
-            name="HeadLineSink",
+            name="River",
             label=label,
             addtomodel=addtomodel,
         )
@@ -503,7 +504,7 @@ class LineSinkStringBase(Element):
         return rv
 
 
-class HeadLineSinkString(LineSinkStringBase, HeadEquation):
+class RiverString(LineSinkStringBase, HeadEquation):
     r"""String of head-specified line-sinks with optional width and resistance.
 
     Inflow per unit length of line-sink is computed as:
@@ -547,7 +548,7 @@ class HeadLineSinkString(LineSinkStringBase, HeadEquation):
 
     See Also
     --------
-    :class:`.HeadLineSink`
+    :class:`.River`
     """
 
     def __init__(
@@ -570,7 +571,7 @@ class HeadLineSinkString(LineSinkStringBase, HeadEquation):
             tsandbc=tsandh,
             layers=layers,
             type=etype,
-            name="HeadLineSinkString",
+            name="RiverString",
             label=label,
         )
         xy = np.atleast_2d(xy).astype(float)
@@ -586,7 +587,7 @@ class HeadLineSinkString(LineSinkStringBase, HeadEquation):
         self.lslist = []
         for i in range(self.nls):
             self.lslist.append(
-                HeadLineSink(
+                River(
                     self.model,
                     x1=self.x[i],
                     y1=self.y[i],
@@ -661,7 +662,7 @@ class MscreenLineSink(LineSinkBase, MscreenEquation):
         self.vresfac = self.vres / (self.wv * self.L)
 
 
-class LineSinkDitchString(LineSinkStringBase, MscreenDitchEquation):
+class DitchString(LineSinkStringBase, MscreenDitchEquation):
     r"""Create ditch consisting of a string of line-sink.
 
     The total discharge for the string is specified and divided over the line-sinks such
@@ -724,7 +725,7 @@ class LineSinkDitchString(LineSinkStringBase, MscreenDitchEquation):
             tsandbc=tsandQ,
             layers=layers,
             type="v",
-            name="LineSinkDitchString",
+            name="DitchString",
             label=label,
         )
         xy = np.atleast_2d(xy).astype(float)
@@ -756,7 +757,7 @@ class LineSinkDitchString(LineSinkStringBase, MscreenDitchEquation):
         self.vresfac = np.zeros_like(self.resfach)
 
 
-class LineSinkDitchString2(LineSinkStringBase, MscreenDitchEquation):
+class DitchString2(LineSinkStringBase, MscreenDitchEquation):
     r"""Create ditch consisting of a string of line-sink.
 
     The total discharge for the string is specified and divided over the line-sinks such
@@ -819,7 +820,7 @@ class LineSinkDitchString2(LineSinkStringBase, MscreenDitchEquation):
             tsandbc=tsandQ,
             layers=layers,
             type="v",
-            name="LineSinkDitchString",
+            name="DitchString",
             label=label,
         )
         xy = np.atleast_2d(xy).astype(float)
@@ -1039,8 +1040,8 @@ class LineSinkHoBase(Element):
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
-class HeadLineSinkHo(LineSinkHoBase, HeadEquationNores):
-    """HeadLineSink of which the head varies through time.
+class RiverHo(LineSinkHoBase, HeadEquationNores):
+    """River of which the head varies through time.
 
     May be screened in multiple layers but all with the same head
     """
@@ -1076,7 +1077,7 @@ class HeadLineSinkHo(LineSinkHoBase, HeadEquationNores):
             order=order,
             layers=layers,
             type=etype,
-            name="HeadLineSinkHo",
+            name="RiverHo",
             label=label,
             addtomodel=addtomodel,
         )
@@ -1091,3 +1092,88 @@ class HeadLineSinkHo(LineSinkHoBase, HeadEquationNores):
         for i, T in enumerate(self.aq.T[self.layers]):
             # Needed in solving; solve for a unit head
             self.pc[i :: self.nlayers] = T
+
+
+class HeadLineSink(River):
+    """Deprecated alias for :class:`.River`.
+
+    .. deprecated::
+        Use :class:`.River` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "HeadLineSink is deprecated. Use River instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class HeadLineSinkString(RiverString):
+    """Deprecated alias for :class:`.RiverString`.
+
+    .. deprecated::
+        Use :class:`.RiverString` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "HeadLineSinkString is deprecated. Use RiverString instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class HeadLineSinkHo(RiverHo):
+    """Deprecated alias for :class:`.RiverHo`.
+
+    .. deprecated::
+        Use :class:`.RiverHo` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "HeadLineSinkHo is deprecated. Use RiverHo instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LineSinkDitchString(DitchString):
+    """Deprecated alias for :class:`.DitchString`.
+
+    .. deprecated::
+        Use :class:`.DitchString` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LineSinkDitchString is deprecated. Use DitchString instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LineSinkDitchString2(DitchString2):
+    """Deprecated alias for :class:`.DitchString2`.
+
+    .. deprecated::
+        Use :class:`.DitchString2` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LineSinkDitchString2 is deprecated. Use DitchString2 instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

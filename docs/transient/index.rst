@@ -9,7 +9,7 @@ point in the aquifer system and at any time.
 
 .. grid::
 
-    .. grid-item-card:: Tutorials
+    .. grid-item-card:: User-guide
         :link: 00userguide/index
         :link-type: doc
 
@@ -62,18 +62,20 @@ Quick Example
 
             # Import python packages
             import numpy as np
-            from timflow import transient as ft
+            import timflow.transient as tft
 
             # Create model
-            ml = ft.ModelMaq(kaq=10, z=[20, 0], Saq=[0.1], phreatictop=True, tmin=1e-3, tmax=100)
+            ml = tft.ModelMaq(
+                kaq=10, z=[20, 0], Saq=[0.1], phreatictop=True, tmin=1e-3, tmax=100
+            )
             
             # Add a river with a fixed water level
             yls = np.arange(-100.0, 101, 20)
             xls = 50.0 * np.ones_like(yls)
-            river = ft.HeadLineSinkString(ml, xy=list(zip(xls, yls)), tsandh='fixed')
+            river = tft.RiverString(ml, xy=list(zip(xls, yls)), tsandh='fixed')
             
             # Add a well
-            well = ft.Well(ml, 0.0, 0.0, rw=0.3, tsandQ=[(0, 1000)])
+            well = tft.Well(ml, 0.0, 0.0, rw=0.3, tsandQ=[(0, 1000)])
             
             # Solve model
             ml.solve()
@@ -86,7 +88,7 @@ Quick Example
 
         In this example a well is modelled near a river in a single aquifer.
 
-        .. figure:: _static/example_output_transient.png
+        .. figure:: ../_static/example_output_transient.png
             :figwidth: 500px
 
 

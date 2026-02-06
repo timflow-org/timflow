@@ -8,6 +8,7 @@ Example::
 """
 
 import inspect  # Used for storing the input
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -194,7 +195,7 @@ class LineDoubletHoBase(Element):
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
-class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
+class LeakyWall(LineDoubletHoBase, LeakyWallEquation):
     """Create a segment of a leaky wall, which is simulated with a line-doublet.
 
     The specific discharge through the wall is equal to the head difference
@@ -255,7 +256,7 @@ class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
             order=order,
             layers=layers,
             type="z",
-            name="LeakyLineDoublet",
+            name="LeakyWall",
             label=label,
             addtomodel=addtomodel,
         )
@@ -268,7 +269,7 @@ class LeakyLineDoublet(LineDoubletHoBase, LeakyWallEquation):
         )
 
 
-class LeakyLineDoubletString(Element, LeakyWallEquation):
+class LeakyWallString(Element, LeakyWallEquation):
     """Create a string of leaky wall segements consisting of line-doublets.
 
     Parameters
@@ -308,7 +309,7 @@ class LeakyLineDoubletString(Element, LeakyWallEquation):
             layers=layers,
             tsandbc=[(0, 0)],
             type="z",
-            name="LeakyLineDoubletString",
+            name="LeakyWallString",
             label=label,
         )
         self.res = res
@@ -319,7 +320,7 @@ class LeakyLineDoubletString(Element, LeakyWallEquation):
         self.nld = len(self.x) - 1
         for i in range(self.nld):
             self.ldlist.append(
-                LeakyLineDoublet(
+                LeakyWall(
                     model,
                     x1=self.x[i],
                     y1=self.y[i],
@@ -397,3 +398,37 @@ class LeakyLineDoubletString(Element, LeakyWallEquation):
             ax.set_aspect("equal", adjustable="datalim")
         for ld in self.ldlist:
             ld.plot(ax=ax, layer=layer)
+
+
+class LeakyLineDoublet(LeakyWall):
+    """Deprecated alias for :class:`.LeakyWall`.
+
+    .. deprecated::
+        Use :class:`.LeakyWall` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoublet is deprecated. Use LeakyWall instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class LeakyLineDoubletString(LeakyWallString):
+    """Deprecated alias for :class:`.LeakyWallString`.
+
+    .. deprecated::
+        Use :class:`.LeakyWallString` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoubletString is deprecated. Use LeakyWallString instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

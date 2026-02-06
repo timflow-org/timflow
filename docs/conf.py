@@ -38,7 +38,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_logo = "_static/timflow_logo.jpeg"
 html_short_title = "timflow"
+html_favicon = "_static/timflow_icon.jpeg"
 html_css_files = ["css/custom.css"]
 html_show_sphinx = True
 html_show_copyright = True
@@ -100,6 +102,10 @@ intersphinx_mapping = {
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
 nb_execution_mode = "auto"
 nb_merge_streams = True
+nb_execution_excludepatterns = [
+    "besselnumba_timing.ipynb",
+    "vertical_anisotropy.ipynb",
+]
 
 myst_enable_extensions = ["dollarmath", "amsmath"]
 myst_dmath_double_inline = True
