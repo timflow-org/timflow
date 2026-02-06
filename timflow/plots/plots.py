@@ -83,13 +83,16 @@ class PlotBase:
         xy: Optional[list[tuple[float]]] = None,
         labels=True,
         params=False,
+        names=False,
         ax=None,
         fmt=None,
         units=None,
+        hstar=None,
         horizontal_axis: Literal["x", "y", "s"] = "s",
+        sep: Literal[", ", "\n"] = ", ",
         **kwargs,
     ):
-        """Plot cross-section of model.
+        r"""Plot cross-section of model.
 
         This is a shared method that handles cross-section plotting for both
         steady and transient models. The method automatically adapts the parameter
@@ -105,6 +108,8 @@ class PlotBase:
             add layer numbering labels to plot
         params : bool, optional
             add parameter values to plot
+        names : bool, optional
+            add inhomogeneity names to plot, only supported for cross-section models.
         ax : matplotlib.Axes, optional
             axes to plot on, default is None which creates a new figure
         fmt : str, optional
@@ -115,6 +120,12 @@ class PlotBase:
             's' for distance along cross-section on x-axis (default)
             'x' for using x-coordinates on x-axis
             'y' for using y-coordinates on x-axis
+        hstar : float, optional
+            override hstar value for plotting water level in transient
+            1D inhomogeneities that use hstar, useful for plotting pretty
+            cross-sections when reference level is not equal to 0.
+        sep : str
+            Separator between parameters, either ", " or "\n"
         **kwargs
             passed on to all ax.plot calls
 
@@ -132,7 +143,15 @@ class PlotBase:
 
         if isinstance(self._ml.aq, (SteadySimpleAquifer, TransientSimpleAquifer)):
             return self._xsection_simple_aquifer(
-                xy=xy, labels=labels, params=params, ax=ax, fmt=fmt, units=units
+                xy=xy,
+                labels=labels,
+                params=params,
+                names=names,
+                ax=ax,
+                fmt=fmt,
+                units=units,
+                hstar=hstar,
+                sep=sep,
             )
 
         # Standard cross-section for multi-layer models
@@ -147,7 +166,7 @@ class PlotBase:
 
         # Plot layers
         self._xection_plot_layers(
-            r0, r, labels, params, fmt, units, lli, aqi, ax, **kwargs
+            r0, r, labels, params, fmt, units, lli, aqi, ax, sep=sep, **kwargs
         )
 
         # Plot aquifer-aquifer boundaries
@@ -241,16 +260,39 @@ class PlotBase:
         )
         return axes
 
-    def _xsection_simple_aquifer(self, xy, labels, params, ax, fmt, units=None):
+    def _xsection_simple_aquifer(
+        self,
+        xy,
+        labels,
+        params,
+        names,
+        ax,
+        fmt,
+        units=None,
+        hstar=None,
+        sep: Literal[", ", "\n"] = ", ",
+    ):
         """Handle cross-section plotting for SimpleAquifer models."""
         # Default implementation - can be overridden
         # Plot elements
+
         x_min = np.inf
         x_max = -np.inf
         for e in self._ml.elementlist:
-            x_min = min([getattr(e, "xls", np.inf), getattr(e, "xld", np.inf), x_min])
-            x_max = max([getattr(e, "xls", -np.inf), getattr(e, "xld", -np.inf), x_max])
-            e.plot(ax=ax)
+            x_min = min(
+                [
+                    getattr(e, "xls", np.inf),
+                    getattr(e, "xld", np.inf),
+                    x_min,
+                ]
+            )
+            x_max = max(
+                [
+                    getattr(e, "xls", -np.inf),
+                    getattr(e, "xld", -np.inf),
+                    x_max,
+                ]
+            )
 
         if xy is not None:
             (x1, _), (x2, _) = xy
@@ -261,14 +303,43 @@ class PlotBase:
 
         # Plot inhoms (implementation differs between steady/transient)
         self._xsection_plot_inhoms(
-            ax=ax, labels=labels, params=params, x1=x1, x2=x2, fmt=fmt, units=units
+            ax=ax,
+            labels=labels,
+            params=params,
+            names=names,
+            x1=x1,
+            x2=x2,
+            fmt=fmt,
+            units=units,
+            sep=sep,
         )
         ax.set_xlim(x1, x2)
         ax.set_ylabel("elevation")
         ax.set_xlabel("x")
+
+        # import here to avoid circular imports
+        from timflow.transient.stripareasink import HstarXsection
+
+        for e in self._ml.elementlist:
+            if isinstance(e, HstarXsection):
+                e.plot(ax=ax, hstar=hstar)
+            else:
+                e.plot(ax=ax)
+
         return ax
 
-    def _xsection_plot_inhoms(self, ax, labels, params, x1, x2, fmt, units):
+    def _xsection_plot_inhoms(
+        self,
+        ax,
+        labels,
+        params,
+        names,
+        x1,
+        x2,
+        fmt,
+        units,
+        sep: Literal[", ", "\n"] = ", ",
+    ):
         """Plot inhomogeneities for SimpleAquifer models.
 
         Parameters
@@ -279,6 +350,8 @@ class PlotBase:
             Whether to add labels
         params : bool
             Whether to add parameter values
+        names : bool
+            Whether to add inhomogeneity names
         x1, x2 : float
             Extent of the plot
         fmt : str
@@ -293,10 +366,12 @@ class PlotBase:
                     ax=ax,
                     labels=labels,
                     params=params,
+                    names=names,
                     x1=x1,
                     x2=x2,
                     fmt=fmt,
                     units=units,
+                    sep=sep,
                 )
         elif self._ml.model_type == "transient":
             for inhom in self._ml.aq.inhomdict.values():
@@ -304,10 +379,12 @@ class PlotBase:
                     ax=ax,
                     labels=labels,
                     params=params,
+                    names=names,
                     x1=x1,
                     x2=x2,
                     fmt=fmt,
                     units=units,
+                    sep=sep,
                 )
 
     def _get_xsection_line_params(self, xy, ax, horizontal_axis):
@@ -368,9 +445,20 @@ class PlotBase:
         return lli, aqi
 
     def _xection_plot_layers(
-        self, r0, r, labels, params, fmt, units, lli, aqi, ax, **kwargs
+        self,
+        r0,
+        r,
+        labels,
+        params,
+        fmt,
+        units,
+        lli,
+        aqi,
+        ax,
+        sep: Literal[", ", "\n"] = ", ",
+        **kwargs,
     ):
-        """Plot individual layers in the cross-section.
+        r"""Plot individual layers in the cross-section.
 
         Parameters
         ----------
@@ -392,6 +480,8 @@ class PlotBase:
             Current aquifer index
         ax : matplotlib.Axes
             Axes to plot on
+        sep : str
+            Separator between parameters, either ", " or "\n"
         **kwargs
             passed on to all ax.plot calls
         """
@@ -414,7 +504,7 @@ class PlotBase:
                     )
                 if params:
                     self._xsection_leaky_layer_params(
-                        ax, r0, r, labels, fmt, units, lli, i
+                        ax, r0, r, labels, fmt, units, lli, i, sep=sep
                     )
                 if labels or params:
                     lli += 1
@@ -431,12 +521,25 @@ class PlotBase:
                         **kwargs,
                     )
                 if params:
-                    self._xsection_aquifer_params(ax, r0, r, labels, fmt, units, aqi, i)
+                    self._xsection_aquifer_params(
+                        ax, r0, r, labels, fmt, units, aqi, i, sep=sep
+                    )
                 if labels or params:
                     aqi += 1
 
-    def _xsection_leaky_layer_params(self, ax, r0, r, labels, fmt, units, lli, layer_idx):
-        """Add parameter text for leaky layers.
+    def _xsection_leaky_layer_params(
+        self,
+        ax,
+        r0,
+        r,
+        labels,
+        fmt,
+        units,
+        lli,
+        layer_idx,
+        sep: Literal[", ", "\n"] = ", ",
+    ):
+        r"""Add parameter text for leaky layers.
 
         Parameters
         ----------
@@ -456,6 +559,8 @@ class PlotBase:
             Leaky layer index
         layer_idx : int
             Layer index in the model
+        sep : str
+            Separator between parameters, either ", " or "\n"
         """
         if self._ml.model_type == "steady":
             # Steady state: only resistance c
@@ -467,10 +572,13 @@ class PlotBase:
         else:
             # Transient: resistance c and storage Sll
             ssfmt = ".2e"
-            paramtxt = (
-                f"$c$ = {self._ml.aq.c[lli]:{fmt}}, "
-                f"$S_s$ = {self._ml.aq.Sll[lli]:{ssfmt}}"
-            )
+            cstr = f"$c$ = {self._ml.aq.c[lli]:{fmt}}"
+            sstr = f"$S_s$ = {self._ml.aq.Sll[lli]:{ssfmt}}"
+            if sep == "\n":
+                nspaces = max(len(sstr) - len(cstr), 1)
+                paramtxt = cstr + " " * nspaces + sep + sstr
+            else:
+                paramtxt = cstr + sep + sstr
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
@@ -480,8 +588,19 @@ class PlotBase:
             va="center",
         )
 
-    def _xsection_aquifer_params(self, ax, r0, r, labels, fmt, units, aqi, layer_idx):
-        """Add parameter text for aquifers.
+    def _xsection_aquifer_params(
+        self,
+        ax,
+        r0,
+        r,
+        labels,
+        fmt,
+        units,
+        aqi,
+        layer_idx,
+        sep: Literal[", ", "\n"] = ", ",
+    ):
+        r"""Add parameter text for aquifers.
 
         Parameters
         ----------
@@ -501,6 +620,8 @@ class PlotBase:
             Aquifer index
         layer_idx : int
             Layer index in the model
+        sep : str
+            Separator between parameters, either ", " or "\n"
         """
         # Steady state: only hydraulic conductivity
         if units is not None:
@@ -511,7 +632,7 @@ class PlotBase:
 
         # Model3D adds vertical anisotropy
         if self._ml.name == "Model3D":
-            paramtxt += f", $k_z/k_h$ = {self._ml.aq.kzoverkh[aqi]:{fmt}}"
+            paramtxt += f"{sep}$k_z/k_h$ = {self._ml.aq.kzoverkh[aqi]:{fmt}}"
 
         # Transient: add (specific) storage
         if self._ml.model_type == "transient":
@@ -519,9 +640,9 @@ class PlotBase:
             ssfmt = ".2e"
             if aqi == 0 and self._ml.aq.phreatictop:
                 # Top phreatic aquifer uses S instead of Ss
-                paramtxt += f", $S$ = {self._ml.aq.Saq[aqi]:{fmt}}"
+                paramtxt += f"{sep}$S$ = {self._ml.aq.Saq[aqi]:{fmt}}"
             else:
-                paramtxt += f", $S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}"
+                paramtxt += f"{sep}$S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}"
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,

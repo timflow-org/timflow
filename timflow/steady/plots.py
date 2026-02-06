@@ -15,6 +15,7 @@ from matplotlib.collections import LineCollection
 
 from timflow.plots.plots import PlotBase
 from timflow.steady.trace import timtraceline
+from timflow.steady.well import WellBase
 
 __all__ = ["PlotSteady"]
 
@@ -100,6 +101,7 @@ class PlotSteady(PlotBase):
         h = self._ml.headgrid(xg, yg, layers)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
+            ax.set_aspect("equal", adjustable="box")
         # color
         if color is None:
             c = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -114,19 +116,18 @@ class PlotSteady(PlotBase):
         cslist = []
         cshandlelist = []
         for i in range(len(layers)):
-            cs = plt.contour(xg, yg, h[i], levels, colors=c[i], **kwargs)
+            cs = ax.contour(xg, yg, h[i], levels, colors=c[i], **kwargs)
             cslist.append(cs)
             handles, _ = cs.legend_elements()
             cshandlelist.append(handles[0])
             if labels:
                 fmt = "%1." + str(decimals) + "f"
-                plt.clabel(cs, fmt=fmt)
+                ax.clabel(cs, fmt=fmt)
         if isinstance(legend, list):
-            plt.legend(cshandlelist, legend)
+            ax.legend(cshandlelist, legend, loc=(0, 1), frameon=False, ncol=3)
         elif legend:
             legendlist = ["layer " + str(i) for i in layers]
-            plt.legend(cshandlelist, legendlist)
-        plt.axis("scaled")
+            ax.legend(cshandlelist, legendlist, loc=(0, 1), frameon=False, ncol=3)
         if layout:
             self.topview(win=[x1, x2, y1, y2], layers=layers, ax=ax)
         if return_contours:
@@ -281,6 +282,8 @@ class PlotSteady(PlotBase):
 
         Returns
         -------
+        ax : matplotlib.Axes or list of Axes
+            axes with plot
         traces : result
             only if return_traces = True
         """
@@ -380,7 +383,8 @@ class PlotSteady(PlotBase):
         if silent == ".":
             print("")  # Print the final newline after the dots
         if return_traces:
-            return traces
+            return ax, traces
+        return ax
 
     def vcontoursf1D(
         self,
@@ -489,8 +493,9 @@ class PlotSteady(PlotBase):
 
         Parameters
         ----------
-        well : Well object
-            well element from which capture zone is started
+        well : timflow.steady.Well, list of wells or list of str
+            well element from which capture zone is started. Accepts a well object,
+            a list of wells, or a list of well names.
         nt : int
             number of path lines
         zstart : scalar
@@ -522,6 +527,8 @@ class PlotSteady(PlotBase):
 
         Returns
         -------
+        ax : matplotlib.Axes or list of Axes
+            axes with plot
         traces : list of arrays of x, y, z, and t values
             only if return_traces is True
         """
@@ -529,23 +536,34 @@ class PlotSteady(PlotBase):
             win = [-1e30, 1e30, -1e30, 1e30]
         if not return_traces:
             metadata = True  # suppress future warning from timtraceline
-        xstart, ystart, zstart = well.capzonestart(nt, zstart)
-        traces = self.tracelines(
-            xstart,
-            ystart,
-            zstart,
-            hstepmax=-abs(hstepmax),
-            vstepfrac=vstepfrac,
-            tmax=tmax,
-            nstepmax=nstepmax,
-            silent=silent,
-            color=color,
-            orientation=orientation,
-            win=win,
-            ax=ax,
-            figsize=figsize,
-            return_traces=return_traces,
-            metadata=metadata,
-        )
+        # make well a list
+        if isinstance(well, (str, WellBase)):
+            well = [well]
+        # loop over wells
+        traces = []
+        for w in well:
+            if isinstance(w, str):
+                w = self._ml.elementdict[w]
+            xstart, ystart, zstart = w.capzonestart(nt, zstart)
+            traces.append(
+                self.tracelines(
+                    xstart,
+                    ystart,
+                    zstart,
+                    hstepmax=-abs(hstepmax),
+                    vstepfrac=vstepfrac,
+                    tmax=tmax,
+                    nstepmax=nstepmax,
+                    silent=silent,
+                    color=color,
+                    orientation=orientation,
+                    win=win,
+                    ax=ax,
+                    figsize=figsize,
+                    return_traces=return_traces,
+                    metadata=metadata,
+                )
+            )
         if return_traces:
-            return traces
+            return ax, traces
+        return ax

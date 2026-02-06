@@ -311,6 +311,8 @@ class WellBase(Element):
 
         Returns
         -------
+        ax : matplotlib.Axes
+            axes with plot
         traces : list of arrays of x, y, z, and t values
             only if return_traces is True
         """
@@ -342,7 +344,8 @@ class WellBase(Element):
             metadata=metadata,
         )
         if return_traces:
-            return traces
+            return ax, traces
+        return ax
 
 
 class Well(WellBase):
