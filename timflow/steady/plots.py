@@ -567,3 +567,34 @@ class PlotSteady(PlotBase):
         if return_traces:
             return ax, traces
         return ax
+
+    def headalongline(self, x, y, layers=None, ax=None, **kwargs):
+        """Plot head along the line provided by x and y coordinates.
+
+        Parameters
+        ----------
+        x : array
+            x-coordinates of the line
+        y : array
+            y-coordinates of the line
+        layers : integer, list or array
+            layers for which head is plotted, default is all layers
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        **kwargs
+            additional keyword arguments passed to ax.plot()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        if ax is None:
+            _, ax = plt.subplots()
+        head = self._ml.headalongline(x, y, layers=layers)
+        r = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
+        if layers is None:
+            layers = np.arange(self._ml.aq.naq)
+        for ilay in layers:
+            ax.plot(r, head[ilay], label=kwargs.pop("label", f"Layer {ilay}"), **kwargs)
+        return ax
