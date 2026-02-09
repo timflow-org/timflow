@@ -14,6 +14,8 @@ timflow solutions or understand the numerical accuracy of specific features.
 - :doc:`line-sink-ditch`
 - :doc:`test_line_elements`
 - :doc:`validation_tidal_wave_with_Bruggeman`
+- :doc:`synthetic_test_calibrate`
+- :doc:`synthetic_calibrate_2aquifers`
 
 .. toctree::
     :maxdepth: 3
@@ -27,3 +29,5 @@ timflow solutions or understand the numerical accuracy of specific features.
     line-sink-ditch
     test_line_elements
     validation_tidal_wave_with_Bruggeman
+    synthetic_test_calibrate
+    synthetic_calibrate_2aquifers
