@@ -100,7 +100,7 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "off"
+nb_execution_mode = "auto"
 nb_merge_streams = True
 nb_execution_excludepatterns = [
     "besselnumba_timing.ipynb",
