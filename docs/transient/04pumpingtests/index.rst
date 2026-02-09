@@ -6,17 +6,6 @@ simulating and analyzing transient groundwater hydraulic problems such as pumpin
 and slug tests.
 
 
-Synthetic
----------
-
-1. `Synthetic pumping test`_ - a synthetic pumping test
-2. `Syntetic pumping test 2 aquifers`_ - a synthetic pumping test in 2-aquifer model
-3. `Synthetic pumping test calibration`_ - a synthetic pumping test to test calibration
-
-.. _Synthetic pumping test: synthetic0_data.html
-.. _Syntetic pumping test 2 aquifers: synthetic1_2aquifers.html
-.. _Synthetic pumping test calibration: synthetic2_test_calibrate.html
-
 Confined Pumping Tests
 ----------------------
 
