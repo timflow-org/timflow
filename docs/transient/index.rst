@@ -100,7 +100,7 @@ approximated as vertical.
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :hidden:
 
     User-guide <00userguide/index>

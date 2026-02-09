@@ -37,10 +37,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "pydata_sphinx_theme"
-html_static_path = ["_static", "transient/pumpingtests/figs"]
+html_static_path = ["_static"]
 html_logo = "_static/timflow_logo.jpeg"
 html_short_title = "timflow"
-html_favicon = "_static/timflow_icon.jpeg"
+html_favicon = "_static/timflow_icon.png"
 html_css_files = ["css/custom.css"]
 html_show_sphinx = True
 html_show_copyright = True
@@ -100,14 +100,14 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "auto"
+nb_execution_mode = "off"
 nb_merge_streams = True
 nb_execution_excludepatterns = [
     "besselnumba_timing.ipynb",
     "vertical_anisotropy.ipynb",
 ]
 
-myst_enable_extensions = ["dollarmath", "amsmath"]
+myst_enable_extensions = ["dollarmath", "amsmath", "html_image"]
 myst_dmath_double_inline = True
 nb_render_markdown_format = "myst"  # Enable MyST markdown parsing in notebooks
 nb_render_text_lexer = "myst-ansi"  # Better rendering of ANSI output
