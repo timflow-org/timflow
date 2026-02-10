@@ -7,6 +7,3 @@ Area-sinks
 2. :class:`~timml.inhomogeneity.PolygonInhomMaq` or
    :class:`~timml.inhomogeneity.PolygonInhom3D` can specify recharge inside a
    polygonal area.
-
-3. :class:`~timml.stripareasink.XsectionAreaSink` is a strip area-sink for cross-section
-   models to simulate infiltration along a strip.

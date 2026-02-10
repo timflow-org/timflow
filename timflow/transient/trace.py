@@ -1,3 +1,9 @@
+"""Particle tracking utilities for transient flow.
+
+Implements pathline tracing for capture zone visualization in
+transient flow conditions.
+"""
+
 import numpy as np
 
 

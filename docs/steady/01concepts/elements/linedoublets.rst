@@ -12,14 +12,14 @@ where :math:`h^-` and :math:`h^-` are the heads on the minus and plus sides of t
 wall, and :math:`c` is the resistance against flow through the wall. An impermeable
 wall is equivalent to a leaky wall with a resistance that is equal to infinity.
 
-1. :class:`~timml.linedoublet.ImpLineDoublet` is used to simulate one straight
+1. :class:`~timml.linedoublet.ImpermeableWall` is used to simulate one straight
    impermeable wall
 
-2. :class:`~timml.linedoublet.ImpLineDoubletString` is an impermeable wall represented
+2. :class:`~timml.linedoublet.ImpermeableWallString` is an impermeable wall represented
    by a poly line of straight segments
 
-3. :class:`~timml.linedoublet.LeakyLineDoublet` is used to simulate one straight leaky
+3. :class:`~timml.linedoublet.LeakyWall` is used to simulate one straight leaky
    wall
 
-4. :class:`~timml.linedoublet.LeakyLineDoubletString` is a leaky wall represented by a
+4. :class:`~timml.linedoublet.LeakyWallString` is a leaky wall represented by a
    poly line of straight segments

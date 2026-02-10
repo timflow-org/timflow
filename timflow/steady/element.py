@@ -1,4 +1,4 @@
-"""Base element interfaces used by TimML.
+"""Base element interfaces used by timflow.steady.
 
 Defines the `Element` base class that other elements derive from.
 
@@ -17,7 +17,7 @@ __all__ = ["Element"]
 
 
 class Element:
-    """Base class for all TimML elements.
+    """Base class for all timflow.steady elements.
 
     Elements represent physical features in the aquifer system such as wells,
     line-sinks, etc.
@@ -36,7 +36,7 @@ class Element:
         self.inhomelement = False  # elements used as part of an inhom boundary are tagged
         if self.label is not None:
             assert self.label not in list(self.model.elementdict.keys()), (
-                "timml error: label " + self.label + " already exists"
+                "timflow error: label " + self.label + " already exists"
             )
 
     def initialize(self):

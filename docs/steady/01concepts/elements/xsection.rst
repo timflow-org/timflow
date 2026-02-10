@@ -15,6 +15,11 @@ Inhomogeneities
 2. :class:`~timml.inhomogeneity1d.Xsection3D` is a strip aquifer consisting of a stack of
    aquifer layers.
 
+Area-sinks
+----------
+
+1. :class:`~timml.stripareasink.XsectionAreaSink` is a strip area-sink for cross-section
+   models to simulate infiltration along a strip.
 
 Line-sinks
 ----------
@@ -22,13 +27,13 @@ Line-sinks
 1. :class:`~timml.linesink1d.LineSink1D` is an infinitely long line-sink for which the
    discharge per unit length is specified.
 
-2. :class:`~timml.linesink1d.HeadLineSink1D` is an infinitely long line-sink for which
+2. :class:`~timml.linesink1d.River1D` is an infinitely long line-sink for which
    the head and (optionally) a resistance is specified.
 
 Line-doublets
 -------------
 
-1. :class:`~timml.linedoublet1d.ImpLineDoublet1D` is an infinitely long impermeable wall.
+1. :class:`~timml.linedoublet1d.ImpermeableWall1D` is an infinitely long impermeable wall.
 
-2. :class:`~timml.linedoublet1d.LeakyLineDoublet1D` is an infinitely long leaky wall with
+2. :class:`~timml.linedoublet1d.LeakyWall1D` is an infinitely long leaky wall with
    specified resistance.

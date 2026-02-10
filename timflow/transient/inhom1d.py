@@ -1,3 +1,15 @@
+"""1D inhomogeneity elements for transient flow.
+
+Defines cross-section inhomogeneities with different aquifer properties
+for transient cross-section models.
+
+Example::
+
+    XsectionMaq(ml, x1=-100, x2=100, kaq=[5], z=[10, 0])
+"""
+
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -196,8 +208,17 @@ class Xsection(AquiferData):
             )
             HstarXsection(self.model, self.x1, self.x2, tsandhstar=self.tsandhstar)
 
-    def plot(self, ax=None, labels=False, params=False, names=False, fmt=None, **kwargs):
-        """Plot the cross-section.
+    def plot(
+        self,
+        ax=None,
+        labels=False,
+        params=False,
+        names=False,
+        fmt=None,
+        sep: Literal[", ", "\n"] = ", ",
+        **kwargs,
+    ):
+        r"""Plot the cross-section.
 
         Parameters
         ----------
@@ -211,6 +232,8 @@ class Xsection(AquiferData):
             If True, add inhomogeneity names.
         fmt : str, optional
             format string for parameter values, e.g. '.2f' for 2 decimals.
+        sep : str
+            Separator between parameters, either ", " or "\n"
         """
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(8, 4))
@@ -278,9 +301,13 @@ class Xsection(AquiferData):
                         va="center",
                     )
                 if params:
-                    paramtxt = (
-                        f"$c$ = {self.c[lli]:{fmt}}, $S_s$ = {self.Sll[lli]:{ssfmt}}"
-                    )
+                    cstr = f"$c$ = {self.c[lli]:{fmt}}"
+                    sstr = f"$S_s$ = {self.Sll[lli]:{ssfmt}}"
+                    if sep == "\n":
+                        nspaces = max(len(sstr) - len(cstr), 1)
+                        paramtxt = cstr + " " * nspaces + sep + sstr
+                    else:
+                        paramtxt = cstr + sep + sstr
                     ax.text(
                         r0 + 0.75 * r if labels else r0 + 0.5 * r,
                         np.mean(self.z[i : i + 2]),
@@ -300,14 +327,16 @@ class Xsection(AquiferData):
                     va="center",
                 )
             if params and self.ltype[i] == "a":
+                khstr = f"$k_h$ = {self.kaq[aqi]:{fmt}}"
                 if aqi == 0 and i == 0 and self.phreatictop:
-                    paramtxt = (
-                        f"$k_h$ = {self.kaq[aqi]:{fmt}}, $S$ = {self.Saq[aqi]:{fmt}}"
-                    )
+                    sstr = f"$S$ = {self.Saq[aqi]:{fmt}}"
                 else:
-                    paramtxt = (
-                        f"$k_h$ = {self.kaq[aqi]:{fmt}}, $S_s$ = {self.Saq[aqi]:{ssfmt}}"
-                    )
+                    sstr = f"$S_s$ = {self.Saq[aqi]:{ssfmt}}"
+                if sep == "\n":
+                    nspaces = max(len(sstr) - len(khstr), 1)
+                    paramtxt = khstr + "  " * nspaces + "\n" + sstr
+                else:
+                    paramtxt = khstr + sep + sstr
                 ax.text(
                     r0 + 0.75 * r if labels else r0 + 0.5 * r,
                     np.mean(self.z[i : i + 2]),
@@ -329,6 +358,7 @@ class Xsection(AquiferData):
 
         ax.hlines(self.z[0], xmin=r0, xmax=r0 + r, color="k", lw=0.75)
         ax.hlines(self.z[-1], xmin=r0, xmax=r0 + r, color="k", lw=3.0)
+
         ax.set_ylabel("elevation")
         return ax
 

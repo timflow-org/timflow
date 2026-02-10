@@ -1,3 +1,15 @@
+"""1D line-doublet elements for transient flow.
+
+Doublet features for modeling barriers in a transient cross-section.
+
+Example::
+
+    LeakyLineDoublet1D(ml, xld=0, layers=0)
+
+"""
+
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -145,7 +157,7 @@ class LineDoublet1DBase(Element):
             )
 
 
-class LeakyLineDoublet1D(LineDoublet1DBase, LeakyWallEquation):
+class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
     r"""Leaky line doublet with specified resistance.
 
     Parameters
@@ -170,7 +182,7 @@ class LeakyLineDoublet1D(LineDoublet1DBase, LeakyWallEquation):
             res=res,
             layers=layers,
             type="z",
-            name="LeakyLineDoublet1D",
+            name="LeakyWall1D",
             label=label,
         )
         self.nunknowns = self.nparam
@@ -180,3 +192,20 @@ class LeakyLineDoublet1D(LineDoublet1DBase, LeakyWallEquation):
         self.parameters = np.zeros(
             (self.model.ngvbc, self.nparam, self.model.npval), dtype=complex
         )
+
+
+class LeakyLineDoublet1D(LeakyWall1D):
+    """Deprecated alias for :class:`.LeakyWall1D`.
+
+    .. deprecated::
+        Use :class:`.LeakyWall1D` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "LeakyLineDoublet1D is deprecated. Use LeakyWall1D instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)

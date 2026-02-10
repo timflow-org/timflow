@@ -1,3 +1,15 @@
+"""Models for transient flow.
+
+Defines `ModelMaq` and `Model3D` to construct transient aquifer systems
+and solve for heads and flows over time.
+
+Example::
+
+    ml = ModelMaq(kaq=[10, 20], z=[20, 12, 10, 0], c=[1000], Saq=[1e-4, 1e-4])
+    # ... add elements
+    ml.solve()
+"""
+
 import inspect  # Used for storing the input
 from warnings import warn
 
@@ -11,7 +23,7 @@ from timflow.transient.invlapnumba import (
     invlap,
     invlapcomp,
 )
-from timflow.transient.plots import PlotTtim
+from timflow.transient.plots import PlotTransient
 
 
 class TimModel:
@@ -35,7 +47,7 @@ class TimModel:
         M=10,
         kzoverkh=None,
         model3d=False,
-        timmlmodel=None,
+        steady=None,
     ):
         self.elementlist = []
         self.elementdict = {}
@@ -67,11 +79,12 @@ class TimModel:
         self.compute_laplace_parameters()
         self.name = "TimModel"
         self.modelname = "ml"  # Used for writing out input
-        self.timmlmodel = timmlmodel
-        if self.timmlmodel is not None:
-            self.timmlmodel.solve()
+        self.model_type = "transient"  # Model type for plotting and other purposes
+        self.steady = steady
+        if self.steady is not None:
+            self.steady.solve()
 
-        self.plots = PlotTtim(self)
+        self.plots = PlotTransient(self)
         self.plot = self.plots.topview
 
         # NOTE: reinstate later, after deprecation below is removed?
@@ -331,9 +344,9 @@ class TimModel:
             layers = np.atleast_1d(layers)  # corrected for base zero
         pot = self.potential(x, y, t, layers, aq, derivative)
         h = aq.potential_to_head(pot, layers)
-        if self.timmlmodel is not None:
+        if self.steady is not None:
             if not neglect_steady:
-                htimml = self.timmlmodel.head(x, y, layers=layers)
+                htimml = self.steady.head(x, y, layers=layers)
                 h += htimml[:, np.newaxis]
         return h
 
@@ -424,8 +437,8 @@ class TimModel:
             ) / aq.poraq[layer]
         velo = np.array([vx, vy, vz])
 
-        if self.timmlmodel is not None:
-            velotimml = self.timmlmodel.velocity(x, y, z)
+        if self.steady is not None:
+            velotimml = self.steady.velocity(x, y, z)
             velo += velotimml
 
         return velo
@@ -530,7 +543,7 @@ class TimModel:
 
         See Also
         --------
-        :func:`~ttim.model.Model.headgrid2`
+        :func:`~timflow.transient.Model.headgrid2`
         """
         nx = len(xg)
         ny = len(yg)
@@ -569,7 +582,7 @@ class TimModel:
 
         See Also
         --------
-        :func:`~ttim.model.Model.headgrid`
+        :func:`~timflow.transient.Model.headgrid`
         """
         xg = np.linspace(x1, x2, nx)
         yg = np.linspace(y1, y2, ny)
@@ -737,8 +750,8 @@ class ModelMaq(TimModel):
         the number of terms to be used in the numerical inversion algorithm.
         10 is usually sufficient. If drawdown curves appear to oscillate,
         more terms may be needed, but this seldom happens.
-    timmlmodel : optional instance of a solved TimML model
-        a timml model may be included to add steady-state flow
+    steady : optional instance of a solved timflow.steady model
+        a timflow.steady model may be included to add steady-state flow
     """
 
     def __init__(
@@ -756,7 +769,7 @@ class ModelMaq(TimModel):
         tmax=10,
         tstart=0,
         M=10,
-        timmlmodel=None,
+        steady=None,
     ):
         self.storeinput(inspect.currentframe())
         kaq, Haq, Hll, c, Saq, Sll, poraq, porll, ltype = param_maq(
@@ -779,7 +792,7 @@ class ModelMaq(TimModel):
             tmax,
             tstart,
             M,
-            timmlmodel=timmlmodel,
+            steady=steady,
         )
         self.name = "ModelMaq"
 
@@ -835,8 +848,8 @@ class Model3D(TimModel):
         the number of terms to be used in the numerical inversion algorithm.
         10 is usually sufficient. If drawdown curves appear to oscillate,
         more terms may be needed, but this seldom happens.
-    timmlmodel : optional instance of a solved TimML model
-        a timml model may be included to add steady-state flow
+    steady : optional instance of a solved timflow.steady model
+        a timflow.steady model may be included to add steady-state flow
     """
 
     def __init__(
@@ -856,7 +869,7 @@ class Model3D(TimModel):
         tmax=10,
         tstart=0,
         M=10,
-        timmlmodel=None,
+        steady=None,
     ):
         """Z must have the length of the number of layers + 1."""
         self.storeinput(inspect.currentframe())
@@ -892,7 +905,7 @@ class Model3D(TimModel):
             M,
             kzoverkh,
             model3d=True,
-            timmlmodel=timmlmodel,
+            steady=steady,
         )
         self.name = "Model3D"
 
@@ -914,8 +927,8 @@ class ModelXsection(TimModel):
     M : integer, optional
         the number of terms to be used in the numerical inversion algorithm.
         10 is usually sufficient.
-    timmlmodel : timml.Model
-        a timml model may be included to add a steady-state flow result to
+    steady : timflow.steady.Model
+        a timflow.steady model may be included to add a steady-state flow result to
         the computed solution.
     """
 
@@ -926,7 +939,7 @@ class ModelXsection(TimModel):
         tmax=10,
         tstart=0,
         M=10,
-        timmlmodel=None,
+        steady=None,
     ):
         self.elementlist = []
         self.elementdict = {}
@@ -942,13 +955,14 @@ class ModelXsection(TimModel):
         self.compute_laplace_parameters()
         self.name = "TimModel"
         self.modelname = "ml"  # Used for writing out input
-        self.timmlmodel = timmlmodel
-        if self.timmlmodel is not None:
-            self.timmlmodel.solve()
+        self.steady = steady
+        if self.steady is not None:
+            self.steady.solve()
 
-        self.plots = PlotTtim(self)
+        self.plots = PlotTransient(self)
         self.plot = self.plots.topview
         self.name = "ModelXsection"
+        self.model_type = "transient"
 
     def check_inhoms(self):
         """Check if number of aquifers in inhoms matches number of aquifers in model."""

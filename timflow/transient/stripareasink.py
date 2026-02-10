@@ -1,3 +1,13 @@
+"""Cross-section area-sink element for transient flow.
+
+Models uniform infiltration over along a strip (cross-section) in
+transient simulations.
+
+Example::
+
+    AreaSinkXsection(ml, x1=-50, x2=50, tsandN=[(0, 0.001)], layers=0)
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

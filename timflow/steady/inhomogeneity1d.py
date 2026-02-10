@@ -407,6 +407,7 @@ class Xsection3D(Xsection):
         self.storeinput(inspect.currentframe())
         (
             kaq,
+            kzoverkh,
             c,
             npor,
             ltype,
@@ -414,6 +415,7 @@ class Xsection3D(Xsection):
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
         super().__init__(model, x1, x2, kaq, c, z, npor, ltype, hstar, N, name=name)
+        self.kzoverkh = kzoverkh
 
 
 class StripInhom(Xsection):

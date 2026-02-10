@@ -1,3 +1,14 @@
+"""Base element interfaces used by TTim.
+
+Defines the `Element` base class that other transient elements derive from.
+
+Example::
+
+    class MyElem(Element):
+        def initialize(self):
+            pass
+"""
+
 import inspect  # Used for storing the input
 from abc import ABC, abstractmethod
 
@@ -58,7 +69,7 @@ class Element(ABC):
         self.label = label
         if self.label is not None:
             assert self.label not in self.model.elementdict.keys(), (
-                "TTim error: label " + self.label + " already exists"
+                "Timflow error: label " + self.label + " already exists"
             )
         self.rzero = 30
 

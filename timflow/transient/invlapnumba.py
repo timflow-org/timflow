@@ -1,3 +1,10 @@
+"""Inverse Laplace transform implementation using Numba.
+
+Provides optimized inverse Laplace transform functions using the
+De Hoog, Knight and Stokes algorithm, accelerated with Numba JIT compilation.
+
+Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
+"""
 # Copyright 2019 Kristopher L. Kuhlman <klkuhlm _at_ sandia _dot_ gov>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -160,18 +167,23 @@ def invlapcomp(time, pot, npint, M, tintervals, enumber, etstart, ebc, nlayers):
     Parameters
     ----------
     time : array, must be ordered
-           times for which time domain solution is computed, must start at 0
-    pot : array of laplace domain solution conform the ttim shape
+        times for which time domain solution is computed, must start at 0
+    pot : array
+        laplace domain solution conform the timflow.transient shape
     npint : int
         number of p values per interval (=2M + 1)
     M : int
         order of the approximation
-    tintervals : time intervals
-    enumber : array with number of element
-    etstart : array with starting time of bc in element
-    ebc : array with boundary condition value of element
-    nlayers : integer or None (default)
-        number of layers
+    tintervals :
+        time intervals
+    enumber : array
+        number of element
+    etstart : array
+        starting time of bc in element
+    ebc : array
+        boundary condition value of element
+    nlayers : integer, optional
+        number of layers, default is None
 
     Notes
     -----

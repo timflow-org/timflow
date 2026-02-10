@@ -3,12 +3,11 @@
 Mark Bakker, Delft University of Technology
 mark dot bakker at tudelft dot nl
 
-TimML is a computer program for the simulation of steady-state multi-aquifer flow with
-analytic elements and consists of a library of Python scripts and FORTRAN extensions.
+Timflow is a Python package for the simulation of steady-state multi-aquifer flow with
+analytic elements.
 """
 
 # ruff: noqa: F401
-from timflow.steady import bessel
 from timflow.steady.circareasink import CircAreaSink
 from timflow.steady.constant import Constant, ConstantStar
 from timflow.steady.inhomogeneity import (
@@ -26,12 +25,21 @@ from timflow.steady.inhomogeneity1d import (
     XsectionMaq,
 )
 from timflow.steady.linedoublet import (
-    ImpLineDoublet,
-    ImpLineDoubletString,
-    LeakyLineDoublet,
-    LeakyLineDoubletString,
+    ImpermeableWall,
+    ImpermeableWallString,
+    ImpLineDoublet,  # deprecated
+    ImpLineDoubletString,  # deprecated
+    LeakyLineDoublet,  # deprecated
+    LeakyLineDoubletString,  # deprecated
+    LeakyWall,
+    LeakyWallString,
 )
-from timflow.steady.linedoublet1d import ImpLineDoublet1D, LeakyLineDoublet1D
+from timflow.steady.linedoublet1d import (
+    ImpermeableWall1D,
+    ImpLineDoublet1D,  # deprecated
+    LeakyLineDoublet1D,  # deprecated
+    LeakyWall1D,
+)
 from timflow.steady.linesink import (
     CollectorWell,
     Ditch,
@@ -47,7 +55,7 @@ from timflow.steady.linesink import (
     River,
     RiverString,
 )
-from timflow.steady.linesink1d import HeadLineSink1D, LineSink1D
+from timflow.steady.linesink1d import HeadLineSink1D, LineSink1D, River1D
 from timflow.steady.model import Model, Model3D, ModelMaq, ModelXsection
 from timflow.steady.stripareasink import XsectionAreaSink
 from timflow.steady.trace import timtraceline, timtracelines
@@ -63,6 +71,3 @@ from timflow.steady.well import (
     WellString,
     WellStringBase,
 )
-
-# default bessel module is numba
-bessel.set_bessel_method(method="numba")

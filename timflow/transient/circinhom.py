@@ -1,3 +1,13 @@
+"""Circular inhomogeneity elements for transient flow.
+
+Defines circular inhomogeneities with different aquifer properties
+for transient simulations.
+
+Example::
+
+    CircInhom(ml, xc=0, yc=0, R=100, kaq=[5], Haq=[10])
+"""
+
 # flake8: noqa
 import numpy as np
 from scipy.special import iv  # Needed for K1 in Well class, and in CircInhom
@@ -211,8 +221,8 @@ class CircInhomRadial(Element, InhomEquation):
         self.Rbig = 700
         # for i in range(self.aqin.Naq):
         #    for j in range(self.model.Nin):
-        #        assert self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig, 'TTim input error, Radius too big'
-        #        assert self.R / abs(self.aqout.lab2[i,j,0]) < self.Rbig, 'TTim input error, Radius too big'
+        #        assert self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig, 'Timflow input error, Radius too big'
+        #        assert self.R / abs(self.aqout.lab2[i,j,0]) < self.Rbig, 'Timflow input error, Radius too big'
         #        if self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig:
         #            self.circ_in_small[i,j] = 1
         #            self.facin[i,j,:] = 1.0 / iv(0, self.R / self.aqin.lab2[i,j,:])
@@ -347,9 +357,9 @@ class CircInhomRadial(Element, InhomEquation):
 #         self.yc = self.y0 + self.R * np.sin( self.thetacp )
 #         self.aqin = self.model.aq.findAquiferData(self.x0 + (1-1e-10)*self.R,self.y0)
 #         self.aqout = self.model.aq.findAquiferData(self.x0+(1.0+1e-8)*self.R,self.y0)
-#         assert self.aqin.Naq == self.aqout.Naq, 'TTim input error: Number of layers needs to be the same inside and outside circular inhomogeneity'
+#         assert self.aqin.Naq == self.aqout.Naq, 'Timflow input error: Number of layers needs to be the same inside and outside circular inhomogeneity'
 #         # Now that aqin is known, check that radii of circles are the same
-#         assert self.aqin.R == self.R, 'TTim Input Error: Radius of CircInhom and CircInhomData must be equal'
+#         assert self.aqin.R == self.R, 'Timflow Input Error: Radius of CircInhom and CircInhomData must be equal'
 #         self.setbc()
 #         self.facin = np.zeros((self.order+1,self.aqin.Naq,self.model.Nin,self.model.Npin),dtype='D')
 #         self.facout = np.zeros((self.order+1,self.aqin.Naq,self.model.Nin,self.model.Npin),dtype='D')
@@ -364,8 +374,8 @@ class CircInhomRadial(Element, InhomEquation):
 #                 if self.test:
 #                     print('inside  relative radius: ',self.R / abs(self.aqin.lab2[i,j,0]))
 #                     print('outside relative radius: ',self.R / abs(self.aqout.lab2[i,j,0]))
-#                 #assert self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig, 'TTim input error, Radius too big'
-#                 #assert self.R / abs(self.aqout.lab2[i,j,0]) < self.Rbig, 'TTim input error, Radius too big'
+#                 #assert self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig, 'Timflow input error, Radius too big'
+#                 #assert self.R / abs(self.aqout.lab2[i,j,0]) < self.Rbig, 'Timflow input error, Radius too big'
 #                 if self.R / abs(self.aqin.lab2[i,j,0]) < self.Rbig:
 #                     self.circ_in_small[i,j] = 1
 #                     for n in range(self.order+1):
@@ -503,7 +513,7 @@ class CircInhomRadial(Element, InhomEquation):
 
 #
 
-# ml = ttim.ModelMaq(kaq=[4,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=1,tmax=10,M=20)
+# ml = timflow.transient.ModelMaq(kaq=[4,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=1,tmax=10,M=20)
 ##ls = MscreenLineSinkDitchString(ml,[(-1,0),(0,0),(1,0)],tsandQ=[(0.0,1.0)],layers=[2])
 # e1a = EllipseInhomDataMaq(ml,0,0,along=2.0,bshort=1.0,angle=0.0,kaq=[10,2],z=[4,2,1,0],c=[200],Saq=[2e-3,2e-4],Sll=[1e-5])
 # e1 = EllipseInhom(ml,0,0,along=2.0,bshort=1.0,angle=0.0,order=5)
@@ -531,20 +541,20 @@ class CircInhomRadial(Element, InhomEquation):
 #    qn2[:,i] = qx2[:,0]*np.cos(a) + qy2[:,0]*np.sin(a)
 
 
-# ml = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10)
-# w1 = ttim.Well(ml,0,2,.1,tsandQ=[(0,10)],layers=[1])
+# ml = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10)
+# w1 = timflow.transient.Well(ml,0,2,.1,tsandQ=[(0,10)],layers=[1])
 # ls2 = ZeroHeadLineSinkString(ml,xy=[(-10,-2),(0,-4),(4,0)],layers=[1])
 # ls1 = MscreenLineSinkDitchString(ml,xy=[(-10,0),(0,0),(10,10)],tsandQ=[(0.0,7.0)],res=0.0,wh='H',layers=[2],label=None)
 # ml.solve()
 
-# ml = ttim.ModelMaq([1,20,2],[25,20,18,10,8,0],c=[1000,2000],Saq=[0.1,1e-4,1e-4],Sll=[0,0],phreatictop=True,tmin=1e-6,tmax=10,M=30)
-# w1 = ttim.Well(ml,0,0,.1,tsandQ=[(0,1000)],layers=[2])
+# ml = timflow.transient.ModelMaq([1,20,2],[25,20,18,10,8,0],c=[1000,2000],Saq=[0.1,1e-4,1e-4],Sll=[0,0],phreatictop=True,tmin=1e-6,tmax=10,M=30)
+# w1 = timflow.transient.Well(ml,0,0,.1,tsandQ=[(0,1000)],layers=[2])
 # ls1 = ZeroMscreenLineSink(ml,10,-5,10,5,layers=[1,2,3],res=0.5,wh=1,vres=3,wv=1)
 # w2 = ZeroMscreenWell(ml,10,0,res=1.0,layers=[1,2,3],vres=1.0)
-# w3 = ttim.Well(ml,0,-10,.1,tsandQ=[(0,700)],layers=[2])
+# w3 = timflow.transient.Well(ml,0,-10,.1,tsandQ=[(0,700)],layers=[2])
 # ml.solve()
-##ml1 = ttim.ModelMaq([1,20,2],[25,20,18,10,8,0],c=[1000,2000],Saq=[1e-4,1e-4,1e-4],Sll=[0,0],tmin=0.1,tmax=10000,M=30)
-##w1 = ttim.Well(ml1,0,0,.1,tsandQ=[(0,1000)],layers=[2],res=0.1)
+##ml1 = timflow.transient.ModelMaq([1,20,2],[25,20,18,10,8,0],c=[1000,2000],Saq=[1e-4,1e-4,1e-4],Sll=[0,0],tmin=0.1,tmax=10000,M=30)
+##w1 = timflow.transient.Well(ml1,0,0,.1,tsandQ=[(0,1000)],layers=[2],res=0.1)
 ##ml1.solve()
 # t = np.logspace(-1,3,100)
 # h0 = ml.head(50,0,t)
@@ -554,16 +564,16 @@ class CircInhomRadial(Element, InhomEquation):
 ##y = [-500,-300,-200,-100,-50,0,50,100,200,300,500]
 ##x = 50 * np.ones(len(y))
 ##ls = ZeroHeadLineSinkString(ml,xy=zip(x,y),layers=[1])
-##w = ttim.Well(ml,0,0,.1,tsandQ=[(0,1000),(100,0)],layers=[2])
+##w = timflow.transient.Well(ml,0,0,.1,tsandQ=[(0,1000),(100,0)],layers=[2])
 ##ml.solve()
 
 
-# ml = ttim.Model3D( kaq=[2,1,5,10,4], z=[10,8,6,4,2,0], Saq=[.1,.0001,.0002,.0002,.0001], phreatictop=True, kzoverkh=0.1, tmin=1e-3, tmax=1e3 )
+# ml = timflow.transient.Model3D( kaq=[2,1,5,10,4], z=[10,8,6,4,2,0], Saq=[.1,.0001,.0002,.0002,.0001], phreatictop=True, kzoverkh=0.1, tmin=1e-3, tmax=1e3 )
 # w = MscreenWell(ml,0,-25,rw=.3,tsandQ=[(0,100),(100,50)],layers=[2,3])
 # ml.solve()
 
-##ml = ttim.Model3D(kaq=2.0,z=[10,5,0],Saq=[.002,.001],kzoverkh=0.2,phreatictop=False,tmin=.1,tmax=10,M=15)
-# ml = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=100,tmax=300,M=50)
+##ml = timflow.transient.Model3D(kaq=2.0,z=[10,5,0],Saq=[.002,.001],kzoverkh=0.2,phreatictop=False,tmin=.1,tmax=10,M=15)
+# ml = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=100,tmax=300,M=50)
 # w = HeadWellNew(ml,0,0,.1,tsandh=[(0.0,1.0)],layers=1)
 # ml.solve()
 ##L1 = np.sqrt(10**2+5**2)
@@ -582,7 +592,7 @@ class CircInhomRadial(Element, InhomEquation):
 # ml.solve()
 # print ml.potential(50,50,[0.5,5])
 
-# ml2 = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
+# ml2 = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
 # L1 = np.sqrt(10**2+5**2)
 # ls1b = LineSink(ml2,-10,-10,0,-5,tsandQ=[(0,.05*L1),(1,.02*L1)],res=1.0,layers=[1,2],label='mark1')
 # L2 = np.sqrt(10**2+15**2)
@@ -604,7 +614,7 @@ class CircInhomRadial(Element, InhomEquation):
 # ls3a = MscreenLineSink(ml,-10,5,-5,5,tsandQ=[(0,.03*5),(2,.07*5)],res=0.5,layers=[1,2])
 # ls3b = MscreenLineSink(ml,-5,5,0,5,tsandQ=[(0,.03*5),(2,.07*5)],res=0.5,layers=[1,2])
 #
-# ml2 = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
+# ml2 = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
 # L1 = np.sqrt(10**2+5**2)
 # ls1a = LineSink(ml2,-10,-10,0,-5,tsandQ=[(0,.05*L1),(1,.02*L1)],res=1.0,layers=[1,2],label='mark1')
 # L2 = np.sqrt(10**2+15**2)
@@ -615,9 +625,9 @@ class CircInhomRadial(Element, InhomEquation):
 
 ##lss = HeadLineSinkString(ml,[(-10,5),(-5,5),(0,5)],tsandh=[(0,0.02),(3,0.01)],res=0.0,layers=[1,2])
 ##ls3 = ZeroMscreenLineSink(ml,-10,5,0,5,res=1.0,layers=[1,2])
-# ml = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
-# w1 = ttim.Well(ml,0,0,.1,tsandQ=[(0,5),(1,2)],res=1.0,layers=[1,2])
-# w2 = ttim.Well(ml,100,0,.1,tsandQ=[(0,3),(2,7)],layers=[1])
+# ml = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=.1,tmax=10,M=15)
+# w1 = timflow.transient.Well(ml,0,0,.1,tsandQ=[(0,5),(1,2)],res=1.0,layers=[1,2])
+# w2 = timflow.transient.Well(ml,100,0,.1,tsandQ=[(0,3),(2,7)],layers=[1])
 ##w3 = MscreenWell(ml,0,100,.1,tsandQ=[(0,2),(3,1)],res=2.0,layers=[1,2])
 # w3 = ZeroMscreenWell(ml,0,100,.1,res=2.0,layers=[1,2])
 ##w3 = ZeroHeadWell(ml,0,100,.1,res=1.0,layers=[1,2])
@@ -629,7 +639,7 @@ class CircInhomRadial(Element, InhomEquation):
 # print ml2.potential(50,50,[.5,5])
 # print lss.strength([.5,5])
 #
-# ml2 = ttim.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=0.1,tmax=10,M=15)
+# ml2 = timflow.transient.ModelMaq(kaq=[10,5],z=[4,2,1,0],c=[100],Saq=[1e-3,1e-4],Sll=[1e-6],tmin=0.1,tmax=10,M=15)
 # ls1a = LineSink(ml2,-10,-10,0,-5,tsandsig=[(0,.05),(1,.02)],res=1.0,layers=[1,2],label='mark1')
 # ls2a = LineSink(ml2,0,-5,10,10,tsandsig=[(0,.03),(2,.07)],layers=[1],label='mark2')
 # ls3a = HeadLineSinkStringOld(ml2,[(-10,5),(-5,5),(0,5)],tsandh=[(0,0.02),(3,0.01)],res=0.0,layers=[1,2])

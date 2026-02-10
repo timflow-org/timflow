@@ -13,8 +13,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
-# from timflow.steady import bessel
-from timflow.steady.besselnumba import disbeslsv, potbeslsv
+from timflow.bessel.besselnumba import disbeslsv, potbeslsv
 from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 from timflow.steady.element import Element
 from timflow.steady.equation import HeadEquation
@@ -264,9 +263,12 @@ class LineSinkBase(LineSinkChangeTrace, Element):
         Q[self.layers] = self.parameters[:, 0] * self.L
         return Q
 
-    def plot(self, layer=None):
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
         if (layer is None) or (layer in self.layers):
-            plt.plot([self.x1, self.x2], [self.y1, self.y2], "k")
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
 class HeadLineSinkZero(LineSinkBase, HeadEquation):
@@ -470,9 +472,12 @@ class LineSinkHoBase(LineSinkChangeTrace, Element):
             )
         return rv
 
-    def plot(self, layer=None, **kwargs):
-        if (layer is None) or (layer in self.layers):
-            plt.plot([self.x1, self.x2], [self.y1, self.y2], "k", **kwargs)
+    def plot(self, ax=None, layer=None, **kwargs):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+        if (layer is None) or np.isin(self.layers, layer).any():
+            ax.plot([self.x1, self.x2], [self.y1, self.y2], "k", **kwargs)
 
     def dischargeinf(self):
         # returns the unit contribution to the discharge in each layer
@@ -680,7 +685,7 @@ class Ditch(River):
             layers=layers,
             dely=dely,
             label=label,
-            name="HeadLineSinkDitch",
+            name="Ditch",
             addtomodel=addtomodel,
         )
         self.Qls = Qls
@@ -861,9 +866,12 @@ class LineSinkStringBase2(Element):
                 return changed, terminate, xyztnew, message
         return changed, terminate, xyztnew, message
 
-    def plot(self, layer=None, **kwargs):
+    def plot(self, ax=None, layer=None, **kwargs):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
         for ls in self.lslist:
-            ls.plot(layer=layer, **kwargs)
+            ls.plot(layer=layer, ax=ax, **kwargs)
 
 
 class RiverString(LineSinkStringBase2):
@@ -1207,9 +1215,9 @@ class CollectorWell(DitchString):
     --------
     Create a collector well with two arms::
 
-        ml = timml.Model3D(kaq=10, z=np.arange(20, -1, -2), kzoverkh=0.1)
+        ml = timflow.steady.Model3D(kaq=10, z=np.arange(20, -1, -2), kzoverkh=0.1)
         xy = [(1, 0, 10, 0), (0, 1, 0, 10)]
-        w = timml.CollectorWell(ml, xy=xy, Qw=1000, layers=np.arange(5, 10))
+        w = timflow.steady.CollectorWell(ml, xy=xy, Qw=1000, layers=np.arange(5, 10))
         ml.solve()
 
     """
@@ -1275,9 +1283,9 @@ class RadialCollectorWell(CollectorWell):
     --------
     Create a radial collector well with 5 arms::
 
-        ml = timml.Model3D(kaq=10, z=np.arange(20, -1, -2), kzoverkh=0.1)
-        w = timml.RadialCollectorWell(ml, x=0, y=0, narms=5, nls=10, angle=0,
-                                      rcaisson=2.0, rw=0.1, Qw=1000, layers=5)
+        ml = timflow.steady.Model3D(kaq=10, z=np.arange(20, -1, -2), kzoverkh=0.1)
+        w = timflow.steady.RadialCollectorWell(ml, x=0, y=0, narms=5, nls=10, angle=0,
+                                               rcaisson=2.0, rw=0.1, Qw=1000, layers=5)
         ml.solve()
 
     """

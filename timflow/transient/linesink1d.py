@@ -1,3 +1,14 @@
+"""1D line-sink elements for transient flow.
+
+Implements simplified line-sinks for transient cross-section (1D) models.
+
+Example::
+
+    River1D(ml, xls=0, tsandbc=[(0, 1)], layers=0)
+"""
+
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -274,7 +285,7 @@ class LineSink1D(LineSink1DBase, MscreenEquation):
         self.vresfac = self.vres / self.wv
 
 
-class HeadLineSink1D(LineSink1DBase, HeadEquation):
+class River1D(LineSink1DBase, HeadEquation):
     """1D head-specified linesink element.
 
     Parameters
@@ -314,7 +325,7 @@ class HeadLineSink1D(LineSink1DBase, HeadEquation):
             wh=wh,
             layers=layers,
             type="v",
-            name="HeadLineSink1D",
+            name="River1D",
             label=label,
         )
         self.nunknowns = self.nparam
@@ -326,6 +337,23 @@ class HeadLineSink1D(LineSink1DBase, HeadEquation):
         )
         # Needed in solving, solve for a unit head
         self.pc = self.aq.T[self.layers]
+
+
+class HeadLineSink1D(River1D):
+    """Deprecated alias for :class:`.River1D`.
+
+    .. deprecated::
+        Use :class:`.River1D` instead. This alias will be removed in a
+        future version.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "HeadLineSink1D is deprecated. Use River1D instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 class HeadDiffLineSink1D(LineSink1DBase, HeadDiffEquation):

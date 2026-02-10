@@ -38,7 +38,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
+html_logo = "_static/timflow_logo.jpeg"
 html_short_title = "timflow"
+html_favicon = "_static/timflow_icon.png"
 html_css_files = ["css/custom.css"]
 html_show_sphinx = True
 html_show_copyright = True
@@ -70,7 +72,7 @@ napoleon_use_param = True
 autosectionlabel_prefix_document = True
 
 # -- AutoAPI settings -----------------------------------------------------------------
-autoapi_dirs = ["../timflow/steady", "../timflow/transient"]
+autoapi_dirs = ["../timflow/steady", "../timflow/transient", "../timflow/bessel"]
 autoapi_root = "api"
 autoapi_options = [
     "show-module-summary",
@@ -98,32 +100,33 @@ intersphinx_mapping = {
 # -- myst_nb options ------------------------------------------------------------------
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
-nb_execution_mode = "off"
+nb_execution_mode = "auto"
 nb_merge_streams = True
+nb_execution_excludepatterns = [
+    "besselnumba_timing.ipynb",
+    "vertical_anisotropy.ipynb",
+]
 
-myst_enable_extensions = ["dollarmath", "amsmath"]
+myst_enable_extensions = ["dollarmath", "amsmath", "html_image"]
 myst_dmath_double_inline = True
 nb_render_markdown_format = "myst"  # Enable MyST markdown parsing in notebooks
 nb_render_text_lexer = "myst-ansi"  # Better rendering of ANSI output
-nb_render_priority = {
-    "html": (
-        "application/vnd.jupyter.widget-view+json",
-        "application/javascript",
-        "text/html",
-        "image/svg+xml",
-        "image/png",
-        "image/jpeg",
-        "text/markdown",
-        "text/latex",
-        "text/plain",
-    )
-}
+# nb_mime_priority_overrides = {
+#     "html": (
+#         "application/vnd.jupyter.widget-view+json",
+#         "application/javascript",
+#         "text/html",
+#         "image/svg+xml",
+#         "image/png",
+#         "image/jpeg",
+#         "text/markdown",
+#         "text/latex",
+#         "text/plain",
+#     )
+# }
 
 # -- bibtex options ------------------------------------------------------------------
 
 # Add some settings for bibtex
-bibtex_bibfiles = [
-    "steady/06about/publications.bib",
-    "transient/06about/publications.bib",
-]
+bibtex_bibfiles = ["about/publications.bib"]
 bibtex_reference_style = "author_year"
