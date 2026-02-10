@@ -1,12 +1,12 @@
 timflow
 =======
 
-`timflow` is a Python package for the modeling of multi-layer flow with analytic
-elements. Is is split into two main submodules `timflow.steady` for steady-state flow
-and `timflow.transient` for modeling transient flow. Both modules may be applied to an
-arbitrary number of aquifers and leaky layers. The head, flow, and leakage between
-aquifers may be computed semi-analytically at any point in space and time. The design
-of timflow is object-oriented and has been kept simple and flexible.
+`timflow` is a Python package for the modeling of multi-layer groundwater flow with
+analytic elements. The package is split into two main submodules `timflow.steady` for
+steady-state flow and `timflow.transient` for modeling transient flow. Both modules may
+be applied to an arbitrary number of aquifers and leaky layers. The head, flow, and
+leakage between aquifers may be computed semi-analytically at any point in space and
+time. The design of timflow is object-oriented and has been kept simple and flexible.
 
 New analytic elements may be added to the code without making any changes in the
 existing part of the code. `timflow` is coded in Python and uses numba to speed up
