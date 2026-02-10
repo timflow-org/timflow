@@ -1,5 +1,6 @@
 <img src="./docs/_static/timflow_logo.jpeg" width="300">
 
+![PyPI - Version](https://img.shields.io/pypi/v/timflow)
 [![General](https://github.com/timflow-org/timflow/actions/workflows/ci-general.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-general.yml)
 [![Steady](https://github.com/timflow-org/timflow/actions/workflows/ci-steady.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-steady.yml)
 [![Transient](https://github.com/timflow-org/timflow/actions/workflows/ci-transient.yml/badge.svg)](https://github.com/timflow-org/timflow/actions/workflows/ci-transient.yml)
@@ -12,7 +13,7 @@
 elements. The package is split into two main submodules: `timflow.steady` for steady-state flow
 and `timflow.transient` for modeling transient flow. Both modules may be applied to an
 arbitrary number of aquifers and leaky layers. The head, flow, and leakage between
-aquifers may be computed semi-analytically at any point in space and time. 
+aquifers may be computed semi-analytically at any point in space and time.
 
 The design
 of `timflow` is object-oriented and has been kept simple and flexible.
