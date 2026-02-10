@@ -33,6 +33,7 @@ particular topics.
 - :doc:`howtos/howto_pumpingtest`
 - :doc:`howtos/howto_xsection_model`
 - :doc:`howtos/howto_fluctuating_head_boundary`
+- :doc:`howtos/howto_convert_ttim_model`
 
 .. toctree::
     :maxdepth: 3
@@ -43,3 +44,4 @@ particular topics.
     howtos/howto_pumpingtest
     howtos/howto_xsection_model
     howtos/howto_fluctuating_head_boundary
+    howtos/howto_convert_ttim_model
