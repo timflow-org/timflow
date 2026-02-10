@@ -8,7 +8,7 @@
 
 # timflow, a multi-layer analytic element model
 
-`timflow` is a Python package for the modeling of multi-layer flow with analytic
+`timflow` is a Python package for the modeling of multi-layer groundwater flow with analytic
 elements. Is is split into two main submodules: `timflow.steady` for steady-state flow
 and `timflow.transient` for modeling transient flow. Both modules may be applied to an
 arbitrary number of aquifers and leaky layers. The head, flow, and leakage between
