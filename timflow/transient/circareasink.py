@@ -66,7 +66,7 @@ class CircAreaSink(Element):
         self.setflowcoef()
         # Since recharge is in layer 0, and RHS is -N
         self.an = self.aq.coef[0, :] * self.flowcoef
-        self.an.shape = (self.aq.naq, self.model.nint, self.model.npint)
+        self.an = self.an.reshape((self.aq.naq, self.model.nint, self.model.npint))
         self.termin = self.aq.lab2 * self.R * self.an
         self.termin2 = self.aq.lab2**2 * self.an
         self.terminq = self.R * self.an
@@ -105,8 +105,7 @@ class CircAreaSink(Element):
                     for j in range(self.model.nint):
                         if (r - self.R) / abs(self.aq.lab2[i, j, 0]) < self.rzero:
                             rv[0, i, j, :] = self.termout[i, j, :] * self.I1RK0r(r, i, j)
-        rv.shape = (self.nparam, aq.naq, self.model.npval)
-        return rv
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
@@ -129,7 +128,7 @@ class CircAreaSink(Element):
                     for j in range(self.model.nint):
                         if (r - self.R) / abs(self.aq.lab2[i, j, 0]) < self.rzero:
                             qr[0, i, j] = self.termoutq[i, j, :] * self.I1RK1r(r, i, j)
-            qr.shape = (self.nparam, aq.naq, self.model.npval)
+            qr = qr.reshape((self.nparam, aq.naq, self.model.npval))
             qx[:] = qr * (x - self.xc) / r
             qy[:] = qr * (y - self.yc) / r
         return qx, qy

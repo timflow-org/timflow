@@ -138,8 +138,7 @@ class LineSinkBase(Element):
                     )
                     # Divide by L as the parameter is total discharge
                     rv[:, i, j, :] = self.term2[:, i, j, :] * pot / self.L
-        rv.shape = (self.nparam, aq.naq, self.model.npval)
-        return rv
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
@@ -172,9 +171,10 @@ class LineSinkBase(Element):
                         )
                     rvx[:, i, j, :] = self.term2[:, i, j, :] * qxqy[0]
                     rvy[:, i, j, :] = self.term2[:, i, j, :] * qxqy[1]
-        rvx.shape = (self.nparam, aq.naq, self.model.npval)
-        rvy.shape = (self.nparam, aq.naq, self.model.npval)
-        return rvx, rvy
+        return (
+            rvx.reshape((self.nparam, aq.naq, self.model.npval)),
+            rvy.reshape((self.nparam, aq.naq, self.model.npval)),
+        )
 
     def headinside(self, t):
         """The head inside the line-sink.
@@ -419,8 +419,8 @@ class LineSinkStringBase(Element):
             self.dischargeinflayers[i * self.nlayers : (i + 1) * self.nlayers, :] = (
                 self.lslist[i].dischargeinflayers
             )
-            self.xc[i] = self.lslist[i].xc
-            self.yc[i] = self.lslist[i].yc
+            self.xc[i : i + 1] = self.lslist[i].xc
+            self.yc[i : i + 1] = self.lslist[i].yc
 
     def potinf(self, x, y, aq=None):
         """Returns array (nunknowns, Nperiods)."""
@@ -976,9 +976,7 @@ class LineSinkHoBase(Element):
                         )
                     for k in range(self.nlayers):
                         rv[k :: self.nlayers, i, j, :] = self.term2[k, i, j, :] * pot
-
-        rv.shape = (self.nparam, aq.naq, self.model.npval)
-        return rv
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
@@ -1016,9 +1014,10 @@ class LineSinkHoBase(Element):
                         rvy[k :: self.nlayers, i, j, :] = (
                             self.term2[k, i, j, :] * qxqy[self.order + 1 :, :]
                         )
-        rvx.shape = (self.nparam, aq.naq, self.model.npval)
-        rvy.shape = (self.nparam, aq.naq, self.model.npval)
-        return rvx, rvy
+        return (
+            rvx.reshape((self.nparam, aq.naq, self.model.npval)),
+            rvy.reshape((self.nparam, aq.naq, self.model.npval)),
+        )
 
     def headinside(self, t):
         """The head inside the line-sink.

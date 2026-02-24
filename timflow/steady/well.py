@@ -82,7 +82,7 @@ class WellBase(Element):
         self.parameters[:, 0] = self.Qw
         self.resfac = self.res / (2 * np.pi * self.rw * self.aq.Haq[self.layers])
         self.resfac = self.resfac * np.identity(self.nlayers)
-        self.resfac.shape = (
+        self.resfac = self.resfac.reshape(
             self.ncp,
             self.nlayers,
             self.nlayers,  # changed to nlayers from nunknowns
@@ -451,7 +451,7 @@ class Well(WellBase):
                     mat[0, ieq : ieq + e.nunknowns] = 1.0
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qw
+        rhs[0:1] = self.Qw
         return mat, rhs
 
     def setparams(self, sol):
@@ -618,7 +618,7 @@ class TargetHeadWell(WellBase):
             rhs[i] -= rhs[0]
         # first equation is head at control point equals hcp
         mat[0] = 0.0
-        rhs[0] = self.hcp
+        rhs[0:1] = self.hcp
         aq = self.model.aq.find_aquifer_data(self.xcp, self.ycp)
         ieq = 0
         for e in self.model.elementlist:
@@ -628,7 +628,9 @@ class TargetHeadWell(WellBase):
                 )
                 ieq += e.nunknowns
             else:
-                rhs[0] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                rhs[0:1] -= (
+                    e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                )
         return mat, rhs
 
     def setparams(self, sol):
@@ -727,7 +729,7 @@ class LargeDiameterWell(WellBase, MscreenWellNoflowEquation):
             if r < self.rw:
                 r = self.rw  # If at well, set to at radius
             if aq.ilap:
-                pot[0] = np.log(r / self.rw) / (2 * np.pi)
+                pot[0:1] = np.log(r / self.rw) / (2 * np.pi)
                 pot[1:] = -k0(r / aq.lab[1:]) / (2 * np.pi) / k0(self.rw / aq.lab[1:])
             else:
                 pot[:] = -k0(r / aq.lab) / (2 * np.pi) / k0(self.rw / aq.lab)
@@ -751,8 +753,8 @@ class LargeDiameterWell(WellBase, MscreenWellNoflowEquation):
                 xminxw = self.rw
                 yminyw = 0.0
             if aq.ilap:
-                qx[0] = -1 / (2 * np.pi) * xminxw / rsq
-                qy[0] = -1 / (2 * np.pi) * yminyw / rsq
+                qx[0:1] = -1 / (2 * np.pi) * xminxw / rsq
+                qy[0:1] = -1 / (2 * np.pi) * yminyw / rsq
                 kone = k1(r / aq.lab[1:]) / k0(self.rw / aq.lab[1:])
                 qx[1:] = -kone * xminxw / (r * aq.lab[1:]) / (2 * np.pi)
                 qy[1:] = -kone * yminyw / (r * aq.lab[1:]) / (2 * np.pi)
@@ -846,7 +848,7 @@ class WellStringBase(Element):
             for w in self.wlist:
                 rv[j : j + w.nparam] = w.potinf(x, y, aq)
                 j += w.nparam
-        # rv.shape = (self.nparam, aq.naq)
+        # rv = rv.reshape((self.nparam, aq.naq))
         return rv
 
     def disvecinf(self, x, y, aq=None):
@@ -907,7 +909,7 @@ class WellStringBase(Element):
         # include resistance by finding position of element in coefficient matrix
         # and subtracting resfac (resistance factor).
         iself = self.model.elementlist.index(self)
-        jcol = np.sum(e.nunknowns for e in self.model.elementlist[:iself])
+        jcol = np.sum([e.nunknowns for e in self.model.elementlist[:iself]])
         irow = 0
         for w in self.wlist:
             mat[irow : irow + w.nlayers, jcol : jcol + w.nunknowns] -= w.resfac[
@@ -1004,7 +1006,7 @@ class WellString(WellStringBase):
                     mat[0, ieq : ieq + self.nunknowns] = 1.0
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qw
+        rhs[0:1] = self.Qw
         return mat, rhs
 
     def setparams(self, sol):
@@ -1166,7 +1168,7 @@ class TargetHeadWellString(WellStringBase):
 
         # first equation is head at control point equals hcp
         mat[0] = 0
-        rhs[0] = self.hcp
+        rhs[0:1] = self.hcp
         aq = self.model.aq.find_aquifer_data(self.xcp, self.ycp)
         ieq = 0
         for e in self.model.elementlist:
@@ -1184,7 +1186,9 @@ class TargetHeadWellString(WellStringBase):
                     )
                     ieq += e.nunknowns
             else:
-                rhs[0] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                rhs[0:1] -= (
+                    e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                )
         return mat, rhs
 
     def setparams(self, sol):

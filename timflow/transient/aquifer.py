@@ -135,10 +135,12 @@ class AquiferData:
             self.coef[:, :, i] = np.linalg.solve(v, b).T
         self.lab = 1.0 / np.sqrt(self.eigval)
         self.lab2 = self.lab.copy()
-        self.lab2.shape = (self.naq, self.model.nint, self.model.npint)
+        self.lab2 = self.lab2.reshape((self.naq, self.model.nint, self.model.npint))
         self.lababs = np.abs(self.lab2[:, :, 0])  # used to check distances
         self.eigvec2 = self.eigvec.copy()
-        self.eigvec2.shape = (self.naq, self.naq, self.model.nint, self.model.npint)
+        self.eigvec2 = self.eigvec2.reshape(
+            (self.naq, self.naq, self.model.nint, self.model.npint)
+        )
 
     def compute_lab_eigvec(self, p, returnA=False, B=None):
         sqrtpSc = np.sqrt(p * self.Scoefll * self.c)
