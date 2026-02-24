@@ -729,7 +729,7 @@ class LargeDiameterWell(WellBase, MscreenWellNoflowEquation):
             if r < self.rw:
                 r = self.rw  # If at well, set to at radius
             if aq.ilap:
-                pot[0] = np.log(r / self.rw) / (2 * np.pi)
+                pot[0:1] = np.log(r / self.rw) / (2 * np.pi)
                 pot[1:] = -k0(r / aq.lab[1:]) / (2 * np.pi) / k0(self.rw / aq.lab[1:])
             else:
                 pot[:] = -k0(r / aq.lab) / (2 * np.pi) / k0(self.rw / aq.lab)
@@ -753,8 +753,8 @@ class LargeDiameterWell(WellBase, MscreenWellNoflowEquation):
                 xminxw = self.rw
                 yminyw = 0.0
             if aq.ilap:
-                qx[0] = -1 / (2 * np.pi) * xminxw / rsq
-                qy[0] = -1 / (2 * np.pi) * yminyw / rsq
+                qx[0:1] = -1 / (2 * np.pi) * xminxw / rsq
+                qy[0:1] = -1 / (2 * np.pi) * yminyw / rsq
                 kone = k1(r / aq.lab[1:]) / k0(self.rw / aq.lab[1:])
                 qx[1:] = -kone * xminxw / (r * aq.lab[1:]) / (2 * np.pi)
                 qy[1:] = -kone * yminyw / (r * aq.lab[1:]) / (2 * np.pi)

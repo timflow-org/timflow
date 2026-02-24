@@ -740,14 +740,16 @@ class LineSinkStringBase2(Element):
         self.xy = np.atleast_2d(xy).astype("d")
         if closed:
             self.xy = np.vstack((self.xy, self.xy[0]))
-        self.x, self.y = self.xy[:, 0], self.xy[:, 1]
         self.order = order  # same for all segments in string
         self.dely = dely  # same for all segments in string
         self.lslist = []
         if self.xy.shape[1] == 2:
             self.nls = len(self.xy) - 1
+            self.x, self.y = self.xy[:, 0], self.xy[:, 1]
         elif self.xy.shape[1] == 4:
             self.nls = len(self.xy)
+            self.x = None
+            self.y = None
         if self.layers.ndim == 1:
             if len(self.layers) == self.nls:
                 self.layers = self.layers[:, np.newaxis]
@@ -945,7 +947,6 @@ class RiverString(LineSinkStringBase2):
         self.res = res
         self.wh = wh
         self.model.add_element(self)
-        # TO DO: TEST FOR DIFFERENT AQUIFERS AND LAYERS
 
     def initialize(self):
         if len(self.hls) == 1:  # one value
@@ -976,6 +977,8 @@ class RiverString(LineSinkStringBase2):
                 y1, y2 = self.y[i : i + 2]
             elif self.xy.shape[1] == 4:
                 x1, y1, x2, y2 = self.xy[i]
+            else:
+                raise ValueError("xy should have shape (n, 2) or (n, 4)")
             self.lslist.append(
                 River(
                     self.model,
@@ -1016,7 +1019,7 @@ class RiverString(LineSinkStringBase2):
         # include resistance by computing position of coefficients in matrix
         # and subtracting resistance terms
         iself = self.model.elementlist.index(self)
-        jcol = np.sum(e.nunknowns for e in self.model.elementlist[:iself])
+        jcol = np.sum([e.nunknowns for e in self.model.elementlist[:iself]]).astype(int)
         irow = 0
         for ls in self.lslist:
             for icp in range(ls.ncp):

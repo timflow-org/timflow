@@ -419,8 +419,8 @@ class LineSinkStringBase(Element):
             self.dischargeinflayers[i * self.nlayers : (i + 1) * self.nlayers, :] = (
                 self.lslist[i].dischargeinflayers
             )
-            self.xc[i] = self.lslist[i].xc
-            self.yc[i] = self.lslist[i].yc
+            self.xc[i : i + 1] = self.lslist[i].xc
+            self.yc[i : i + 1] = self.lslist[i].yc
 
     def potinf(self, x, y, aq=None):
         """Returns array (nunknowns, Nperiods)."""
