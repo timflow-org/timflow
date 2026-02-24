@@ -707,7 +707,7 @@ class Ditch(River):
                     mat[0, ieq : ieq + e.nunknowns] = self.dischargeinf()
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qls
+        rhs[0:1] = self.Qls
         return mat, rhs
 
     def setparams(self, sol):
@@ -1114,7 +1114,7 @@ class DitchString(RiverString):
                     mat[0, ieq : ieq + self.nunknowns] = self.dischargeinf()
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qls
+        rhs[0:1] = self.Qls
         return mat, rhs
 
 

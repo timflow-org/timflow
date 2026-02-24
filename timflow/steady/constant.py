@@ -170,7 +170,7 @@ class ConstantInside(Element):
                 # else:
                 #    mat[0, ieq:ieq+e. nunknowns] += -1
                 else:
-                    rhs[0] -= e.potentiallayers(
+                    rhs[0:1] -= e.potentiallayers(
                         self.xc[icp], self.yc[icp], self.layers
                     ).sum(0)
         return mat, rhs

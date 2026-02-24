@@ -451,7 +451,7 @@ class Well(WellBase):
                     mat[0, ieq : ieq + e.nunknowns] = 1.0
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qw
+        rhs[0:1] = self.Qw
         return mat, rhs
 
     def setparams(self, sol):
@@ -618,7 +618,7 @@ class TargetHeadWell(WellBase):
             rhs[i] -= rhs[0]
         # first equation is head at control point equals hcp
         mat[0] = 0.0
-        rhs[0] = self.hcp
+        rhs[0:1] = self.hcp
         aq = self.model.aq.find_aquifer_data(self.xcp, self.ycp)
         ieq = 0
         for e in self.model.elementlist:
@@ -628,7 +628,7 @@ class TargetHeadWell(WellBase):
                 )
                 ieq += e.nunknowns
             else:
-                rhs[0] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                rhs[0:1] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
         return mat, rhs
 
     def setparams(self, sol):
@@ -1004,7 +1004,7 @@ class WellString(WellStringBase):
                     mat[0, ieq : ieq + self.nunknowns] = 1.0
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qw
+        rhs[0:1] = self.Qw
         return mat, rhs
 
     def setparams(self, sol):
@@ -1166,7 +1166,7 @@ class TargetHeadWellString(WellStringBase):
 
         # first equation is head at control point equals hcp
         mat[0] = 0
-        rhs[0] = self.hcp
+        rhs[0:1] = self.hcp
         aq = self.model.aq.find_aquifer_data(self.xcp, self.ycp)
         ieq = 0
         for e in self.model.elementlist:
@@ -1184,7 +1184,7 @@ class TargetHeadWellString(WellStringBase):
                     )
                     ieq += e.nunknowns
             else:
-                rhs[0] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
+                rhs[0:1] -= e.potentiallayers(self.xcp, self.ycp, self.lcp) / aq.T[self.lcp]
         return mat, rhs
 
     def setparams(self, sol):
