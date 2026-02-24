@@ -802,7 +802,6 @@ class LineSinkStringBase2(Element):
             for i, ls in enumerate(self.lslist):
                 rv[i] = ls.potinf(x, y, aq)
         return rv.reshape((self.nparam, aq.naq))
-        
 
     def disvecinf(self, x, y, aq=None):
         if aq is None:
