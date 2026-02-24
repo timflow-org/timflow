@@ -597,7 +597,7 @@ class River(LineSinkHoBase, HeadEquation):
         self.resfac = (
             np.tile(self.res / self.whfac, self.ncp) * self.strengthinf
         )  # this is resfach !
-        self.resfac.shape = (self.ncp, self.nlayers, self.nunknowns)
+        self.resfac = self.resfac.reshape((self.ncp, self.nlayers, self.nunknowns))
         if len(self.hls) == 1:
             self.hc = self.hls * np.ones(self.nparam)
         elif len(self.hls) == self.ncp:  # head specified at control points
@@ -801,8 +801,8 @@ class LineSinkStringBase2(Element):
         if aq in self.aq:
             for i, ls in enumerate(self.lslist):
                 rv[i] = ls.potinf(x, y, aq)
-        rv.shape = (self.nparam, aq.naq)
-        return rv
+        return rv.reshape((self.nparam, aq.naq))
+        
 
     def disvecinf(self, x, y, aq=None):
         if aq is None:
@@ -811,8 +811,7 @@ class LineSinkStringBase2(Element):
         if aq in self.aq:
             for i, ls in enumerate(self.lslist):
                 rv[:, i] = ls.disvecinf(x, y, aq)
-        rv.shape = (2, self.nparam, aq.naq)
-        return rv
+        return rv.reshape((2, self.nparam, aq.naq))
 
     def dischargeinf(self):
         rv = np.zeros((self.nls, self.lslist[0].nparam))
@@ -829,7 +828,7 @@ class LineSinkStringBase2(Element):
             array of shape (nlay, nlinesinks)
         """
         Qls = self.parameters[:, 0] * self.dischargeinf()
-        Qls.shape = (self.nls, self.nlayers, self.order + 1)
+        Qls = Qls.reshape((self.nls, self.nlayers, self.order + 1))
         Qls = Qls.sum(axis=2)
         rv = np.zeros((self.model.aq.naq, self.nls))
         for i, q in enumerate(Qls):
@@ -840,7 +839,7 @@ class LineSinkStringBase2(Element):
         """Discharge of the element in each layer."""
         rv = np.zeros(self.aq[0].naq)
         Qls = self.parameters[:, 0] * self.dischargeinf()
-        Qls.shape = (self.nls, self.nlayers, self.order + 1)
+        Qls = Qls.reshape((self.nls, self.nlayers, self.order + 1))
         Qls = np.sum(Qls, 2)
         for i, q in enumerate(Qls):
             rv[self.layers[i]] += q

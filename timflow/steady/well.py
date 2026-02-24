@@ -82,7 +82,7 @@ class WellBase(Element):
         self.parameters[:, 0] = self.Qw
         self.resfac = self.res / (2 * np.pi * self.rw * self.aq.Haq[self.layers])
         self.resfac = self.resfac * np.identity(self.nlayers)
-        self.resfac.shape = (
+        self.resfac = self.resfac.reshape(
             self.ncp,
             self.nlayers,
             self.nlayers,  # changed to nlayers from nunknowns
@@ -846,7 +846,7 @@ class WellStringBase(Element):
             for w in self.wlist:
                 rv[j : j + w.nparam] = w.potinf(x, y, aq)
                 j += w.nparam
-        # rv.shape = (self.nparam, aq.naq)
+        # rv = rv.reshape((self.nparam, aq.naq))
         return rv
 
     def disvecinf(self, x, y, aq=None):

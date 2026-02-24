@@ -143,8 +143,7 @@ class LineDoubletHoBase(Element):
                         )
                         for k in range(self.nlayers):
                             rv[k :: self.nlayers, i, j, :] = self.term2[k, i, j, :] * pot
-        rv.shape = (self.nparam, aq.naq, self.model.npval)
-        return rv
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
@@ -182,10 +181,10 @@ class LineDoubletHoBase(Element):
                             rvy[k :: self.nlayers, i, j, :] = (
                                 self.term2[k, i, j, :] * qxqy[self.order + 1 :, :]
                             )
-
-        rvx.shape = (self.nparam, aq.naq, self.model.npval)
-        rvy.shape = (self.nparam, aq.naq, self.model.npval)
-        return rvx, rvy
+        return (
+            rvx.reshape((self.nparam, aq.naq, self.model.npval)),
+            rvy.reshape((self.nparam, aq.naq, self.model.npval)),
+        )
 
     def plot(self, ax=None, layer=None):
         if ax is None:
