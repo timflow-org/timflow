@@ -274,8 +274,7 @@ class CircInhomRadial(Element, InhomEquation):
                             rv[self.aqin.Naq + i, i, j, :] = self.approx.kvratio(
                                 r, self.R, self.aqout.lab2[i, j, :]
                             )
-        rv.shape = (self.Nparam, aq.Naq, self.model.Np)
-        return rv
+        return rv.reshape((self.Nparam, aq.Naq, self.model.Np))
 
     def disinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
@@ -304,7 +303,7 @@ class CircInhomRadial(Element, InhomEquation):
                                 -self.approx.ivratiop(r, self.R, self.aqin.lab2[i, j, :])
                                 / self.aqin.lab2[i, j, :]
                             )
-            qr.shape = (self.nparam, aq.naq, self.model.np)
+            qr = qr.reshape((self.nparam, aq.naq, self.model.np))
             qx[:] = qr * (x - self.x0) / r
             qy[:] = qr * (y - self.y0) / r
         if aq == self.aqout:
@@ -326,7 +325,7 @@ class CircInhomRadial(Element, InhomEquation):
                                 self.approx.kvratiop(r, self.R, self.aqout.lab2[i, j, :])
                                 / self.aqout.lab2[i, j, :]
                             )
-            qr.shape = (self.Nparam, aq.Naq, self.model.Np)
+            qr = qr.reshape((self.Nparam, aq.Naq, self.model.Np))
             qx[:] = qr * (x - self.x0) / r
             qy[:] = qr * (y - self.y0) / r
         return qx, qy
@@ -427,7 +426,7 @@ class CircInhomRadial(Element, InhomEquation):
 #                             for n in range(1,self.order+1):
 #                                 rv[aq.Naq+i,2*n-1,i,j,:] = pot[n] * np.cos(n*alpha)
 #                                 rv[aq.Naq+i,2*n  ,i,j,:] = pot[n] * np.sin(n*alpha)
-#         rv.shape = (self.Nparam,aq.Naq,self.model.Np)
+#         rv = rv.reshape((self.Nparam, aq.Naq, self.model.Np))
 #         return rv
 #     def disinf(self,x,y,aq=None):
 #         '''Can be called with only one x,y value'''
@@ -462,8 +461,8 @@ class CircInhomRadial(Element, InhomEquation):
 #                                 qr[i,2*n  ,i,j,:] = -potp[n] / 2 / self.aqin.lab2[i,j,:] * np.sin(n*alpha)
 #                                 qt[i,2*n-1,i,j,:] =  pot[n] * np.sin(n*alpha) * n / r
 #                                 qt[i,2*n  ,i,j,:] = -pot[n] * np.cos(n*alpha) * n / r
-#             qr.shape = (self.Nparam/2,aq.Naq,self.model.Np)
-#             qt.shape = (self.Nparam/2,aq.Naq,self.model.Np)
+#             qr = qr.reshape((self.Nparam / 2, aq.Naq, self.model.Np))
+#             qt = qt.reshape((self.Nparam / 2, aq.Naq, self.model.Np))
 #             qx[:self.Nparam/2,:,:] = qr * np.cos(alpha) - qt * np.sin(alpha);
 #             qy[:self.Nparam/2,:,:] = qr * np.sin(alpha) + qt * np.cos(alpha);
 #         if aq == self.aqout:
@@ -494,8 +493,8 @@ class CircInhomRadial(Element, InhomEquation):
 #                                 qr[i,2*n  ,i,j,:] = -potp[n] / self.aqout.lab2[i,j,:] * np.sin(n*alpha)
 #                                 qt[i,2*n-1,i,j,:] =  pot[n] * np.sin(n*alpha) * n / r
 #                                 qt[i,2*n  ,i,j,:] = -pot[n] * np.cos(n*alpha) * n / r
-#             qr.shape = (self.Nparam/2,aq.Naq,self.model.Np)
-#             qt.shape = (self.Nparam/2,aq.Naq,self.model.Np)
+#             qr = qr.reshape((self.Nparam / 2, aq.Naq, self.model.Np))
+#             qt = qt.reshape((self.Nparam / 2, aq.Naq, self.model.Np))
 #             qx[self.Nparam/2:,:,:] = qr * np.cos(alpha) - qt * np.sin(alpha);
 #             qy[self.Nparam/2:,:,:] = qr * np.sin(alpha) + qt * np.cos(alpha);
 #         return qx,qy

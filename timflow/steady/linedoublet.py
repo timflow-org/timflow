@@ -408,8 +408,7 @@ class LineDoubletStringBase(Element):
         rv = np.zeros((self.Nld, self.ldlist[0].nparam, aq.naq))
         for i in range(self.Nld):
             rv[i] = self.ldlist[i].potinf(x, y, aq)
-        rv.shape = (self.nparam, aq.naq)
-        return rv
+        return rv.reshape((self.nparam, aq.naq))
 
     def disvecinf(self, x, y, aq=None):
         if aq is None:
@@ -417,8 +416,7 @@ class LineDoubletStringBase(Element):
         rv = np.zeros((2, self.Nld, self.ldlist[0].nparam, aq.naq))
         for i in range(self.Nld):
             rv[:, i] = self.ldlist[i].disvecinf(x, y, aq)
-        rv.shape = (2, self.nparam, aq.naq)
-        return rv
+        return rv.reshape((2, self.nparam, aq.naq))
 
     def plot(self, ax=None, layer=None):
         if ax is None:

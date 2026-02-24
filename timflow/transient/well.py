@@ -109,8 +109,7 @@ class WellBase(Element):
                         # quicker?
                         # bessel.k0besselv( r / self.aq.lab2[i,j,:], pot )
                         rv[:, i, j, :] = self.term2[:, i, j, :] * pot
-        rv.shape = (self.nparam, aq.naq, self.model.npval)
-        return rv
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def potinfone(self, x, y, jtime, aq=None):
         """Can be called with only one x,y value for time interval jtime."""
@@ -126,7 +125,7 @@ class WellBase(Element):
                 if r / abs(self.aq.lab2[i, jtime, 0]) < self.rzero:
                     pot[:] = kv(0, r / self.aq.lab2[i, jtime, :])
                     rv[:, i, :] = self.term2[:, i, jtime, :] * pot
-        # rv.shape = (self.nparam, aq.naq, self.model.npval)
+        # rv = rv.reshape((self.nparam, aq.naq, self.model.npval))
         return rv
 
     def disvecinf(self, x, y, aq=None):
@@ -151,7 +150,7 @@ class WellBase(Element):
                             * kv(1, r / self.aq.lab2[i, j, :])
                             / self.aq.lab2[i, j, :]
                         )
-            qr.shape = (self.nparam, aq.naq, self.model.npval)
+            qr = qr.reshape((self.nparam, aq.naq, self.model.npval))
             qx[:] = qr * (x - self.xw) / r
             qy[:] = qr * (y - self.yw) / r
         return qx, qy

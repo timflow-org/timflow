@@ -416,9 +416,9 @@ class TimModel:
                     )[:, 0]
             else:  # layer = 0, so top layer
                 if aq.naq == 1:  # only one layer
-                    h[1] = self.head(x, y, t, layers=[layer], aq=aq, neglect_steady=True)[
-                        :, 0
-                    ]
+                    h[1:2] = self.head(
+                        x, y, t, layers=[layer], aq=aq, neglect_steady=True
+                    )[:, 0]
                 else:
                     h[1:] = self.head(
                         x, y, t, layers=[layer, layer + 1], aq=aq, neglect_steady=True

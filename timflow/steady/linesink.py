@@ -597,7 +597,7 @@ class River(LineSinkHoBase, HeadEquation):
         self.resfac = (
             np.tile(self.res / self.whfac, self.ncp) * self.strengthinf
         )  # this is resfach !
-        self.resfac.shape = (self.ncp, self.nlayers, self.nunknowns)
+        self.resfac = self.resfac.reshape((self.ncp, self.nlayers, self.nunknowns))
         if len(self.hls) == 1:
             self.hc = self.hls * np.ones(self.nparam)
         elif len(self.hls) == self.ncp:  # head specified at control points
@@ -707,7 +707,7 @@ class Ditch(River):
                     mat[0, ieq : ieq + e.nunknowns] = self.dischargeinf()
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qls
+        rhs[0:1] = self.Qls
         return mat, rhs
 
     def setparams(self, sol):
@@ -740,14 +740,16 @@ class LineSinkStringBase2(Element):
         self.xy = np.atleast_2d(xy).astype("d")
         if closed:
             self.xy = np.vstack((self.xy, self.xy[0]))
-        self.x, self.y = self.xy[:, 0], self.xy[:, 1]
         self.order = order  # same for all segments in string
         self.dely = dely  # same for all segments in string
         self.lslist = []
         if self.xy.shape[1] == 2:
             self.nls = len(self.xy) - 1
+            self.x, self.y = self.xy[:, 0], self.xy[:, 1]
         elif self.xy.shape[1] == 4:
             self.nls = len(self.xy)
+            self.x = None
+            self.y = None
         if self.layers.ndim == 1:
             if len(self.layers) == self.nls:
                 self.layers = self.layers[:, np.newaxis]
@@ -801,8 +803,7 @@ class LineSinkStringBase2(Element):
         if aq in self.aq:
             for i, ls in enumerate(self.lslist):
                 rv[i] = ls.potinf(x, y, aq)
-        rv.shape = (self.nparam, aq.naq)
-        return rv
+        return rv.reshape((self.nparam, aq.naq))
 
     def disvecinf(self, x, y, aq=None):
         if aq is None:
@@ -811,8 +812,7 @@ class LineSinkStringBase2(Element):
         if aq in self.aq:
             for i, ls in enumerate(self.lslist):
                 rv[:, i] = ls.disvecinf(x, y, aq)
-        rv.shape = (2, self.nparam, aq.naq)
-        return rv
+        return rv.reshape((2, self.nparam, aq.naq))
 
     def dischargeinf(self):
         rv = np.zeros((self.nls, self.lslist[0].nparam))
@@ -829,7 +829,7 @@ class LineSinkStringBase2(Element):
             array of shape (nlay, nlinesinks)
         """
         Qls = self.parameters[:, 0] * self.dischargeinf()
-        Qls.shape = (self.nls, self.nlayers, self.order + 1)
+        Qls = Qls.reshape((self.nls, self.nlayers, self.order + 1))
         Qls = Qls.sum(axis=2)
         rv = np.zeros((self.model.aq.naq, self.nls))
         for i, q in enumerate(Qls):
@@ -840,7 +840,7 @@ class LineSinkStringBase2(Element):
         """Discharge of the element in each layer."""
         rv = np.zeros(self.aq[0].naq)
         Qls = self.parameters[:, 0] * self.dischargeinf()
-        Qls.shape = (self.nls, self.nlayers, self.order + 1)
+        Qls = Qls.reshape((self.nls, self.nlayers, self.order + 1))
         Qls = np.sum(Qls, 2)
         for i, q in enumerate(Qls):
             rv[self.layers[i]] += q
@@ -947,7 +947,6 @@ class RiverString(LineSinkStringBase2):
         self.res = res
         self.wh = wh
         self.model.add_element(self)
-        # TO DO: TEST FOR DIFFERENT AQUIFERS AND LAYERS
 
     def initialize(self):
         if len(self.hls) == 1:  # one value
@@ -978,6 +977,8 @@ class RiverString(LineSinkStringBase2):
                 y1, y2 = self.y[i : i + 2]
             elif self.xy.shape[1] == 4:
                 x1, y1, x2, y2 = self.xy[i]
+            else:
+                raise ValueError("xy should have shape (n, 2) or (n, 4)")
             self.lslist.append(
                 River(
                     self.model,
@@ -1018,7 +1019,7 @@ class RiverString(LineSinkStringBase2):
         # include resistance by computing position of coefficients in matrix
         # and subtracting resistance terms
         iself = self.model.elementlist.index(self)
-        jcol = np.sum(e.nunknowns for e in self.model.elementlist[:iself])
+        jcol = np.sum([e.nunknowns for e in self.model.elementlist[:iself]]).astype(int)
         irow = 0
         for ls in self.lslist:
             for icp in range(ls.ncp):
@@ -1114,7 +1115,7 @@ class DitchString(RiverString):
                     mat[0, ieq : ieq + self.nunknowns] = self.dischargeinf()
                     break
                 ieq += e.nunknowns
-        rhs[0] = self.Qls
+        rhs[0:1] = self.Qls
         return mat, rhs
 
 
