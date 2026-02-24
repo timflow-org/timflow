@@ -138,7 +138,7 @@ class LineSinkBase(Element):
                     )
                     # Divide by L as the parameter is total discharge
                     rv[:, i, j, :] = self.term2[:, i, j, :] * pot / self.L
-                return rv.reshape((self.nparam, aq.naq, self.model.npval))
+        return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value."""
