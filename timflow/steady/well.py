@@ -909,7 +909,7 @@ class WellStringBase(Element):
         # include resistance by finding position of element in coefficient matrix
         # and subtracting resfac (resistance factor).
         iself = self.model.elementlist.index(self)
-        jcol = np.sum(e.nunknowns for e in self.model.elementlist[:iself])
+        jcol = np.sum([e.nunknowns for e in self.model.elementlist[:iself]])
         irow = 0
         for w in self.wlist:
             mat[irow : irow + w.nlayers, jcol : jcol + w.nunknowns] -= w.resfac[
