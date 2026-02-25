@@ -47,6 +47,5 @@ Leaky Pumping Tests (Semi-confined)
 Slug Tests
 ----------
 
-1. :doc:`Pratt County <slug1_pratt_county>` - One layer partially penetrated slug test with data from the test well.
-2. :doc:`Falling Head <slug2_falling_head>` - One layer partially penetrated slug test with data from the test well.
-3. :doc:`Multi well <slug3_multiwell>` - One layer fully penetrated slug test with data from both observation well and pumping well.
+1. :doc:`Pratt County <slug1_pratt_county>` - Slug test with data from the partially penetrating test well.
+2. :doc:`Multi well <slug2_multiwell>` - Slug test with data from both fully penetrating test well and observation well.
