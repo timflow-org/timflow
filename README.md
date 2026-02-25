@@ -54,4 +54,5 @@ Some of the papers that you may want to cite when using `timflow` are:
   * M. Bakker. 2013. Semi-analytic modeling of transient multi-layer flow with TTim.
   Hydrogeology Journal, 21: 935-943. [https://doi.org/10.1007/s10040-013-0975-2](https://doi.org/10.1007/s10040-013-0975-2)
   * M .Bakker. 2013. Analytic modeling of transient multi-layer flow. In: Advances in
-  Hydrogeology, edited by P Mishra and K Kuhlman, Springer, Heidelberg, 95-114.
+  Hydrogeology, edited by P Mishra and K Kuhlman, Springer, Heidelberg, 95-114. Available [here](https://github.com/mbakker7/timflow/blob/master/papers/2013_bakker_ttim_theory.pdf).
+
