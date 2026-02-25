@@ -12,6 +12,7 @@ problems such as pumping tests and slug tests. More to come soon.
 
     confined1_oude_korendijk
     confined2_grindley
+    confined3_sioux
 
 .. toctree::
     :maxdepth: 1
@@ -20,6 +21,7 @@ problems such as pumping tests and slug tests. More to come soon.
 
     leaky1_dalem
     leaky2_hardixveld
+    leaky3_texashill
 
 .. toctree::
     :maxdepth: 1
