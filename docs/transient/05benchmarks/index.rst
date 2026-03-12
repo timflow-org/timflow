@@ -10,6 +10,7 @@ timflow solutions or understand the numerical accuracy of specific features.
 - :doc:`ttim_neuman_comparison`
 - :doc:`compare_wells_linesink`
 - :doc:`well_near_river_or_wall`
+- :doc:`well_near_leaky_river`
 - :doc:`well_benchmarks`
 - :doc:`line-sink-ditch`
 - :doc:`test_line_elements`
@@ -25,6 +26,7 @@ timflow solutions or understand the numerical accuracy of specific features.
     ttim_neuman_comparison
     compare_wells_linesink
     well_near_river_or_wall
+    well_near_leaky_river
     well_benchmarks
     line-sink-ditch
     test_line_elements
