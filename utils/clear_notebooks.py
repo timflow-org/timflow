@@ -6,20 +6,7 @@ from nbconvert.preprocessors import (
     ClearOutputPreprocessor,
 )
 
-nbdirs = [
-    # steady
-    Path("docs/steady/00userguide/tutorials"),
-    Path("docs/steady/00userguide/howtos"),
-    Path("docs/steady/02examples"),
-    Path("docs/steady/03xsections"),
-    Path("docs/steady/04benchmarks"),
-    # transient
-    Path("docs/transient/00userguide/tutorials"),
-    Path("docs/transient/00userguide/howtos"),
-    Path("docs/transient/02examples"),
-    Path("docs/transient/03xsections"),
-    Path("docs/transient/05benchmarks"),
-]
+nbroots = [Path("docs/steady"), Path("docs/transient")]
 
 skip = [
     "benchmarking_besselaes.ipynb",
@@ -30,13 +17,21 @@ skip = [
 
 def get_notebooks():
     nblist = []
-    for nbdir in nbdirs:
-        nblist += [nb for nb in nbdir.glob("*.ipynb") if nb.name not in skip]
-    return nblist
+    for root in nbroots:
+        for nb in root.rglob("*.ipynb"):
+            if nb.name in skip:
+                continue
+            if "_build" in nb.parts:
+                continue
+            nblist.append(nb)
+    return sorted(nblist)
 
 
 clear_output = ClearOutputPreprocessor()
-clear_metadata = ClearMetadataPreprocessor()
+
+# By default nbconvert keeps `metadata.language_info.name`. Use an empty preserve
+# mask so kernel/language metadata is stripped from notebook files.
+clear_metadata = ClearMetadataPreprocessor(preserve_nb_metadata_mask=set())
 
 for notebook in get_notebooks():
     print("Clearing notebook:", notebook)
@@ -45,5 +40,12 @@ for notebook in get_notebooks():
     # run nbconvert preprocessors to clear outputs and metadata
     clear_output.preprocess(nb, {})
     clear_metadata.preprocess(nb, {})
+
+    # Ensure a portable kernel is defined for CI/ReadTheDocs notebook execution.
+    nb.metadata["kernelspec"] = {
+        "name": "python3",
+        "display_name": "Python 3",
+        "language": "python",
+    }
 
     nbformat.write(nb, notebook)

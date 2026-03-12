@@ -50,4 +50,4 @@ jobs:
 
       - name: Test benchmark notebooks
         run: |
-          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto --ignore=docs/transient/05benchmarks/besselnumbanew_timing.ipynb docs/transient/05benchmarks/
+          uv run pytest --nbval-lax --cov-append --dist loadscope -n auto docs/transient/05benchmarks/
