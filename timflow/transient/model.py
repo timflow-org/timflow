@@ -36,6 +36,7 @@ class TimModel:
         c=[1e100, 100],
         Saq=[1e-4, 1e-4],
         Sll=[0],
+        beta=0,
         poraq=0.3,
         porll=0.3,
         ltype=["a", "a"],
@@ -68,6 +69,7 @@ class TimModel:
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,
@@ -733,6 +735,9 @@ class ModelMaq(TimModel):
         if phreatictop is True and topboundary is 'semi', Sll of top
         leaky layer is phreatic storage coefficient (and not multiplied
         with the layer thickness)
+    beta : float, array or list
+        tidal efficiency
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'conf' or 'semi' (default is 'conf')
         indicating whether the top is confined ('conf') or
         semi-confined ('semi')
@@ -761,6 +766,7 @@ class ModelMaq(TimModel):
         c=[],
         Saq=[0.001],
         Sll=[0],
+        beta=0,
         poraq=[0.3],
         porll=[0.3],
         topboundary="conf",
@@ -772,8 +778,8 @@ class ModelMaq(TimModel):
         steady=None,
     ):
         self.storeinput(inspect.currentframe())
-        kaq, Haq, Hll, c, Saq, Sll, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype = param_maq(
+            kaq, z, c, Saq, Sll, beta, poraq, porll, topboundary, phreatictop
         )
         super().__init__(
             kaq,
@@ -783,6 +789,7 @@ class ModelMaq(TimModel):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,
@@ -826,6 +833,9 @@ class Model3D(TimModel):
         vertical anisotropy ratio vertical k divided by horizontal k
         if float, value is the same for all layers
         length is number of layers
+    beta : float, array or list
+        tidal efficiency
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'conf' or 'semi' (default is 'conf')
         indicating whether the top is confined ('conf') or
         semi-confined ('semi').
@@ -858,6 +868,7 @@ class Model3D(TimModel):
         z=[4, 3, 2, 1],
         Saq=0.001,
         kzoverkh=0.1,
+        beta=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=False,
@@ -873,11 +884,12 @@ class Model3D(TimModel):
     ):
         """Z must have the length of the number of layers + 1."""
         self.storeinput(inspect.currentframe())
-        kaq, Haq, Hll, c, Saq, Sll, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
+            beta,
             poraq,
             phreatictop,
             topboundary,
@@ -894,6 +906,7 @@ class Model3D(TimModel):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,

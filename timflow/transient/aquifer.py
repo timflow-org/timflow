@@ -23,6 +23,7 @@ class AquiferData:
         c,
         Saq,
         Sll,
+        beta,
         poraq,
         porll,
         ltype,
@@ -47,6 +48,7 @@ class AquiferData:
         self.Saq = np.atleast_1d(Saq).astype(float)
         self.Sll = np.atleast_1d(Sll).astype(float)
         self.Sll[self.Sll < 1e-20] = 1e-20  # Cannot be zero
+        self.beta = np.atleast_1d(beta).astype(float)
         self.poraq = np.atleast_1d(poraq).astype(float)
         self.porll = np.atleast_1d(porll).astype(float)
         self.ltype = np.atleast_1d(ltype)
@@ -261,6 +263,7 @@ class Aquifer(AquiferData):
         c,
         Saq,
         Sll,
+        beta,
         poraq,
         porll,
         ltype,
@@ -278,6 +281,7 @@ class Aquifer(AquiferData):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,

@@ -44,6 +44,8 @@ class Xsection(AquiferData):
         Specific storage of the aquifers.
     Sll : array
         Specific storage of the leaky layers.
+    beta : array
+        Loading efficiency.
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -83,6 +85,7 @@ class Xsection(AquiferData):
         c,
         Saq,
         Sll,
+        beta,
         poraq,
         porll,
         ltype,
@@ -103,6 +106,7 @@ class Xsection(AquiferData):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,
@@ -384,6 +388,8 @@ class XsectionMaq(Xsection):
         Specific storage of the aquifers.
     Sll : array
         Specific storage of the leaky layers.
+    beta : array
+        Loading efficiency.
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -413,6 +419,7 @@ class XsectionMaq(Xsection):
         c=(),
         Saq=0.001,
         Sll=0,
+        beta=0,
         poraq=0.3,
         porll=0.3,
         topboundary="conf",
@@ -421,8 +428,8 @@ class XsectionMaq(Xsection):
         tsandN=None,
         name=None,
     ):
-        kaq, Haq, Hll, c, Saq, Sll, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype = param_maq(
+            kaq, z, c, Saq, Sll, beta, poraq, porll, topboundary, phreatictop
         )
         super().__init__(
             model,
@@ -435,6 +442,7 @@ class XsectionMaq(Xsection):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,
@@ -469,6 +477,8 @@ class Xsection3D(Xsection):
     kzoverkh : scalar
         Ratio of vertical hydraulic conductivity to horizontal hydraulic
         conductivity.
+    beta : array
+        Loading efficiency
     poraq : array
         Porosities of the aquifers.
     topboundary : str
@@ -503,6 +513,7 @@ class Xsection3D(Xsection):
         z=(4, 3, 2, 1),
         Saq=0.001,
         kzoverkh=0.1,
+        beta=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=False,
@@ -514,11 +525,12 @@ class Xsection3D(Xsection):
         tsandN=None,
         name=None,
     ):
-        kaq, Haq, Hll, c, Saq, Sll, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
+            beta,
             poraq,
             phreatictop,
             topboundary,
@@ -538,6 +550,7 @@ class Xsection3D(Xsection):
             c,
             Saq,
             Sll,
+            beta,
             poraq,
             porll,
             ltype,
