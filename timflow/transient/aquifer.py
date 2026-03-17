@@ -23,7 +23,7 @@ class AquiferData:
         c,
         Saq,
         Sll,
-        beta,
+        leffaq,
         poraq,
         porll,
         ltype,
@@ -48,7 +48,7 @@ class AquiferData:
         self.Saq = np.atleast_1d(Saq).astype(float)
         self.Sll = np.atleast_1d(Sll).astype(float)
         self.Sll[self.Sll < 1e-20] = 1e-20  # Cannot be zero
-        self.beta = np.atleast_1d(beta).astype(float)
+        self.leffaq = np.atleast_1d(leffaq).astype(float)
         self.poraq = np.atleast_1d(poraq).astype(float)
         self.porll = np.atleast_1d(porll).astype(float)
         self.ltype = np.atleast_1d(ltype)
@@ -128,13 +128,17 @@ class AquiferData:
         self.lab = np.zeros((self.naq, self.model.npval), dtype=complex)
         self.eigvec = np.zeros((self.naq, self.naq, self.model.npval), dtype=complex)
         self.coef = np.zeros((self.naq, self.naq, self.model.npval), dtype=complex)
-        b = np.diag(np.ones(self.naq))
+        bmat = np.diag(np.ones(self.naq))
+        self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
+        self.b = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         for i in range(self.model.npval):
-            w, v = self.compute_lab_eigvec(self.model.p[i])
+            w, v, a, b = self.compute_lab_eigvec(self.model.p[i])
+            self.a[i] = a
+            self.b[i] = b
             # Eigenvectors are columns of v
             self.eigval[:, i] = w
             self.eigvec[:, :, i] = v
-            self.coef[:, :, i] = np.linalg.solve(v, b).T
+            self.coef[:, :, i] = np.linalg.solve(v, bmat).T
         self.lab = 1.0 / np.sqrt(self.eigval)
         self.lab2 = self.lab.copy()
         self.lab2 = self.lab2.reshape((self.naq, self.model.nint, self.model.npint))
@@ -181,7 +185,7 @@ class AquiferData:
         index = np.argsort(abs(w))[::-1]
         w = w[index]
         v = v[:, index]
-        return w, v
+        return w, v, a, b
 
     def head_to_potential(self, h, layers):
         return h * self.Tcol[layers]
@@ -263,7 +267,7 @@ class Aquifer(AquiferData):
         c,
         Saq,
         Sll,
-        beta,
+        leffaq,
         poraq,
         porll,
         ltype,
@@ -281,7 +285,7 @@ class Aquifer(AquiferData):
             c,
             Saq,
             Sll,
-            beta,
+            leffaq,
             poraq,
             porll,
             ltype,

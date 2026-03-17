@@ -13,7 +13,7 @@ def param_maq(
     c=[],
     Saq=[0.001],
     Sll=[0],
-    beta=0,
+    leffaq=0,
     poraq=[0.3],
     porll=[0.3],
     topboundary="conf",
@@ -27,7 +27,7 @@ def param_maq(
     c = np.atleast_1d(c).astype(float)
     Sll = np.atleast_1d(Sll).astype(float)
     porll = np.atleast_1d(porll).astype(float)
-    beta = np.atleast_1d(beta).astype(float)
+    leffaq = np.atleast_1d(leffaq).astype(float)
     H = z[:-1] - z[1:]
     assert np.all(H >= 0), (
         "Error: Not all layer thicknesses are" + " non-negative" + str(H)
@@ -91,22 +91,22 @@ def param_maq(
             Sll = Sll * np.ones(naq)
         if len(porll) == 1:
             porll = porll * np.ones(naq)
-        if len(beta) == 1:
-            beta = beta * np.ones(naq)
+        if len(leffaq) == 1:
+            leffaq = leffaq * np.ones(naq)
         assert len(kaq) == naq, "Error: Length of kaq needs to be " + str(naq)
         assert len(Saq) == naq, "Error: Length of Saq needs to be " + str(naq)
         assert len(poraq) == naq, "Error: Length of poraq needs to be " + str(naq)
         assert len(c) == naq, "Error: Length of c needs to be " + str(naq)
         assert len(Sll) == naq, "Error: Length of Sll needs to be " + str(naq)
         assert len(porll) == naq, "Error: Length of porll needs to be " + str(naq)
-        assert len(beta) == naq, "Error: Length of beta needs to be " + str(naq)
+        assert len(leffaq) == naq, "Error: Length of leffaq needs to be " + str(naq)
         Haq = H[1::2]
         Hll = H[::2]
         # layertype
         nlayers = len(z) - 1
         ltype = np.array(nlayers * ["a"])
         ltype[0::2] = "l"
-    return kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype
+    return kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype
 
 
 def param_3d(
@@ -114,7 +114,7 @@ def param_3d(
     z=[1, 0],
     Saq=[0.001],
     kzoverkh=1,
-    beta=0,
+    leffaq=0,
     poraq=0.3,
     phreatictop=False,
     topboundary="conf",
@@ -135,9 +135,9 @@ def param_3d(
     kzoverkh = np.atleast_1d(kzoverkh).astype(float)
     if len(kzoverkh) == 1:
         kzoverkh = kzoverkh * np.ones(naq)
-    beta = np.atleast_1d(beta).astype(float)
-    if len(beta) == 1:
-        beta = beta * np.ones(naq)
+    leffaq = np.atleast_1d(leffaq).astype(float)
+    if len(leffaq) == 1:
+        leffaq = leffaq * np.ones(naq)
     poraq = np.atleast_1d(poraq).astype(float)
     if len(poraq) == 1:
         poraq = poraq * np.ones(naq)
@@ -161,4 +161,4 @@ def param_3d(
         porll[0] = toppor
         ltype = np.hstack(("l", ltype))
         z = np.hstack((z[0] + topthick, z))
-    return kaq, Haq, Hll, c, Saq, Sll, beta, poraq, porll, ltype, z
+    return kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z
