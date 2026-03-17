@@ -143,9 +143,7 @@ class HstarXsection(Element):
             self.resfac * self.flowcoef * self.aq.lab**2 * self.aq.coef[self.layers]
         )
         self.term2 = self.aq.lab**2 * np.sum(
-            self.aq.coef
-            * self.aq.leffaq[:, np.newaxis]
-            * self.aq.Scoefaq[:, np.newaxis],
+            self.aq.coef * self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis],
             axis=0,
         )
         self.dischargeinf = self.aq.coef[0, :] * self.flowcoef * self.resfac
