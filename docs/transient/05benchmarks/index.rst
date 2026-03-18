@@ -17,6 +17,7 @@ timflow solutions or understand the numerical accuracy of specific features.
 - :doc:`validation_tidal_wave_with_Bruggeman`
 - :doc:`synthetic_test_calibrate`
 - :doc:`synthetic_calibrate_2aquifers`
+- :doc:`river1d`
 
 .. toctree::
     :maxdepth: 3
@@ -33,3 +34,4 @@ timflow solutions or understand the numerical accuracy of specific features.
     validation_tidal_wave_with_Bruggeman
     synthetic_test_calibrate
     synthetic_calibrate_2aquifers
+    river1d
