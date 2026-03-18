@@ -142,6 +142,10 @@ class HstarXsection(Element):
         self.term = (
             self.resfac * self.flowcoef * self.aq.lab**2 * self.aq.coef[self.layers]
         )
+        self.term2 = self.aq.lab**2 * np.sum(
+            self.aq.coef * self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis],
+            axis=0,
+        )
         self.dischargeinf = self.aq.coef[0, :] * self.flowcoef * self.resfac
         self.dischargeinflayers = np.sum(
             self.dischargeinf * self.aq.eigvec[self.layers, :, :], 1
@@ -155,7 +159,7 @@ class HstarXsection(Element):
             aq = self.model.aq.find_aquifer_data(x, y)
         rv = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
         if aq == self.aq:
-            rv[:] = self.term
+            rv[:] = self.term + self.term2
         return rv
 
     def disvecinf(self, x, y=0, aq=None):
