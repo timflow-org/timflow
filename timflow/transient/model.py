@@ -352,6 +352,17 @@ class TimModel:
                 h += htimml[:, np.newaxis]
         return h
 
+    def headll(self, x, y, t, ll_layer, aq=None):
+        if aq is None:
+            aq = self.aq.find_aquifer_data(x, y)
+        if ll_layer == 0:
+            print('not implemented yet for ll_layer = 0')
+            return
+        head = self.potential(x, y, t, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
+        eta = np.zeros_like(pot) # first row is leaky layer on top
+        #for i in range(1, aq.naq):
+        #    eta[:, 1:] = head[:, :-1] * np.sinh(alpha
+
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer
         if aq is None:
