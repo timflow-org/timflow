@@ -113,6 +113,8 @@ class AquiferData:
         # Compute Saq and Sll
         self.Scoefaq = self.Saq * self.Haq
         self.Scoefll = self.Sll * self.Hll
+        # Compute kappa (hydraulic conductivity of leaky layer)
+        self.kappa = self.Hll / self.c
         if (self.topboundary == "con") and self.phreatictop:
             self.Scoefaq[0] = self.Scoefaq[0] / self.Haq[0]
         elif (self.topboundary == "lea") and self.phreatictop:
@@ -131,10 +133,13 @@ class AquiferData:
         bmat = np.diag(np.ones(self.naq))
         self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         self.b = np.zeros((self.model.npval, len(self.c)), dtype=complex)
+        self.alpha = np.zeros((self.model.npval, len(self.c)), dtype=complex)
+        
         for i in range(self.model.npval):
             w, v, a, b = self.compute_lab_eigvec(self.model.p[i])
             self.a[i] = a
             self.b[i] = b
+            self.alpha[i] = np.sqrt(self.model.p[i] * self.Sll / self.kappa)
             # Eigenvectors are columns of v
             self.eigval[:, i] = w
             self.eigvec[:, :, i] = v
