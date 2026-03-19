@@ -30,7 +30,7 @@ problems such as pumping tests and slug tests. More to come soon.
     :caption: Slug tests
 
     slug1_pratt_county
-    slug2_multiwelll
+    slug2_multiwell
     slug3_falling_head
     slug4_dawsonville
 
@@ -40,6 +40,7 @@ problems such as pumping tests and slug tests. More to come soon.
     :caption: unconfined aquifers
 
     unconfined1_moench 
+
 Confined Pumping Tests
 ----------------------
 
@@ -64,6 +65,6 @@ Slug Tests
 4. :doc:`Dawsonville <slug4_dawsonville>` - Slug test in a confined aquifer with a fully penetrating well.
 
 Unconfined Pumping Tests
-----------
+------------------------
 
-1. :doc:`Moench <unconfined2_moench>` - Unconfined pumping test with a partially penetrating well and observation wells at multiple depths.
+1. :doc:`Moench <unconfined1_moench>` - Unconfined pumping test with a partially penetrating well and observation wells at multiple depths.
