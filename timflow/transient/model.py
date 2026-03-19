@@ -352,16 +352,37 @@ class TimModel:
                 h += htimml[:, np.newaxis]
         return h
 
-    def headll(self, x, y, t, ll_layer, aq=None):
+    def headll(self, x, y, z, t, aq=None, returneta=False):
         if aq is None:
             aq = self.aq.find_aquifer_data(x, y)
-        if ll_layer == 0:
+        lay, ltype, _ = aq.findlayer(z)
+        assert ltype == 'l'
+        headbar = self.potential(x, y, t, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
+        if lay == 0:
             print('not implemented yet for ll_layer = 0')
             return
-        head = self.potential(x, y, t, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
-        eta = np.zeros_like(pot) # first row is leaky layer on top
-        #for i in range(1, aq.naq):
-        #    eta[:, 1:] = head[:, :-1] * np.sinh(alpha
+        else:
+            eta = (headbar[:, lay - 1] * np.sinh(aq.alpha[lay] * (z - aq.zaqtop[lay])) +
+                   headbar[:, lay] * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z))) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+        eta = eta[:, np.newaxis, :]
+        if returneta:
+            return eta
+        time = np.atleast_1d(t)
+        nlayers = 1
+        rv = invlapcomp(
+            time,
+            eta,
+            self.npint,
+            self.M,
+            self.tintervals,
+            self.enumber,
+            self.etstart,
+            self.ebc,
+            nlayers,
+        )
+        return rv
+
+        
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer
