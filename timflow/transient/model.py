@@ -353,36 +353,63 @@ class TimModel:
         return h
 
     def headll(self, x, y, z, t, aq=None, returneta=False):
+        """Head at x, y, t where t can be multiple times.
+
+        Parameters
+        ----------
+        x : float
+        y : float
+        z : float or array
+        t : list or array
+            times for which grid is returned
+
+        Returns
+        -------
+        h : array size `ntimes, nz`
+        """
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
         if aq is None:
             aq = self.aq.find_aquifer_data(x, y)
-        lay, ltype, _ = aq.findlayer(z)
-        assert ltype == 'l'
-        headbar = self.potential(x, y, t, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
-        if lay == 0:
-            print('not implemented yet for ll_layer = 0')
-            return
-        else:
-            eta = (headbar[:, lay - 1] * np.sinh(aq.alpha[lay] * (z - aq.zaqtop[lay])) +
-                   headbar[:, lay] * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z))) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
-        eta = eta[:, np.newaxis, :]
-        if returneta:
-            return eta
-        time = np.atleast_1d(t)
-        nlayers = 1
-        rv = invlapcomp(
-            time,
-            eta,
+        headbar = self.potential(x, y, t, aq=aq, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
+        haq = invlapcomp(
+            t,
+            headbar,
             self.npint,
             self.M,
             self.tintervals,
             self.enumber,
             self.etstart,
             self.ebc,
-            nlayers,
-        )
+            aq.nlayers,
+            )
+        for iz in range(len(z)):       
+            lay, ltype, _ = aq.findlayer(z[iz])
+            if ltype == 'a':
+                rv[iz] = haq[lay]
+            elif ltype == 'l':
+                if lay == 0:
+                    rv[iz] = np.nan
+                else:
+                    eta = (headbar[:, lay - 1] * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay])) +
+                           headbar[:, lay] * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                    eta = eta[:, np.newaxis, :]
+                    if returneta:
+                        return eta
+                    nlayers = 1
+                    rv[iz] = invlapcomp(
+                        t,
+                        eta,
+                        self.npint,
+                        self.M,
+                        self.tintervals,
+                        self.enumber,
+                        self.etstart,
+                        self.ebc,
+                        nlayers,
+                    )
         return rv
-
-        
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer
