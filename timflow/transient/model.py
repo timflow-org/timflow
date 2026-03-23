@@ -22,6 +22,7 @@ from timflow.transient.invlapnumba import (
     compute_laplace_parameters_numba,
     invlap,
     invlapcomp,
+    invlapgen,
 )
 from timflow.transient.plots import PlotTransient
 
@@ -425,6 +426,26 @@ class TimModel:
                     self.ebc,
                     1,
                 )
+        return rv
+
+    def headll(self, z, t, aq, returneta=False):
+        """Head in leaky layer caused by loading efficiency
+        """
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
+        headbar = -1 / self.p
+        for iz in range(len(z)):
+            lay, ltype, _ = aq.findlayer(z[iz])
+            eta = (
+                headbar
+                * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
+                + headbar
+                * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
+                ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+            if returneta:
+                return eta
+            rv[iz] = invlapgen(t, eta, self.M, self.tintervals, np.array([0.0]), np.array([1.0]))
         return rv
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
