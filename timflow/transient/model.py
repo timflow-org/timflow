@@ -392,11 +392,18 @@ class TimModel:
                 rv[iz] = haq[lay]
             elif ltype == "l":
                 if lay == 0:
-                    eta = (
-                        headbar[:, lay]
-                        * np.sinh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
-                        / np.sinh(aq.alpha[lay] * aq.Hll[lay])
-                    )
+                    if aq.topboundary == "sem":
+                        eta = (
+                            headbar[:, lay]
+                            * np.sinh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                            / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                        )
+                    elif aq.topboundary == "lea":
+                        eta = (
+                            headbar[:, lay]
+                            * np.cosh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                            / np.cosh(aq.alpha[lay] * aq.Hll[lay])
+                        )
                 else:
                     eta = (
                         headbar[:, lay - 1]

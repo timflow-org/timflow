@@ -133,12 +133,14 @@ class AquiferData:
         bmat = np.diag(np.ones(self.naq))
         self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         self.b = np.zeros((self.model.npval, len(self.c)), dtype=complex)
+        self.d = np.zeros(self.model.npval, dtype=complex)
         self.alpha = np.zeros((len(self.c), self.model.npval), dtype=complex)
 
         for i in range(self.model.npval):
-            w, v, a, b = self.compute_lab_eigvec(self.model.p[i])
+            w, v, a, b, dzero = self.compute_lab_eigvec(self.model.p[i])
             self.a[i] = a
             self.b[i] = b
+            self.d[i] = dzero
             self.alpha[:, i] = np.sqrt(self.model.p[i] * self.Sll / self.kappa)
             # Eigenvectors are columns of v
             self.eigval[:, i] = w
@@ -156,6 +158,7 @@ class AquiferData:
     def compute_lab_eigvec(self, p, returnA=False, B=None):
         sqrtpSc = np.sqrt(p * self.Scoefll * self.c)
         a, b = np.zeros_like(sqrtpSc), np.zeros_like(sqrtpSc)
+        dzero = 0j
         small = np.abs(sqrtpSc) < 200
         a[small] = sqrtpSc[small] / np.tanh(sqrtpSc[small])
         b[small] = sqrtpSc[small] / np.sinh(sqrtpSc[small])
@@ -190,7 +193,7 @@ class AquiferData:
         index = np.argsort(abs(w))[::-1]
         w = w[index]
         v = v[:, index]
-        return w, v, a, b
+        return w, v, a, b, dzero
 
     def head_to_potential(self, h, layers):
         return h * self.Tcol[layers]
