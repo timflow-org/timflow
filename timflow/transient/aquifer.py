@@ -134,7 +134,7 @@ class AquiferData:
         self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         self.b = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         self.alpha = np.zeros((len(self.c), self.model.npval), dtype=complex)
-        
+
         for i in range(self.model.npval):
             w, v, a, b = self.compute_lab_eigvec(self.model.p[i])
             self.a[i] = a

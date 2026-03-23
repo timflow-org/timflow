@@ -352,16 +352,15 @@ class TimModel:
                 h += htimml[:, np.newaxis]
         return h
 
-    def headll(self, x, y, z, t, aq=None, returneta=False):
-        """Head at x, y, t where t can be multiple times.
+    def headinvertical(self, x, y, z, t, aq=None, returneta=False):
+        """Head along vertical line at x, y, z, t.
 
         Parameters
         ----------
         x : float
         y : float
-        z : float or array
-        t : list or array
-            times for which grid is returned
+        z : float, list, or array
+        t : float, list, or array
 
         Returns
         -------
@@ -372,7 +371,10 @@ class TimModel:
         rv = np.zeros((len(z), len(t)))
         if aq is None:
             aq = self.aq.find_aquifer_data(x, y)
-        headbar = self.potential(x, y, t, aq=aq, returnphi=True) / aq.T[np.newaxis, :, np.newaxis]
+        headbar = (
+            self.potential(x, y, t, aq=aq, returnphi=True)
+            / aq.T[np.newaxis, :, np.newaxis]
+        )
         haq = invlapcomp(
             t,
             headbar,
@@ -382,33 +384,40 @@ class TimModel:
             self.enumber,
             self.etstart,
             self.ebc,
-            aq.nlayers,
-            )
-        for iz in range(len(z)):       
+            aq.naq,
+        )
+        for iz in range(len(z)):
             lay, ltype, _ = aq.findlayer(z[iz])
-            if ltype == 'a':
+            if ltype == "a":
                 rv[iz] = haq[lay]
-            elif ltype == 'l':
+            elif ltype == "l":
                 if lay == 0:
-                    rv[iz] = np.nan
-                else:
-                    eta = (headbar[:, lay - 1] * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay])) +
-                           headbar[:, lay] * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
-                    eta = eta[:, np.newaxis, :]
-                    if returneta:
-                        return eta
-                    nlayers = 1
-                    rv[iz] = invlapcomp(
-                        t,
-                        eta,
-                        self.npint,
-                        self.M,
-                        self.tintervals,
-                        self.enumber,
-                        self.etstart,
-                        self.ebc,
-                        nlayers,
+                    eta = (
+                        headbar[:, lay]
+                        * np.sinh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                        / np.sinh(aq.alpha[lay] * aq.Hll[lay])
                     )
+                else:
+                    eta = (
+                        headbar[:, lay - 1]
+                        * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
+                        + headbar[:, lay]
+                        * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
+                    ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                eta = eta[:, np.newaxis, :]
+                if returneta:
+                    return eta
+                rv[iz] = invlapcomp(
+                    t,
+                    eta,
+                    self.npint,
+                    self.M,
+                    self.tintervals,
+                    self.enumber,
+                    self.etstart,
+                    self.ebc,
+                    1,
+                )
         return rv
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
