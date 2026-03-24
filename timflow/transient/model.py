@@ -38,6 +38,7 @@ class TimModel:
         Saq=[1e-4, 1e-4],
         Sll=[0],
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         porll=0.3,
         ltype=["a", "a"],
@@ -71,6 +72,7 @@ class TimModel:
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -833,6 +835,9 @@ class ModelMaq(TimModel):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
+    leffll : float, array or list
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'conf' or 'semi' (default is 'conf')
         indicating whether the top is confined ('conf') or
         semi-confined ('semi')
@@ -862,6 +867,7 @@ class ModelMaq(TimModel):
         Saq=[0.001],
         Sll=[0],
         leffaq=0,
+        leffll=0,
         poraq=[0.3],
         porll=[0.3],
         topboundary="conf",
@@ -873,8 +879,18 @@ class ModelMaq(TimModel):
         steady=None,
     ):
         self.storeinput(inspect.currentframe())
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype = param_maq(
+            kaq,
+            z,
+            c,
+            Saq,
+            Sll,
+            leffaq,
+            leffll,
+            poraq,
+            porll,
+            topboundary,
+            phreatictop,
         )
         super().__init__(
             kaq,
@@ -885,6 +901,7 @@ class ModelMaq(TimModel):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -931,6 +948,9 @@ class Model3D(TimModel):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
+    leffll : float, array or list
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'conf' or 'semi' (default is 'conf')
         indicating whether the top is confined ('conf') or
         semi-confined ('semi').
@@ -964,6 +984,7 @@ class Model3D(TimModel):
         Saq=0.001,
         kzoverkh=0.1,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=False,
@@ -979,12 +1000,13 @@ class Model3D(TimModel):
     ):
         """Z must have the length of the number of layers + 1."""
         self.storeinput(inspect.currentframe())
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
             leffaq,
+            leffll,
             poraq,
             phreatictop,
             topboundary,
@@ -1002,6 +1024,7 @@ class Model3D(TimModel):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,

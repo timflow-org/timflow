@@ -24,6 +24,7 @@ class AquiferData:
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -49,6 +50,7 @@ class AquiferData:
         self.Sll = np.atleast_1d(Sll).astype(float)
         self.Sll[self.Sll < 1e-20] = 1e-20  # Cannot be zero
         self.leffaq = np.atleast_1d(leffaq).astype(float)
+        self.leffll = np.atleast_1d(leffll).astype(float)
         self.poraq = np.atleast_1d(poraq).astype(float)
         self.porll = np.atleast_1d(porll).astype(float)
         self.ltype = np.atleast_1d(ltype)
@@ -276,6 +278,7 @@ class Aquifer(AquiferData):
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -294,6 +297,7 @@ class Aquifer(AquiferData):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
