@@ -146,6 +146,14 @@ class HstarXsection(Element):
             self.aq.coef * self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis],
             axis=0,
         )
+        self.term2 = self.term2[np.newaxis, :, :]
+        # # leakage from leaky layer with loading efficiency
+        self.abc = (-self.aq.b.T + self.aq.a.T) / self.aq.c.T[:, np.newaxis]
+        self.nbar = self.aq.leffll[:, np.newaxis] * self.abc
+        self.nbar[:-1] += self.aq.leffll[1:, np.newaxis] * self.abc[1:]
+        self.nbar = self.nbar / self.model.p
+        self.nbar = self.aq.lab**2 * np.sum(self.aq.coef * self.nbar, axis=0)
+        self.nbar = self.nbar[np.newaxis, :, :]
         self.dischargeinf = self.aq.coef[0, :] * self.flowcoef * self.resfac
         self.dischargeinflayers = np.sum(
             self.dischargeinf * self.aq.eigvec[self.layers, :, :], 1
@@ -159,7 +167,7 @@ class HstarXsection(Element):
             aq = self.model.aq.find_aquifer_data(x, y)
         rv = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
         if aq == self.aq:
-            rv[:] = self.term + self.term2
+            rv[:] = self.term + self.term2 + self.nbar
         return rv
 
     def disvecinf(self, x, y=0, aq=None):
