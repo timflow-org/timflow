@@ -1019,7 +1019,7 @@ class RiverString(LineSinkStringBase2):
         # include resistance by computing position of coefficients in matrix
         # and subtracting resistance terms
         iself = self.model.elementlist.index(self)
-        jcol = np.sum([e.nunknowns for e in self.model.elementlist[:iself]]).astype(int)
+        jcol = sum([e.nunknowns for e in self.model.elementlist[:iself]])
         irow = 0
         for ls in self.lslist:
             for icp in range(ls.ncp):
