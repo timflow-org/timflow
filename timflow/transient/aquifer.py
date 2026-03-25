@@ -11,6 +11,9 @@ Example::
 import numpy as np
 import pandas as pd
 
+from timflow.transient.invlapnumba import invlapcomp
+from timflow.transient.stripareasink import HstarXsection
+
 
 class AquiferData:
     def __init__(
@@ -264,6 +267,39 @@ class AquiferData:
             summary.iloc[::2, 3] = self.c
         summary.loc[:, "layer"] = self.layernumber
         return summary  # .set_index("layer")
+
+    def headsemitoplayer(self, x, y, z, t):
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
+        # find if there is HstarXsection
+        for e in self.model.elementlist:
+            if isinstance(e, HstarXsection):
+                if e.aq == self:
+                    if x >= e.x1 and x <= e.x2:
+                        break
+        else:
+            return rv
+        htop = np.zeros((1, self.model.npval), dtype=complex)
+        htop[0] = 1 / self.model.p
+        for iz in range(len(z)):
+            if z[iz] <= self.z[0] and z[iz] >= self.zaqtop[0]:
+                eta = (
+                    htop * np.sinh(self.alpha[0] * (z[iz] - self.zaqtop[0]))
+                ) / np.sinh(self.alpha[0] * self.Hll[0])
+                eta = eta[:, np.newaxis, :]
+                rv[iz] = invlapcomp(
+                    t,
+                    eta,
+                    self.model.npint,
+                    self.model.M,
+                    self.model.tintervals,
+                    np.array(len(e.tstart) * [0]),
+                    e.tstart,
+                    e.bc,
+                    1,
+                )
+        return rv
 
 
 class Aquifer(AquiferData):

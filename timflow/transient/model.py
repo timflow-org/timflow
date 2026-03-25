@@ -428,6 +428,8 @@ class TimModel:
                     self.ebc,
                     1,
                 )
+        if aq.topboundary[:3] == "sem":
+            rv += aq.headsemitoplayer(x, y, z, t)
         return rv
 
     def headll(self, z, t, aq, returneta=False):
