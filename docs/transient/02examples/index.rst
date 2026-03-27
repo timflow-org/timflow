@@ -37,6 +37,18 @@ Modeling rivers
     meandering_river
     higher_order_head_linesink
 
+Horizontal Wells
+----------------
+
+- :doc:`horizontal_well`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Horizontal Wells
+    :hidden:
+
+    horizontal_well
+
 Recharge
 --------
 

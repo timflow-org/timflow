@@ -8,6 +8,8 @@ Example::
     ml.plots.topview()
 """
 
+from typing import Literal
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -195,3 +197,96 @@ class PlotTransient(PlotBase):
         if layout:
             self.topview(win=[x1, x2, y1, y2], ax=ax)
         return ax
+
+    def vcontour(
+        self,
+        win,
+        n,
+        t,
+        levels=20,
+        labels=True,
+        decimals=0,
+        color=None,
+        vinterp=True,
+        nudge=1e-6,
+        newfig=True,
+        figsize=None,
+        layout=True,
+        horizontal_axis: Literal["x", "y", "s"] = "s",
+    ):
+        """Head contour plot in vertical cross-section.
+
+        Parameters
+        ----------
+        win : list or tuple
+            [xmin, xmax, ymin, ymax]
+        n : integer
+            number of grid points along cross-section
+        t : scalar
+            time
+        levels : integer or array (default 20)
+            levels that are contoured
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        color : str or list of strings
+            color of contour lines
+        vinterp : boolean
+            when True, interpolate between centers of layers
+            when False, constant value vertically in each layer
+        nudge : float
+            first value is computed nudge from the specified window
+        newfig : boolean (default True)
+            create new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        layout : boolean
+            plot layout if True
+        horizontal_axis : str, optional
+            's' for distance along cross-section on x-axis (default)
+            'x' for using x-coordinates on x-axis
+            'y' for using y-coordinates on x-axis
+
+        Returns
+        -------
+        cs : contour set
+        """
+        x1, x2, y1, y2 = win
+        xg = np.linspace(x1 + nudge, x2 - nudge, n)
+        yg = np.linspace(y1 + nudge, y2 - nudge, n)
+        h = self._ml.headalongline(xg, yg, t)[:, 0, :]
+        if horizontal_axis == "x":
+            xg = xg
+        elif horizontal_axis == "y":
+            xg = yg
+        elif horizontal_axis == "s":
+            L = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            xg = np.linspace(0, L, n)
+        else:
+            raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
+        if vinterp:
+            zg = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
+            zg = np.hstack((self._ml.aq.zaqtop[0], zg, self._ml.aq.zaqbot[-1]))
+            h = np.vstack((h[0], h, h[-1]))
+        else:
+            zg = np.empty(2 * self._ml.aq.naq)
+            for i in range(self._ml.aq.naq):
+                zg[2 * i] = self._ml.aq.zaqtop[i]
+                zg[2 * i + 1] = self._ml.aq.zaqbot[i]
+            h = np.repeat(h, 2, 0)
+        if newfig:
+            _, ax = plt.subplots(figsize=figsize)
+        if layout:
+            self.xsection(
+                xy=[(x1, y1), (x2, y2)],
+                labels=False,
+                ax=ax,
+                horizontal_axis=horizontal_axis,
+            )
+        cs = ax.contour(xg, zg, h, levels, colors=color)
+        if labels:
+            fmt = "%1." + str(decimals) + "f"
+            ax.clabel(cs, fmt=fmt)
+
+        return cs
