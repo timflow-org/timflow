@@ -590,8 +590,8 @@ class Model:
         aqs = {}
         if not isinstance(self.aq, SimpleAquifer):
             aqs["background"] = self.aq.summary()
-        for i, iaq in enumerate(self.aq.inhomlist):
-            aqs[f"inhom{i}"] = iaq.summary()
+        for iaq in self.aq.inhomdict.values():
+            aqs[iaq.name] = iaq.summary()
         if aqs:
             return pd.concat(aqs, axis=0)
 
@@ -810,14 +810,14 @@ class ModelXsection(Model):
         """
         # check aquifers
         naqs = {}
-        for inhom in self.aq.inhomlist:
+        for inhom in self.aq.inhomdict.values():
             naqs[inhom.name] = inhom.naq
         check = np.array(list(naqs.values())) == self.aq.naq
         if not check.all():
             raise ValueError(f"Number of aquifers does not match {self.aq.naq}:\n{naqs}")
         # check -inf to inf
-        xmin = min([inhom.x1 for inhom in self.aq.inhomlist])
-        xmax = max([inhom.x2 for inhom in self.aq.inhomlist])
+        xmin = min([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        xmax = max([inhom.x2 for inhom in self.aq.inhomdict.values()])
         if not (np.isinf(xmin) and np.sign(xmin) < 0):
             raise ValueError(
                 f"XsectionModel boundary error: left-most boundary must be at x=-np.inf, "

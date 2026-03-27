@@ -64,11 +64,8 @@ class Xsection(AquiferData):
         self.x2 = x2
         self.hstar = hstar
         self.N = N
+        self.name = name
         self.inhom_number = self.model.aq.add_inhom(self)
-        if name is None:
-            self.name = f"inhom{self.inhom_number:02g}"
-        else:
-            self.name = name
         self.addlinesinks = True  # Set to False not to add line-sinks
 
     def __repr__(self):
@@ -90,6 +87,10 @@ class Xsection(AquiferData):
 
     def isinside(self, x, y):
         return (x >= self.x1) and (x < self.x2)
+
+    def initialize(self):
+        super().initialize()
+        self.create_elements()
 
     def create_elements(self):
         if (self.x1 == -np.inf) and (self.x2 == np.inf):

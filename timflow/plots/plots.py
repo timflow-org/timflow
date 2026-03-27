@@ -360,32 +360,18 @@ class PlotBase:
             Dictionary of units for parameters (unused in transient, kept for
             compatibility)
         """
-        if self._ml.model_type == "steady":
-            for inhom in self._ml.aq.inhomlist:
-                inhom.plot(
-                    ax=ax,
-                    labels=labels,
-                    params=params,
-                    names=names,
-                    x1=x1,
-                    x2=x2,
-                    fmt=fmt,
-                    units=units,
-                    sep=sep,
-                )
-        elif self._ml.model_type == "transient":
-            for inhom in self._ml.aq.inhomdict.values():
-                inhom.plot(
-                    ax=ax,
-                    labels=labels,
-                    params=params,
-                    names=names,
-                    x1=x1,
-                    x2=x2,
-                    fmt=fmt,
-                    units=units,
-                    sep=sep,
-                )
+        for inhom in self._ml.aq.inhomdict.values():
+            inhom.plot(
+                ax=ax,
+                labels=labels,
+                params=params,
+                names=names,
+                x1=x1,
+                x2=x2,
+                fmt=fmt,
+                units=units,
+                sep=sep,
+            )
 
     def _get_xsection_line_params(self, xy, ax, horizontal_axis):
         """Get parameters for cross-section line.
