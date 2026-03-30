@@ -527,10 +527,10 @@ class Calibrate:
         """Parse None | float | (initial, pmin, pmax) -> (initial, pmin, pmax) or None."""
         if arg is None:
             return None
+        if isinstance(arg, bool):
+            return (default_initial, -np.inf, np.inf)
         if isinstance(arg, (int, float)):
             return (arg, -np.inf, np.inf)
-        elif isinstance(arg, bool):
-            return (default_initial, -np.inf, np.inf)
         return tuple(arg)  # (initial, pmin, pmax)
 
     def _add_series_constant(
