@@ -52,6 +52,7 @@ class PolygonInhom(AquiferData):
         self.ndeg = ndeg
         self.hstar = hstar
         self.N = N
+        self.name = name
         self.inhom_number = self.model.aq.add_inhom(self)
         self.z1, self.z2 = compute_z1z2(xy)
         self.Nsides = len(self.z1)
@@ -71,7 +72,7 @@ class PolygonInhom(AquiferData):
         self.xmax = max(self.x)
         self.ymin = min(self.y)
         self.ymax = max(self.y)
-        self.name = name
+        
 
     def __repr__(self):
         return "PolygonInhom: " + str(list(zip(self.x, self.y, strict=False)))
@@ -189,6 +190,8 @@ class PolygonInhomMaq(PolygonInhom):
     ndeg : int
         number of points used between two segments to numerically
         integrate normal discharge
+    name : string, optional
+        name of inhomogeneity
     """
 
     tiny = 1e-8
