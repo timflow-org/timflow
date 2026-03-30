@@ -206,7 +206,6 @@ class Aquifer(AquiferData):
             inhom.initialize()
         for inhom in self.inhomdict.values():
             inhom.create_elements()
-        self.inhomdict[inhom.name] = inhom
 
     def add_inhom(self, inhom):
         inhom_number = len(self.inhomdict)
