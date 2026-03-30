@@ -741,7 +741,8 @@ class Calibrate:
         for obs in self.observations_in_well_dict.values():
             if obs.model_key == "transient":
                 dt = obs._time_shift if obs.time_shift is not None else 0.0
-                h = obs.element.headinside(obs.t - dt)[0]
+                t = obs.t - dt
+                h = obs.element.headinside(t)[0]
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
                 if self.reference_time is not None:
@@ -759,11 +760,12 @@ class Calibrate:
                 h = obs.element.headinside()
                 w = obs.weight if obs.weight is not None else 1.0
                 rv = np.append(rv, np.atleast_1d((obs.h - h) * w))
-        # penalize for nans, when tmin is too large and model doesn't produce results
-        # for timesteps close to changes in boundary conditions.
-        nan_mask = np.isnan(rv)
-        if nan_mask.any():
-            rv[nan_mask] = np.nanmax(np.abs(rv), initial=1.0) * 1e3
+                # fix for nans, when tmin is larger than timestep after change in bc
+                # not ideal but better than crashing the optimizer. Warnings are already
+                # printed by the model when this happens.
+                nan_mask = np.isnan(rv)
+                if nan_mask.any():
+                    rv[nan_mask] = np.interp(t[nan_mask], t[~nan_mask], rv[~nan_mask])
         return rv
 
     def residuals_lmfit(self, lmfitparams: Any, printdot: bool = False) -> np.ndarray:

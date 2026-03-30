@@ -42,7 +42,9 @@ __all__ = [
 class PolygonInhom(AquiferData):
     tiny = 1e-8
 
-    def __init__(self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg):
+    def __init__(
+        self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg, name=None
+    ):
         # All input variables except model should be numpy arrays
         # That should be checked outside this function):
         AquiferData.__init__(self, model, kaq, c, z, npor, ltype)
@@ -69,6 +71,7 @@ class PolygonInhom(AquiferData):
         self.xmax = max(self.x)
         self.ymin = min(self.y)
         self.ymax = max(self.y)
+        self.name = name
 
     def __repr__(self):
         return "PolygonInhom: " + str(list(zip(self.x, self.y, strict=False)))
@@ -203,6 +206,7 @@ class PolygonInhomMaq(PolygonInhom):
         N=None,
         order=3,
         ndeg=3,
+        name=None,
     ):
         if c is None:
             c = []
@@ -220,7 +224,19 @@ class PolygonInhomMaq(PolygonInhom):
             ltype,
         ) = param_maq(kaq, z, c, npor, topboundary)
         PolygonInhom.__init__(
-            self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg
+            self,
+            model,
+            xy,
+            kaq,
+            c,
+            z,
+            npor,
+            ltype,
+            hstar,
+            N,
+            order,
+            ndeg,
+            name=name,
         )
 
 

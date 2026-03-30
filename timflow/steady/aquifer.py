@@ -196,7 +196,6 @@ class Aquifer(AquiferData):
 
     def __init__(self, model, kaq, c, z, npor, ltype):
         super().__init__(model, kaq, c, z, npor, ltype)
-        self.inhomlist = []
         self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhom
 
@@ -207,11 +206,11 @@ class Aquifer(AquiferData):
             inhom.initialize()
         for inhom in self.inhomdict.values():
             inhom.create_elements()
-        self.inhomlist.append(inhom)
+        self.inhomdict[inhom.name] = inhom
 
     def add_inhom(self, inhom):
         inhom_number = len(self.inhomdict)
-        if inhom.name is None:
+        if not hasattr(inhom, "name") or inhom.name is None:
             inhom.name = f"inhom{inhom_number:02g}"
         if inhom.name in self.inhomdict:
             raise ValueError(f"Inhomogeneity name '{inhom.name}' already exists.")
@@ -240,7 +239,6 @@ class SimpleAquifer(Aquifer):
 
     def __init__(self, naq):
         self.naq = naq
-        self.inhomlist = []
         self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhomogeneity
         self.elementlist = []
