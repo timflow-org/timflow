@@ -700,9 +700,13 @@ class Calibrate:
         # 2. Solve whichever models are registered
         needs_steady = any(
             s.model_key == "steady" for s in self.observations_dict.values()
+        ) or any(
+            s.model_key == "steady" for s in self.observations_in_well_dict.values()
         )
         needs_transient = any(
             s.model_key == "transient" for s in self.observations_dict.values()
+        ) or any(
+            s.model_key == "transient" for s in self.observations_in_well_dict.values()
         )
 
         if needs_steady and self.steady_model is not None:
