@@ -153,7 +153,7 @@ class PlotTransient(PlotBase):
 
         Returns
         -------
-        ax : matplotlib.Axesi
+        ax : matplotlib.Axes
             axes with plot
         """
         x1, x2, y1, y2 = win
