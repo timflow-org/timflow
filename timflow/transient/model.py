@@ -562,7 +562,7 @@ class TimModel:
             warn(
                 "printrow is deprecated, use show_progress instead",
                 category=DeprecationWarning,
-                stacklevel=1,
+                stacklevel=2,
             )
             show_progress = printrow
         nx = len(xg)
