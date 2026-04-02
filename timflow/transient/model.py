@@ -547,8 +547,7 @@ class TimModel:
         printrow : bool, optional
 
             .. deprecated:: 0.2.0
-
-            prints dot to screen for each row of grid if set to `True`
+                prints dot to screen for each row of grid if set to `True`
 
         Returns
         -------
@@ -565,6 +564,19 @@ class TimModel:
                 stacklevel=2,
             )
             show_progress = printrow
+
+        if parallel:
+            try:
+                from tqdm.contrib.concurrent import thread_map
+            except ImportError:
+                warn(
+                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
+                    " enable parallel execution. Falling back to serial execution.",
+                    category=ImportWarning,
+                    stacklevel=2,
+                )
+                parallel = False
+                thread_map = None
         nx = len(xg)
         ny = len(yg)
         if layers is None:
@@ -580,7 +592,6 @@ class TimModel:
                 for i in range(nx):
                     h[:, :, j, i] = self.head(xg[i], yg[j], t, layers)
         else:
-            from tqdm.contrib.concurrent import thread_map
 
             def compute(ij):
                 i, j = ij
@@ -627,13 +638,12 @@ class TimModel:
             show computation progress, by printing dots per row or with tqdm progressbar
             when parallel is True. Default is False.
         parallel : bool, optional
-            if `True`, computes headgrid in parallel using multiprocessing,
+            if `True`, computes headgrid in parallel using multi threading,
             by default `False`
         printrow : boolean, optional
 
             .. deprecated:: 0.2.0
-
-            prints dot to screen for each row of grid if set to `True`
+                prints dot to screen for each row of grid if set to `True`
 
         Returns
         -------

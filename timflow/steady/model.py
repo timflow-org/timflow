@@ -275,13 +275,12 @@ class Model:
             show computation progress, by printing dots per row or with tqdm progressbar
             when parallel is True. Default is False.
         parallel : bool, optional
-            if `True`, computes headgrid in parallel using multiprocessing,
+            if `True`, computes headgrid in parallel using multi threading,
             by default `False`
         printrow : bool, optional
 
-            .. deprecated :: 0.2.0
-
-            prints dot to screen for each row of grid if set to `True`
+            .. deprecated:: 0.2.0
+                prints dot to screen for each row of grid if set to `True`
 
         Returns
         -------
@@ -298,6 +297,20 @@ class Model:
                 stacklevel=2,
             )
             show_progress = printrow
+
+        if parallel:
+            try:
+                from tqdm.contrib.concurrent import thread_map
+            except ImportError:
+                warnings.warn(
+                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
+                    " enable parallel execution. Falling back to serial execution.",
+                    category=ImportWarning,
+                    stacklevel=2,
+                )
+                parallel = False
+                thread_map = None
+
         nx, ny = len(xg), len(yg)
         if layers is None:
             Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
@@ -313,7 +326,6 @@ class Model:
             if show_progress:
                 print("", flush=True)
         else:
-            from tqdm.contrib.concurrent import thread_map
 
             def compute(ij):
                 i, j = ij
@@ -328,10 +340,21 @@ class Model:
             )
             for i, j, result in results:
                 h[:, j, i] = result
+
         return h
 
     def headgrid2(
-        self, x1, x2, nx, y1, y2, ny, layers=None, show_progress=False, printrow=False
+        self,
+        x1,
+        x2,
+        nx,
+        y1,
+        y2,
+        ny,
+        layers=None,
+        show_progress=False,
+        printrow=False,
+        parallel=False,
     ):
         """Grid of heads.
 
@@ -348,8 +371,8 @@ class Model:
             when parallel is True. Default is False.
         printrow : boolean, optional
 
-            .. deprecated :: 0.2.0
-            prints dot to screen for each row of grid if set to `True`
+            .. deprecated:: 0.2.0
+                prints dot to screen for each row of grid if set to `True`
 
         Returns
         -------
@@ -361,7 +384,12 @@ class Model:
         """
         xg, yg = np.linspace(x1, x2, nx), np.linspace(y1, y2, ny)
         return self.headgrid(
-            xg, yg, layers=layers, printrow=printrow, show_progress=show_progress
+            xg,
+            yg,
+            layers=layers,
+            printrow=printrow,
+            show_progress=show_progress,
+            parallel=parallel,
         )
 
     def headalongline(self, x, y, layers=None):
