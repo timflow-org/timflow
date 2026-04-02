@@ -145,8 +145,10 @@ class HstarXsection(Element):
         self.term2 = np.zeros((1, self.aq.naq, self.model.npval), dtype=complex)
         for i in range(self.model.npval):
             self.term2[0, :, i] = np.sum(
-            self.aq.coef[:, :, i] * self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis],
-            axis=0,
+                self.aq.coef[:, :, i]
+                * self.aq.leffaq[:, np.newaxis]
+                * self.aq.Scoefaq[:, np.newaxis],
+                axis=0,
             )
         self.term2 = self.aq.lab**2 * self.term2
         # # leakage from leaky layer with loading efficiency
