@@ -148,7 +148,7 @@ class PlotTransient(PlotBase):
             add legend to figure
             if list of strings: use strings as names in legend
         parallel : bool, optional
-            if True, compute headgrid in parallel using multiprocessing,
+            if True, compute headgrid in parallel using multiple threads,
             default is False
 
         Returns
