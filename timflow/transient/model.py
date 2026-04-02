@@ -523,7 +523,9 @@ class TimModel:
             qx[:, :, i], qy[:, :, i] = self.disvec(xg[i], yg[i], t, layers)
         return qx, qy
 
-    def headgrid(self, xg, yg, t, layers=None, printrow=False):
+    def headgrid(
+        self, xg, yg, t, layers=None, printrow=False, show_progress=False, parallel=False
+    ):
         """Grid of heads.
 
         Parameters
@@ -536,7 +538,16 @@ class TimModel:
             times for which grid is returned
         layers : integer, list or array, optional
             layers for which grid is returned
-        printrow : boolean, optional
+        show_progress : bool
+            show computation progress, by printing dots per row or with tqdm progressbar
+            when parallel is True. Default is False.
+        parallel : bool, optional
+            if `True`, computes headgrid in parallel using multiprocessing,
+            by default `False`
+        printrow : bool, optional
+
+            .. deprecated:: 0.2.0
+
             prints dot to screen for each row of grid if set to `True`
 
         Returns
@@ -547,6 +558,13 @@ class TimModel:
         --------
         :func:`~timflow.transient.Model.headgrid2`
         """
+        if printrow:
+            warn(
+                "printrow is deprecated, use show_progress instead",
+                category=DeprecationWarning,
+                stacklevel=1,
+            )
+            show_progress = printrow
         nx = len(xg)
         ny = len(yg)
         if layers is None:
@@ -555,14 +573,44 @@ class TimModel:
             nlayers = len(np.atleast_1d(layers))
         t = np.atleast_1d(t)
         h = np.empty((nlayers, len(t), ny, nx))
-        for j in range(ny):
-            if printrow:
-                print(".", end="", flush=True)
-            for i in range(nx):
-                h[:, :, j, i] = self.head(xg[i], yg[j], t, layers)
+        if not parallel:
+            for j in range(ny):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(nx):
+                    h[:, :, j, i] = self.head(xg[i], yg[j], t, layers)
+        else:
+            from tqdm.contrib.concurrent import thread_map
+
+            def compute(ij):
+                i, j = ij
+                return i, j, self.head(xg[i], yg[j], t, layers)
+
+            results = thread_map(
+                compute,
+                [(i, j) for j in range(ny) for i in range(nx)],
+                total=nx * ny,
+                desc="headgrid",
+                disable=not show_progress,
+            )
+            for i, j, result in results:
+                h[:, :, j, i] = result
         return h
 
-    def headgrid2(self, x1, x2, nx, y1, y2, ny, t, layers=None, printrow=False):
+    def headgrid2(
+        self,
+        x1,
+        x2,
+        nx,
+        y1,
+        y2,
+        ny,
+        t,
+        layers=None,
+        show_progress=False,
+        printrow=False,
+        parallel=False,
+    ):
         """Grid of heads.
 
         Parameters
@@ -575,7 +623,16 @@ class TimModel:
             times for which grid is returned
         layers : integer, list or array, optional
             layers for which grid is returned
+        show_progress : bool
+            show computation progress, by printing dots per row or with tqdm progressbar
+            when parallel is True. Default is False.
+        parallel : bool, optional
+            if `True`, computes headgrid in parallel using multiprocessing,
+            by default `False`
         printrow : boolean, optional
+
+            .. deprecated:: 0.2.0
+
             prints dot to screen for each row of grid if set to `True`
 
         Returns
@@ -588,7 +645,15 @@ class TimModel:
         """
         xg = np.linspace(x1, x2, nx)
         yg = np.linspace(y1, y2, ny)
-        return self.headgrid(xg, yg, t, layers, printrow)
+        return self.headgrid(
+            xg,
+            yg,
+            t,
+            layers,
+            show_progress=show_progress,
+            printrow=printrow,
+            parallel=parallel,
+        )
 
     def inverseLapTran(self, pot, t):
         """Returns array of potentials of len(t) t must be ordered and tmin<=t<=tmax."""

@@ -115,6 +115,7 @@ class PlotTransient(PlotBase):
         ax=None,
         figsize=None,
         legend=True,
+        parallel=False,
     ):
         """Contour plot.
 
@@ -146,10 +147,13 @@ class PlotTransient(PlotBase):
         legend : list or boolean (default True)
             add legend to figure
             if list of strings: use strings as names in legend
+        parallel : bool, optional
+            if True, compute headgrid in parallel using multiprocessing,
+            default is False
 
         Returns
         -------
-        ax : matplotlib.Axes
+        ax : matplotlib.Axesi
             axes with plot
         """
         x1, x2, y1, y2 = win
@@ -160,7 +164,7 @@ class PlotTransient(PlotBase):
         layers = np.atleast_1d(layers)
         xg = np.linspace(x1, x2, nx)
         yg = np.linspace(y1, y2, ny)
-        h = self._ml.headgrid(xg, yg, t, layers)
+        h = self._ml.headgrid(xg, yg, t, layers, parallel=parallel)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
             ax.set_aspect("equal", adjustable="box")
