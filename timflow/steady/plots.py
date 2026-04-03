@@ -48,6 +48,7 @@ class PlotSteady(PlotBase):
         figsize=None,
         legend=True,
         return_contours=False,
+        parallel=False,
         **kwargs,
     ):
         """Head contour plot.
@@ -81,6 +82,11 @@ class PlotSteady(PlotBase):
             if list of strings: use strings as names in legend
         return_contours : bool, optional
             if True, return list of contour sets for each contoured layer
+        parallel : bool, optional
+            if True, compute headgrid in parallel using multiple threads,
+            default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
 
 
         Returns
@@ -98,7 +104,7 @@ class PlotSteady(PlotBase):
         layers = np.atleast_1d(layers)
         xg = np.linspace(x1, x2, nx)
         yg = np.linspace(y1, y2, ny)
-        h = self._ml.headgrid(xg, yg, layers)
+        h = self._ml.headgrid(xg, yg, layers, parallel=parallel)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
             ax.set_aspect("equal", adjustable="box")

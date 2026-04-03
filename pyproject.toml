@@ -41,8 +41,17 @@ documentation = "https://timflow.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 lint = ["ruff"]
-optional = ["lmfit"]
-ci = ["timflow[lint,optional]", "pytest", "pytest-cov", "pytest-xdist", "nbval", "jupyter", "shapely",]
+parallel = ["tqdm"]
+optional = ["timflow[parallel]", "lmfit"]
+ci = [
+    "timflow[lint,optional]",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "nbval",
+    "jupyter",
+    "shapely",
+]
 docs = [
     "timflow[ci]",
     "sphinx",
@@ -99,9 +108,7 @@ addopts = [
     "--ignore=docs/steady/02examples/vertical_anisotropy.ipynb",
     "--ignore=docs/steady/04benchmarks/besselnumba_timing.ipynb",
 ]
-markers = [
-    "notebooks: run notebooks",
-]
+markers = ["notebooks: run notebooks"]
 
 [tool.coverage.run]
 omit = [
