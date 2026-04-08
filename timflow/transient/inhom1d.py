@@ -46,6 +46,8 @@ class Xsection(AquiferData):
         Specific storage of the leaky layers.
     leffaq : array
         loading efficiency of the aquifer
+    leffll : array
+        loading efficiency of the leaky layer
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -86,6 +88,7 @@ class Xsection(AquiferData):
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -107,6 +110,7 @@ class Xsection(AquiferData):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -390,6 +394,8 @@ class XsectionMaq(Xsection):
         Specific storage of the leaky layers.
     leffaq : array
         loading efficiency of the aquifer
+    leffll : array
+        loading efficiency of the leaky layer
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -420,6 +426,7 @@ class XsectionMaq(Xsection):
         Saq=0.001,
         Sll=0,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         porll=0.3,
         topboundary="conf",
@@ -428,8 +435,18 @@ class XsectionMaq(Xsection):
         tsandN=None,
         name=None,
     ):
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype = param_maq(
+            kaq,
+            z,
+            c,
+            Saq,
+            Sll,
+            leffaq,
+            leffll,
+            poraq,
+            porll,
+            topboundary,
+            phreatictop,
         )
         super().__init__(
             model,
@@ -443,6 +460,7 @@ class XsectionMaq(Xsection):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -479,6 +497,8 @@ class Xsection3D(Xsection):
         conductivity.
     leffaq : array
         Loading efficiency
+    leffll : array
+        loading efficiency of the leaky layer
     poraq : array
         Porosities of the aquifers.
     topboundary : str
@@ -514,6 +534,7 @@ class Xsection3D(Xsection):
         Saq=0.001,
         kzoverkh=0.1,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=False,
@@ -525,12 +546,13 @@ class Xsection3D(Xsection):
         tsandN=None,
         name=None,
     ):
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
             leffaq,
+            leffll,
             poraq,
             phreatictop,
             topboundary,
@@ -551,6 +573,7 @@ class Xsection3D(Xsection):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,

@@ -11,6 +11,9 @@ Example::
 import numpy as np
 import pandas as pd
 
+from timflow.transient.invlapnumba import invlapcomp
+from timflow.transient.stripareasink import HstarXsection
+
 
 class AquiferData:
     def __init__(
@@ -24,6 +27,7 @@ class AquiferData:
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -49,6 +53,7 @@ class AquiferData:
         self.Sll = np.atleast_1d(Sll).astype(float)
         self.Sll[self.Sll < 1e-20] = 1e-20  # Cannot be zero
         self.leffaq = np.atleast_1d(leffaq).astype(float)
+        self.leffll = np.atleast_1d(leffll).astype(float)
         self.poraq = np.atleast_1d(poraq).astype(float)
         self.porll = np.atleast_1d(porll).astype(float)
         self.ltype = np.atleast_1d(ltype)
@@ -113,6 +118,8 @@ class AquiferData:
         # Compute Saq and Sll
         self.Scoefaq = self.Saq * self.Haq
         self.Scoefll = self.Sll * self.Hll
+        # Compute kappa (hydraulic conductivity of leaky layer)
+        self.kappa = self.Hll / self.c
         if (self.topboundary == "con") and self.phreatictop:
             self.Scoefaq[0] = self.Scoefaq[0] / self.Haq[0]
         elif (self.topboundary == "lea") and self.phreatictop:
@@ -131,10 +138,15 @@ class AquiferData:
         bmat = np.diag(np.ones(self.naq))
         self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
         self.b = np.zeros((self.model.npval, len(self.c)), dtype=complex)
+        self.d = np.zeros(self.model.npval, dtype=complex)
+        self.alpha = np.zeros((len(self.c), self.model.npval), dtype=complex)
+
         for i in range(self.model.npval):
-            w, v, a, b = self.compute_lab_eigvec(self.model.p[i])
+            w, v, a, b, dzero = self.compute_lab_eigvec(self.model.p[i])
             self.a[i] = a
             self.b[i] = b
+            self.d[i] = dzero
+            self.alpha[:, i] = np.sqrt(self.model.p[i] * self.Sll / self.kappa)
             # Eigenvectors are columns of v
             self.eigval[:, i] = w
             self.eigvec[:, :, i] = v
@@ -151,6 +163,7 @@ class AquiferData:
     def compute_lab_eigvec(self, p, returnA=False, B=None):
         sqrtpSc = np.sqrt(p * self.Scoefll * self.c)
         a, b = np.zeros_like(sqrtpSc), np.zeros_like(sqrtpSc)
+        dzero = 0j
         small = np.abs(sqrtpSc) < 200
         a[small] = sqrtpSc[small] / np.tanh(sqrtpSc[small])
         b[small] = sqrtpSc[small] / np.sinh(sqrtpSc[small])
@@ -185,7 +198,7 @@ class AquiferData:
         index = np.argsort(abs(w))[::-1]
         w = w[index]
         v = v[:, index]
-        return w, v, a, b
+        return w, v, a, b, dzero
 
     def head_to_potential(self, h, layers):
         return h * self.Tcol[layers]
@@ -255,6 +268,39 @@ class AquiferData:
         summary.loc[:, "layer"] = self.layernumber
         return summary  # .set_index("layer")
 
+    def headsemitoplayer(self, x, y, z, t):
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
+        # find if there is HstarXsection
+        for e in self.model.elementlist:
+            if isinstance(e, HstarXsection):
+                if e.aq == self:
+                    if x >= e.x1 and x <= e.x2:
+                        break
+        else:
+            return rv
+        htop = np.zeros((1, self.model.npval), dtype=complex)
+        htop[0] = 1 / self.model.p
+        for iz in range(len(z)):
+            if z[iz] <= self.z[0] and z[iz] >= self.zaqtop[0]:
+                eta = (
+                    htop * np.sinh(self.alpha[0] * (z[iz] - self.zaqtop[0]))
+                ) / np.sinh(self.alpha[0] * self.Hll[0])
+                eta = eta[:, np.newaxis, :]
+                rv[iz] = invlapcomp(
+                    t,
+                    eta,
+                    self.model.npint,
+                    self.model.M,
+                    self.model.tintervals,
+                    np.array(len(e.tstart) * [0]),
+                    e.tstart,
+                    e.bc,
+                    1,
+                )
+        return rv
+
 
 class Aquifer(AquiferData):
     def __init__(
@@ -268,6 +314,7 @@ class Aquifer(AquiferData):
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -286,6 +333,7 @@ class Aquifer(AquiferData):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,

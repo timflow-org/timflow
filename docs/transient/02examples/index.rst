@@ -72,3 +72,15 @@ Pathlines
     :hidden:
 
     pathline_trace
+
+Head in leaky layers
+--------------------
+
+- :doc:`head_in_vertical`
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Head in leaky layers
+    :hidden:
+
+    head_in_vertical
