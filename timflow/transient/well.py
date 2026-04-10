@@ -18,6 +18,7 @@ from scipy.special import kv
 
 from timflow.transient.element import Element
 from timflow.transient.equation import HeadEquation, WellBoreStorageEquation
+from timflow.transient.invlapnumba import invlapcomp
 
 
 class WellBase(Element):
@@ -458,3 +459,335 @@ class WellTest(WellBase):
     def setflowcoef(self):
         """Separate function so that this can be overloaded for other types."""
         self.flowcoef = self.fp
+
+
+class WellStringBase(Element):
+    """Base class for multiple connected wells in transient flow."""
+
+    def __init__(
+        self,
+        model,
+        xy,
+        tsandbc=[(0, 1)],
+        layers=0,
+        type="",
+        name="WellStringBase",
+        label=None,
+    ):
+        super().__init__(
+            model,
+            nparam=1,
+            nunknowns=0,
+            layers=0,
+            tsandbc=tsandbc,
+            type=type,
+            name=name,
+            label=label,
+        )
+        self.xy = np.atleast_2d(xy).astype(float)
+        self.xw = self.xy[:, 0]
+        self.yw = self.xy[:, 1]
+        self.nw = len(self.xw)
+
+        if isinstance(layers, (int, np.integer)):
+            layers = layers * np.ones((self.nw, 1), dtype=int)
+        elif isinstance(layers, (list, tuple)):
+            try:
+                nlayers = max(len(layers[i]) for i in range(self.nw))
+                layers = np.array(layers) * np.ones((self.nw, nlayers), dtype=int)
+            except ValueError:
+                pass
+            except TypeError:
+                layers = np.atleast_1d(layers) * np.ones((self.nw, 1), dtype=int)
+        elif isinstance(layers, np.ndarray):
+            if layers.ndim == 1:
+                layers = layers * np.ones((self.nw, layers.shape[0]), dtype=int)
+            else:
+                assert layers.shape[0] == self.nw, (
+                    "layers array must be shape (nwells, nlayers)"
+                )
+
+        self.layers = layers
+        self.nlayers_well = []
+        for i in range(self.nw):
+            self.nlayers_well.append(len(np.atleast_1d(self.layers[i])))
+        self.wlist = []
+
+    def __repr__(self):
+        return self.name + " with nodes " + str(self.xy)
+
+    def initialize(self):
+        for w in self.wlist:
+            w.initialize()
+
+        self.aq = []
+        for w in self.wlist:
+            if w.aq not in self.aq:
+                self.aq.append(w.aq)
+
+        self.nparam = sum(w.nparam for w in self.wlist)
+        self.nunknowns = self.nparam
+        self.parameters = np.zeros(
+            (self.model.ngvbc, self.nparam, self.model.npval), dtype=complex
+        )
+        self.setbc()
+
+        self.resfach = []
+        self.resfacp = []
+        self.dischargeinf = np.zeros(
+            (self.nparam, self.model.aq.naq, self.model.npval), dtype=complex
+        )
+        self.dischargeinflayers = np.zeros((self.nparam, self.model.npval), dtype=complex)
+        self.xc = np.zeros(self.nw)
+        self.yc = np.zeros(self.nw)
+
+        j = 0
+        for i, w in enumerate(self.wlist):
+            nwparam = w.nparam
+            self.resfach.extend(w.resfach.tolist())
+            self.resfacp.extend(w.resfacp.tolist())
+            self.dischargeinf[j : j + nwparam] = w.dischargeinf
+            self.dischargeinflayers[j : j + nwparam] = w.dischargeinflayers
+            self.xc[i] = w.xc[0]
+            self.yc[i] = w.yc[0]
+            j += nwparam
+        self.resfach = np.array(self.resfach)
+        self.resfacp = np.array(self.resfacp)
+
+    def potinf(self, x, y, aq=None):
+        if aq is None:
+            aq = self.model.aq.find_aquifer_data(x, y)
+        rv = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
+        j = 0
+        for w in self.wlist:
+            rv[j : j + w.nparam] = w.potinf(x, y, aq)
+            j += w.nparam
+        return rv
+
+    def disvecinf(self, x, y, aq=None):
+        if aq is None:
+            aq = self.model.aq.find_aquifer_data(x, y)
+        rvx = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
+        rvy = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
+        j = 0
+        for w in self.wlist:
+            qx, qy = w.disvecinf(x, y, aq)
+            rvx[j : j + w.nparam] = qx
+            rvy[j : j + w.nparam] = qy
+            j += w.nparam
+        return rvx, rvy
+
+    def equation(self):
+        mat = np.zeros((self.nunknowns, self.model.neq, self.model.npval), dtype=complex)
+        rhs = np.zeros(
+            (self.nunknowns, self.model.ngvbc, self.model.npval), dtype=complex
+        )
+        irow = 0
+        jcol_self = int(np.sum([e.nunknowns for e in self.model.elementlist[: self.model.elementlist.index(self)]]))
+        jcol_self_well = jcol_self
+        iself = self.model.elementlist.index(self)
+        for w in self.wlist:
+            ieq = 0
+            for e in self.model.elementlist:
+                if e.nunknowns > 0:
+                    mat[irow : irow + w.nlayers, ieq : ieq + e.nunknowns, :] = (
+                        e.potinflayers(w.xc[0], w.yc[0], w.layers)
+                    )
+                    ieq += e.nunknowns
+            for i in range(self.model.ngbc):
+                rhs[irow : irow + w.nlayers, i, :] -= self.model.gbclist[
+                    i
+                ].unitpotentiallayers(w.xc[0], w.yc[0], w.layers)
+            for i in range(w.nlayers):
+                mat[irow + i, jcol_self_well + i, :] -= (
+                    w.resfacp[i] * w.dischargeinflayers[i]
+                )
+            irow += w.nlayers
+            jcol_self_well += w.nunknowns
+        return mat, rhs
+
+    def run_after_solve(self):
+        i = 0
+        for w in self.wlist:
+            w.parameters[:] = self.parameters[:, i : i + w.nparam, :]
+            i += w.nparam
+
+    def discharge(self, t, derivative=0):
+        time = np.atleast_1d(t).astype(float)
+        s = (
+            self.parameters * self.dischargeinflayers[np.newaxis, :, :]
+        ) * self.model.p**derivative
+        qparam = invlapcomp(
+            time,
+            s,
+            self.model.npint,
+            self.model.M,
+            self.model.tintervals,
+            self.model.enumber,
+            self.model.etstart,
+            self.model.ebc,
+            self.nparam,
+        )
+        q = np.zeros((self.model.aq.naq, len(time)))
+        j = 0
+        for w in self.wlist:
+            wlayers = np.atleast_1d(w.layers)
+            q[wlayers, :] += qparam[j : j + w.nparam, :]
+            j += w.nparam
+        return q
+
+    def discharge_per_well(self, t, derivative=0):
+        time = np.atleast_1d(t).astype(float)
+        s = (
+            self.parameters * self.dischargeinflayers[np.newaxis, :, :]
+        ) * self.model.p**derivative
+        qparam = invlapcomp(
+            time,
+            s,
+            self.model.npint,
+            self.model.M,
+            self.model.tintervals,
+            self.model.enumber,
+            self.model.etstart,
+            self.model.ebc,
+            self.nparam,
+        )
+        q = np.zeros((self.model.aq.naq, self.nw, len(time)))
+        j = 0
+        for i, w in enumerate(self.wlist):
+            wlayers = np.atleast_1d(w.layers)
+            q[wlayers, i, :] = qparam[j : j + w.nparam, :]
+            j += w.nparam
+        return q
+
+    def headinside(self, t, derivative=0):
+        return self.wlist[0].headinside(t, derivative=derivative)[0]
+
+    def plot(self, ax=None, layer=None):
+        if ax is None:
+            _, ax = plt.subplots()
+            ax.set_aspect("equal", adjustable="datalim")
+        for iw, w in enumerate(self.wlist):
+            if (layer is None) or np.isin(layer, np.atleast_1d(self.layers[iw])).any():
+                ax.plot(w.xw, w.yw, "k.")
+
+
+class WellString(WellStringBase):
+    """String of wells with specified total transient discharge."""
+
+    def __init__(
+        self,
+        model,
+        xy,
+        tsandQ=[(0, 1)],
+        rw=0.1,
+        res=0.0,
+        layers=0,
+        rc=None,
+        label=None,
+    ):
+        self.storeinput(inspect.currentframe())
+        super().__init__(
+            model,
+            xy,
+            tsandbc=tsandQ,
+            layers=layers,
+            type="v",
+            name="WellString",
+            label=label,
+        )
+        self.rw = rw
+        self.res = res
+        self.rc = rc
+        self.tsandQ = tsandQ
+        self.model.addelement(self)
+
+    def initialize(self):
+        self.wlist = []
+        for i in range(self.nw):
+            w = Well(
+                self.model,
+                xw=self.xw[i],
+                yw=self.yw[i],
+                rw=self.rw,
+                tsandQ=self.tsandQ,
+                res=self.res,
+                rc=self.rc,
+                layers=self.layers[i],
+                wbstype="pumping",
+                label=None,
+            )
+            self.model.removeelement(w)
+            self.wlist.append(w)
+        self.flowcoef = 1.0 / self.model.p
+        super().initialize()
+
+    def equation(self):
+        mat = np.zeros((self.nunknowns, self.model.neq, self.model.npval), dtype=complex)
+        rhs = np.zeros(
+            (self.nunknowns, self.model.ngvbc, self.model.npval), dtype=complex
+        )
+
+        xcp = []
+        ycp = []
+        lcp = []
+        for w in self.wlist:
+            wlayers = np.atleast_1d(w.layers)
+            for ilay in wlayers:
+                xcp.append(w.xc[0])
+                ycp.append(w.yc[0])
+                lcp.append(int(ilay))
+
+        iself = self.model.elementlist.index(self)
+        jself = int(np.sum([e.nunknowns for e in self.model.elementlist[:iself]]))
+
+        # Equations 0..nunknowns-2: all inside heads are equal.
+        for irow in range(self.nunknowns - 1):
+            layer0 = np.atleast_1d(lcp[irow])
+            layer1 = np.atleast_1d(lcp[irow + 1])
+            ieq = 0
+            for e in self.model.elementlist:
+                if e.nunknowns > 0:
+                    head0 = (
+                        e.potinflayers(xcp[irow], ycp[irow], layer0)
+                        / self.model.aq.find_aquifer_data(xcp[irow], ycp[irow]).T[layer0][
+                            :, np.newaxis, np.newaxis
+                        ]
+                    )
+                    head1 = (
+                        e.potinflayers(xcp[irow + 1], ycp[irow + 1], layer1)
+                        / self.model.aq.find_aquifer_data(xcp[irow + 1], ycp[irow + 1]).T[
+                            layer1
+                        ][:, np.newaxis, np.newaxis]
+                    )
+                    mat[irow, ieq : ieq + e.nunknowns, :] = head0[0] - head1[0]
+                    ieq += e.nunknowns
+            for ig in range(self.model.ngbc):
+                gh0 = (
+                    self.model.gbclist[ig].unitpotentiallayers(xcp[irow], ycp[irow], layer0)
+                    / self.model.aq.find_aquifer_data(xcp[irow], ycp[irow]).T[layer0][
+                        :, np.newaxis
+                    ]
+                )
+                gh1 = (
+                    self.model.gbclist[ig].unitpotentiallayers(
+                        xcp[irow + 1], ycp[irow + 1], layer1
+                    )
+                    / self.model.aq.find_aquifer_data(xcp[irow + 1], ycp[irow + 1]).T[layer1][
+                        :, np.newaxis
+                    ]
+                )
+                rhs[irow, ig, :] -= gh0[0] - gh1[0]
+
+            # Correct for screen resistance on the two compared unknowns.
+            mat[irow, jself + irow, :] -= self.resfach[irow] * self.dischargeinflayers[irow]
+            mat[irow, jself + irow + 1, :] += (
+                self.resfach[irow + 1] * self.dischargeinflayers[irow + 1]
+            )
+
+        # Last equation: sum of all screen discharges equals specified well-string Q.
+        mat[-1, jself : jself + self.nunknowns, :] = 1.0
+        if self.type == "v":
+            ivbc = self.model.vbclist.index(self)
+            rhs[-1, self.model.ngbc + ivbc, :] = 1.0
+        return mat, rhs

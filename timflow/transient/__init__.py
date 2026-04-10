@@ -41,4 +41,11 @@ from timflow.transient.linesink1d import (
 # Import all classes and functions
 from timflow.transient.model import Model3D, ModelMaq, ModelXsection
 from timflow.transient.trace import timtrace, timtraceline
-from timflow.transient.well import DischargeWell, HeadWell, Well, WellTest
+from timflow.transient.well import (
+    DischargeWell,
+    HeadWell,
+    Well,
+    WellString,
+    WellStringBase,
+    WellTest,
+)
