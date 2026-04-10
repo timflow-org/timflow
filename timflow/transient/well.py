@@ -578,33 +578,42 @@ class WellStringBase(Element):
         return rvx, rvy
 
     def equation(self):
-        mat = np.zeros((self.nunknowns, self.model.neq, self.model.npval), dtype=complex)
-        rhs = np.zeros(
-            (self.nunknowns, self.model.ngvbc, self.model.npval), dtype=complex
-        )
-        irow = 0
-        jcol_self = int(np.sum([e.nunknowns for e in self.model.elementlist[: self.model.elementlist.index(self)]]))
-        jcol_self_well = jcol_self
-        iself = self.model.elementlist.index(self)
-        for w in self.wlist:
-            ieq = 0
-            for e in self.model.elementlist:
-                if e.nunknowns > 0:
-                    mat[irow : irow + w.nlayers, ieq : ieq + e.nunknowns, :] = (
-                        e.potinflayers(w.xc[0], w.yc[0], w.layers)
-                    )
-                    ieq += e.nunknowns
-            for i in range(self.model.ngbc):
-                rhs[irow : irow + w.nlayers, i, :] -= self.model.gbclist[
-                    i
-                ].unitpotentiallayers(w.xc[0], w.yc[0], w.layers)
-            for i in range(w.nlayers):
-                mat[irow + i, jcol_self_well + i, :] -= (
-                    w.resfacp[i] * w.dischargeinflayers[i]
-                )
-            irow += w.nlayers
-            jcol_self_well += w.nunknowns
-        return mat, rhs
+        pass
+
+    # mat = np.zeros((self.nunknowns, self.model.neq, self.model.npval), dtype=complex)
+    # rhs = np.zeros(
+    #     (self.nunknowns, self.model.ngvbc, self.model.npval), dtype=complex
+    # )
+    # irow = 0
+    # jcol_self = int(
+    #     np.sum(
+    #         [
+    #             e.nunknowns
+    #             for e in self.model.elementlist[: self.model.elementlist.index(self)]
+    #         ]
+    #     )
+    # )
+    # jcol_self_well = jcol_self
+    # iself = self.model.elementlist.index(self)
+    # for w in self.wlist:
+    #     ieq = 0
+    #     for e in self.model.elementlist:
+    #         if e.nunknowns > 0:
+    #             mat[irow : irow + w.nlayers, ieq : ieq + e.nunknowns, :] = (
+    #                 e.potinflayers(w.xc[0], w.yc[0], w.layers)
+    #             )
+    #             ieq += e.nunknowns
+    #     for i in range(self.model.ngbc):
+    #         rhs[irow : irow + w.nlayers, i, :] -= self.model.gbclist[
+    #             i
+    #         ].unitpotentiallayers(w.xc[0], w.yc[0], w.layers)
+    #     for i in range(w.nlayers):
+    #         mat[irow + i, jcol_self_well + i, :] -= (
+    #             w.resfacp[i] * w.dischargeinflayers[i]
+    #         )
+    #     irow += w.nlayers
+    #     jcol_self_well += w.nunknowns
+    # return mat, rhs
 
     def run_after_solve(self):
         i = 0
@@ -764,7 +773,9 @@ class WellString(WellStringBase):
                     ieq += e.nunknowns
             for ig in range(self.model.ngbc):
                 gh0 = (
-                    self.model.gbclist[ig].unitpotentiallayers(xcp[irow], ycp[irow], layer0)
+                    self.model.gbclist[ig].unitpotentiallayers(
+                        xcp[irow], ycp[irow], layer0
+                    )
                     / self.model.aq.find_aquifer_data(xcp[irow], ycp[irow]).T[layer0][
                         :, np.newaxis
                     ]
@@ -773,14 +784,16 @@ class WellString(WellStringBase):
                     self.model.gbclist[ig].unitpotentiallayers(
                         xcp[irow + 1], ycp[irow + 1], layer1
                     )
-                    / self.model.aq.find_aquifer_data(xcp[irow + 1], ycp[irow + 1]).T[layer1][
-                        :, np.newaxis
-                    ]
+                    / self.model.aq.find_aquifer_data(xcp[irow + 1], ycp[irow + 1]).T[
+                        layer1
+                    ][:, np.newaxis]
                 )
                 rhs[irow, ig, :] -= gh0[0] - gh1[0]
 
             # Correct for screen resistance on the two compared unknowns.
-            mat[irow, jself + irow, :] -= self.resfach[irow] * self.dischargeinflayers[irow]
+            mat[irow, jself + irow, :] -= (
+                self.resfach[irow] * self.dischargeinflayers[irow]
+            )
             mat[irow, jself + irow + 1, :] += (
                 self.resfach[irow + 1] * self.dischargeinflayers[irow + 1]
             )
