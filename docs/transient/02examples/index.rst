@@ -12,6 +12,7 @@ Modeling wells
 - :doc:`line_sink_well_sol`
 - :doc:`wells_in_different_systems`
 - :doc:`well_in_multilayer_system`
+- :doc:`connected_wells`
 
 .. toctree::
     :maxdepth: 2
@@ -22,6 +23,7 @@ Modeling wells
     line_sink_well_sol
     wells_in_different_systems
     well_in_multilayer_system
+    connected_wells
 
 Modeling rivers
 ---------------
