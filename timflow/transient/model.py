@@ -864,8 +864,6 @@ class ModelMaq(TimModel):
             )
         if topboundary[:3] == "phr":
             phreatictop = True
-        else:
-            phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
             kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
         )
@@ -980,8 +978,6 @@ class Model3D(TimModel):
             )
         if topboundary[:3] == "phr":
             phreatictop = True
-        else:
-            phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
             kaq,
             z,

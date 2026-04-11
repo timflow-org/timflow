@@ -81,6 +81,8 @@ class AquiferData:
     def __repr__(self):
         if self.topboundary.startswith("con"):
             topbound = "confined"
+        elif self.topboundary.startswith("phr"):
+            topbound = "phreatic"
         elif self.topboundary.startswith("lea"):
             topbound = "leaky"
         elif self.topboundary.startswith("sem"):
