@@ -816,12 +816,11 @@ class ModelMaq(TimModel):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
-    topboundary : string, 'conf' or 'semi' (default is 'conf')
-        indicating whether the top is confined ('conf') or
-        semi-confined ('semi')
-    phreatictop : boolean
-        the storage coefficient of the top model layer is treated as
-        phreatic storage (and not multiplied with the aquifer thickness)
+    topboundary : string, 'confined', 'phreatic', 'semi', or 'leaky' (default is 'conf')
+        indicating whether the top is confined ('con' is enough), phreatic ('phr' is
+        enough), semi-confined ('sem' is enough), or a leaky layer ('lea' is enough).
+        When phreatic, the storage coefficient (Saq) of the top model layer is
+        treated as phreatic storage (and not multiplied with the aquifer thickness)
     tmin : scalar
         the minimum time for which heads can be computed after any change
         in boundary condition.
@@ -856,6 +855,17 @@ class ModelMaq(TimModel):
         steady=None,
     ):
         self.storeinput(inspect.currentframe())
+        if phreatictop:
+            warn(
+                "'phreatictop' is deprecated and will be removed in a future version. "
+                "Use topboundary='phreatic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if topboundary[:3] == "phr":
+            phreatictop = True
+        else:
+            phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
             kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
         )
@@ -914,17 +924,16 @@ class Model3D(TimModel):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
-    topboundary : string, 'conf' or 'semi' (default is 'conf')
-        indicating whether the top is confined ('conf') or
-        semi-confined ('semi').
-        currently only implemented for 'conf'
+    topboundary : string, 'confined', 'phreatic', or 'semi' (default is 'conf')
+        indicating whether the top is confined ('con' is enough), phreatic
+        ('phr' is enough) or semi-confined ('sem' is enough).
+        When 'phreatic', the storage coefficient (Saq) of the top model layer is
+        treated as phreatic storage (and not multiplied with the aquifer thickness)
+        When 'semi', the topres and topthick must be specified.
     topres : float
         resistance of top semi-confining layer, only read if topboundary='semi'
     topthick: float
         thickness of top semi-confining layer, only read if topboundary='semi'
-    phreatictop : boolean
-        the storage coefficient of the top aquifer layer is treated as
-        phreatic storage (and not multiplied with the aquifer thickness)
     tmin : scalar
         the minimum time for which heads can be computed after any change
         in boundary condition.
@@ -962,6 +971,17 @@ class Model3D(TimModel):
     ):
         """Z must have the length of the number of layers + 1."""
         self.storeinput(inspect.currentframe())
+        if phreatictop:
+            warn(
+                "'phreatictop' is deprecated and will be removed in a future version. "
+                "Use topboundary='phreatic' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        if topboundary[:3] == "phr":
+            phreatictop = True
+        else:
+            phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
