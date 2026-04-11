@@ -115,6 +115,8 @@ class AquiferData:
         self.Scoefll = self.Sll * self.Hll
         if (self.topboundary == "con") and self.phreatictop:
             self.Scoefaq[0] = self.Scoefaq[0] / self.Haq[0]
+        elif self.topboundary == "phr":
+            self.Scoefaq[0] = self.Scoefaq[0] / self.Haq[0]
         elif (self.topboundary == "lea") and self.phreatictop:
             self.Scoefll[0] = self.Scoefll[0] / self.Hll[0]
         self.D = self.T / self.Scoefaq

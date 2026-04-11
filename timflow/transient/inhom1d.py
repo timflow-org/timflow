@@ -437,8 +437,8 @@ class XsectionMaq(Xsection):
             )
         if topboundary[:3] == "phr":
             phreatictop = True
-        else:
-            phreatictop = False
+        # else:
+        #    phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
             kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
         )
