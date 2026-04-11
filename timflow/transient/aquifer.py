@@ -70,10 +70,9 @@ class AquiferData:
         self.model3d = model3d
         if self.model3d:
             assert self.kzoverkh is not None, "model3d specified without kzoverkh"
-            assert self.topboundary.startswith("con"), (
-                "Error: For Model3D, only 'confined' topboundary is currently "
-                "implemented."
-            )
+            assert self.topboundary.startswith("con") or self.topboundary.startswith(
+                "phr"
+            ), "Error: For Model3D, only 'confined' topboundary is currently implemented."
         # self.D = self.T / self.Saq
         self.area = 1e200  # Smaller than default of ml.aq so that inhom is found
         self.name = name
