@@ -862,6 +862,14 @@ class ModelMaq(TimModel):
                 DeprecationWarning,
                 stacklevel=2,
             )
+        # if phreatictop is not None:
+        #     warn(
+        #         "'phreatictop' is deprecated and will be removed in a future version. "
+        #         "Use topboundary='phreatic' to set top layer to phreatic.",
+        #         DeprecationWarning,
+        #         stacklevel=2,
+        #     )
+        # phreatictop = False
         if topboundary[:3] == "phr":
             phreatictop = True
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
