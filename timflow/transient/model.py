@@ -847,7 +847,7 @@ class ModelMaq(TimModel):
         poraq=[0.3],
         porll=[0.3],
         topboundary="conf",
-        phreatictop=False,
+        phreatictop=None,
         tmin=1,
         tmax=10,
         tstart=0,
@@ -855,23 +855,17 @@ class ModelMaq(TimModel):
         steady=None,
     ):
         self.storeinput(inspect.currentframe())
-        if phreatictop:
+        if phreatictop is None:
+            phreatictop = False
+            if topboundary[:3] == "phr":
+                phreatictop = True
+        else:  # phreatictop is not None
             warn(
                 "'phreatictop' is deprecated and will be removed in a future version. "
-                "Use topboundary='phreatic' instead.",
+                "'phreatictop' is set to False unless topboundary='phreatic'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        # if phreatictop is not None:
-        #     warn(
-        #         "'phreatictop' is deprecated and will be removed in a future version. "
-        #         "Use topboundary='phreatic' to set top layer to phreatic.",
-        #         DeprecationWarning,
-        #         stacklevel=2,
-        #     )
-        # phreatictop = False
-        if topboundary[:3] == "phr":
-            phreatictop = True
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
             kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
         )
