@@ -545,8 +545,8 @@ class Xsection3D(Xsection):
             )
         if topboundary[:3] == "phr":
             phreatictop = True
-        else:
-            phreatictop = False
+        #else:
+        #    phreatictop = False
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
