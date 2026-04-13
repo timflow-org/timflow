@@ -32,7 +32,7 @@ def param_maq(
     assert np.all(H >= 0), (
         "Error: Not all layer thicknesses are" + " non-negative" + str(H)
     )
-    if topboundary[:3] == "con":
+    if topboundary[:3] == "con" or topboundary[:3] == "phr":
         assert len(z) % 2 == 0, (
             "Error: Length of z must be 2 * number of aquifers "
             "when topboundary is confined in MaqModel"
