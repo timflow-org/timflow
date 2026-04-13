@@ -958,7 +958,7 @@ class Model3D(TimModel):
         leffaq=0,
         poraq=0.3,
         topboundary="conf",
-        phreatictop=False,
+        phreatictop=None,
         topres=0,
         topthick=0,
         topSll=0,
@@ -971,15 +971,17 @@ class Model3D(TimModel):
     ):
         """Z must have the length of the number of layers + 1."""
         self.storeinput(inspect.currentframe())
-        if phreatictop:
+        if phreatictop is None:
+            phreatictop = False
+            if topboundary[:3] == "phr":
+                phreatictop = True
+        else:  # phreatictop is not None
             warn(
                 "'phreatictop' is deprecated and will be removed in a future version. "
-                "Use topboundary='phreatic' instead.",
+                "'phreatictop' is set to False unless topboundary='phreatic'.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-        if topboundary[:3] == "phr":
-            phreatictop = True
         kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
