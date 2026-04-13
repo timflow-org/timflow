@@ -159,8 +159,9 @@ class HeadSeries:
         Observation times.
     h : np.ndarray
         Observed heads.
-    weights : np.ndarray, optional
-        Per-timestep weights. Defaults to uniform weight of 1.0 if ``None``.
+    weights : float, np.ndarray, optional
+        Per time-series (float) or per-timestep weights (array). Defaults to uniform
+        weight of 1.0 if ``None``.
     constant : float or (float, float, float), optional
         If not ``None``, a constant offset is added as a calibration
         parameter. Supply a float for the initial value (unbounded), or a
@@ -593,8 +594,9 @@ class Calibrate:
             Observation times.
         h : array_like
             Observed heads.
-        weights : array_like, optional
-            Per-timestep weights. Defaults to uniform weight of 1.
+        weights : float, np.ndarray, optional
+            Per time-series (float) or per-timestep weights (array). Defaults to
+            uniform weight of 1.0 if ``None``.
         constant : float or (float, float, float), optional
             Add a calibrated constant offset to this series. Supply a float
             for the initial value (unbounded), or a ``(initial, pmin, pmax)``
