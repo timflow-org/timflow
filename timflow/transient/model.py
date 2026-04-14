@@ -804,15 +804,11 @@ class ModelMaq(TimModel):
     Saq : float, array or list
         specific storage of all aquifers
         if float, sepcific storage is same in all aquifers
-        if phreatictop is True and topboundary is 'conf', Saq of top
-        aquifer is phreatic storage coefficient (and not multiplied
-        with the layer thickness)
+        if topboundary is 'phreatic', Saq of top aquifer is phreatic storage coefficient
+        (and not multiplied with the layer thickness)
     Sll : float, array or list
         specific storage of all leaky layers
         if float, sepcific storage is same in all leaky layers
-        if phreatictop is True and topboundary is 'semi', Sll of top
-        leaky layer is phreatic storage coefficient (and not multiplied
-        with the layer thickness)
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
@@ -912,11 +908,10 @@ class Model3D(TimModel):
         if topboundary='semi': length is number of layers + 2 as top
         of leaky layer on top of systems needs to be specified
     Saq : float, array or list
-        specific storage of all aquifers layers
-        if float, sepcific storage is same in all aquifers layers
-        if phreatictop is True and topboundary is 'conf', Saq of top
-        aquifer is phreatic storage coefficient (and not multiplied
-        with the layer thickness)
+        specific storage of all aquifers
+        if float, sepcific storage is same in all aquifers
+        if topboundary is 'phreatic', Saq of top aquifer is phreatic storage coefficient
+        (and not multiplied with the layer thickness)
     kzoverkh : float
         vertical anisotropy ratio vertical k divided by horizontal k
         if float, value is the same for all layers

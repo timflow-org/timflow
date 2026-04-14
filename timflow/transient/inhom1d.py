@@ -385,10 +385,14 @@ class XsectionMaq(Xsection):
         Elevations of the tops and bottoms of the layers.
     c : array
         Resistance of the leaky layers.
-    Saq : array
-        Specific storage of the aquifers.
-    Sll : array
-        Specific storage of the leaky layers.
+    Saq : float, array or list
+        specific storage of all aquifers
+        if float, sepcific storage is same in all aquifers
+        if topboundary is 'phreatic', Saq of top aquifer is phreatic storage coefficient
+        (and not multiplied with the layer thickness)
+    Sll : float, array or list
+        specific storage of all leaky layers
+        if float, sepcific storage is same in all leaky layers
     leffaq : array
         loading efficiency of the aquifer
     poraq : array
@@ -483,8 +487,11 @@ class Xsection3D(Xsection):
         Hydraulic conductivities of the aquifers.
     z : array
         Elevations of the tops and bottoms of the layers.
-    Saq : array
-        Specific storage of the aquifers.
+    Saq : float, array or list
+        specific storage of all aquifers
+        if float, sepcific storage is same in all aquifers
+        if topboundary is 'phreatic', Saq of top aquifer is phreatic storage coefficient
+        (and not multiplied with the layer thickness)
     kzoverkh : scalar
         Ratio of vertical hydraulic conductivity to horizontal hydraulic
         conductivity.
