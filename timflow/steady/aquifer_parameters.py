@@ -38,7 +38,7 @@ def param_maq(kaq, z, c, npor, top):
     z = np.atleast_1d(z).astype("d")
     c = np.atleast_1d(c).astype("d")
     npor = np.atleast_1d(npor).astype("d")
-    if top == "conf":
+    if top.startswith("con"):
         Naq = int(len(z) / 2)
         ltype = np.array(list((Naq - 1) * "al" + "a"))
     else:  # leaky layer on top
@@ -49,7 +49,7 @@ def param_maq(kaq, z, c, npor, top):
     assert len(kaq) == Naq, "Error: length of kaq needs to be 1 or" + str(Naq)
     H = z[:-1] - z[1:]
     assert np.all(H >= 0), "Error: Not all layers thicknesses are non-negative" + str(H)
-    if top == "conf":
+    if top.startswith("con"):
         if len(c) == 1:
             c = c * np.ones(Naq - 1)
         if len(npor) == 1:
@@ -104,10 +104,10 @@ def param_3d(kaq, z, kzoverkh, npor, top="conf", topres=0):
     z = np.atleast_1d(z).astype("d")
     kzoverkh = np.atleast_1d(kzoverkh).astype("d")
     npor = np.atleast_1d(npor).astype("d")
-    if top == "conf":
+    if top.startswith("conf"):
         Naq = len(z) - 1
         ltype = np.array(Naq * ["a"])
-    elif top == "semi":
+    elif top.startswith("semi"):
         Naq = len(z) - 1
         ltype = np.hstack(("l", Naq * ["a"]))
     if len(kaq) == 1:
@@ -117,21 +117,21 @@ def param_3d(kaq, z, kzoverkh, npor, top="conf", topres=0):
         kzoverkh = kzoverkh * np.ones(Naq)
     assert len(kzoverkh) == Naq, "Error: length of kzoverkh needs to be 1 or" + str(Naq)
     if len(npor) == 1:
-        if top == "conf":
+        if top.startswith("con"):
             npor = npor * np.ones(Naq)
-        elif top == "semi":
+        elif top.startswith("sem"):
             npor = npor * np.ones(Naq + 1)
-    if top == "conf":
+    if top.startswith("con"):
         assert len(npor) == Naq, "Error: length of npor needs to be 1 or" + str(Naq)
-    elif top == "semi":
+    elif top.startswith("sem"):
         assert len(npor) == Naq + 1, "Error: length of npor needs to be 1 or" + str(
             Naq + 1
         )
     H = z[:-1] - z[1:]
     assert np.all(H >= 0), "Error: Not all layers thicknesses are non-negative" + str(H)
     c = 0.5 * H[:-1] / (kzoverkh[:-1] * kaq[:-1]) + 0.5 * H[1:] / (kzoverkh[1:] * kaq[1:])
-    if top == "conf":
+    if top.startswith("con"):
         c = np.hstack((1e100, c))
-    elif top == "semi":
+    elif top.startswith("sem"):
         c = np.hstack((topres + 0.5 * H[0] / (kzoverkh[0] * kaq[0]), c))
     return kaq, kzoverkh, c, npor, ltype

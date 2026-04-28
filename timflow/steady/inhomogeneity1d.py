@@ -58,8 +58,10 @@ class Xsection(AquiferData):
 
     tiny = 1e-12
 
-    def __init__(self, model, x1, x2, kaq, c, z, npor, ltype, hstar, N, name=None):
-        super().__init__(model, kaq, c, z, npor, ltype)
+    def __init__(
+        self, model, x1, x2, kaq, c, z, npor, ltype, model3d, hstar, N, name=None
+    ):
+        super().__init__(model, kaq, c, z, npor, ltype, model3d)
         self.x1 = x1
         self.x2 = x2
         self.hstar = hstar
@@ -339,7 +341,10 @@ class XsectionMaq(Xsection):
             npor,
             ltype,
         ) = param_maq(kaq, z, c, npor, topboundary)
-        super().__init__(model, x1, x2, kaq, c, z, npor, ltype, hstar, N, name=name)
+        model3d = False
+        super().__init__(
+            model, x1, x2, kaq, c, z, npor, ltype, model3d, hstar, N, name=name
+        )
 
 
 class Xsection3D(Xsection):
@@ -418,7 +423,10 @@ class Xsection3D(Xsection):
         ) = param_3d(kaq, z, kzoverkh, npor, topboundary, topres)
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
-        super().__init__(model, x1, x2, kaq, c, z, npor, ltype, hstar, N, name=name)
+        model3d = True
+        super().__init__(
+            model, x1, x2, kaq, c, z, npor, ltype, model3d, hstar, N, name=name
+        )
         self.kzoverkh = kzoverkh
 
 

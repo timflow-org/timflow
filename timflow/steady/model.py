@@ -53,12 +53,12 @@ class Model:
         'l' leaky layer
     """
 
-    def __init__(self, kaq, c, z, npor, ltype):
+    def __init__(self, kaq, c, z, npor, ltype, model3d=False):
         # All input variables are numpy arrays
         # That should be checked outside this function
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
-        self.aq = Aquifer(self, kaq, c, z, npor, ltype)
+        self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d)
         self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
@@ -838,7 +838,8 @@ class Model3D(Model):
         )
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
-        super().__init__(kaq, c, z, npor, ltype)
+        model3d = True
+        super().__init__(kaq, c, z, npor, ltype, model3d)
         self.aq.kzoverkh = kzoverkh  # add kzoverkh to aquifer object
         self.name = "Model3D"
         if self.aq.ltype[0] == "l":
