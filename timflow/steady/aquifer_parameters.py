@@ -107,7 +107,7 @@ def param_3d(kaq, z, kzoverkh, npor, top="conf", topres=0):
     if top.startswith("conf"):
         Naq = len(z) - 1
         ltype = np.array(Naq * ["a"])
-    elif top.startswith("semi"):
+    elif top.startswith("sem"):
         Naq = len(z) - 1
         ltype = np.hstack(("l", Naq * ["a"]))
     if len(kaq) == 1:
