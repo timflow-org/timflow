@@ -104,7 +104,7 @@ def param_3d(kaq, z, kzoverkh, npor, top="conf", topres=0):
     z = np.atleast_1d(z).astype("d")
     kzoverkh = np.atleast_1d(kzoverkh).astype("d")
     npor = np.atleast_1d(npor).astype("d")
-    if top.startswith("conf"):
+    if top.startswith("con"):
         Naq = len(z) - 1
         ltype = np.array(Naq * ["a"])
     elif top.startswith("sem"):
