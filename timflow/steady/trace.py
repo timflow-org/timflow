@@ -57,10 +57,11 @@ def timtraceline(
         if True, return layers numbers
     metadata: boolean
         if False, return xyzt array or xyzt array plus layer array
-        if True, return list of result dictionaries with three entries:
+        if True, return list of result dictionaries with four entries:
         - "trace": np.array(xyzt)
         - "message": termination message
         - "complete": True if terminated correctly
+        - "total_travel_time": final time value in trace
     """
     verbose = False  # used for debugging
     if win is None:
@@ -272,7 +273,7 @@ def timtraceline(
     if not silent:
         print(message)
     if metadata:
-        result = {"trace": np.array(xyzt), "message": message, "complete": terminate}
+        result = {"trace": np.array(xyzt), "message": message, "complete": terminate, "total_travel_time": xyzt[-1][-1]}
         if returnlayers:
             result["layers"] = layerlist
     else:
