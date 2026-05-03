@@ -273,7 +273,12 @@ def timtraceline(
     if not silent:
         print(message)
     if metadata:
-        result = {"trace": np.array(xyzt), "message": message, "complete": terminate, "total_travel_time": xyzt[-1][-1]}
+        result = {
+            "trace": np.array(xyzt),
+            "message": message,
+            "complete": terminate,
+            "total_travel_time": xyzt[-1][-1],
+        }
         if returnlayers:
             result["layers"] = layerlist
     else:
