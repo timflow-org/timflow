@@ -344,7 +344,7 @@ class Calibrate:
                 self.parameters.loc[name, "optimal"] = self.fitresult.params.valuesdict()[
                     name
                 ]
-            if hasattr(self.fitresult, "covar"):
+            if hasattr(self.fitresult, "covar") and self.fitresult.covar is not None:
                 self.parameters["std"] = np.sqrt(np.diag(self.fitresult.covar))
                 self.parameters["perc_std"] = (
                     100 * self.parameters["std"] / np.abs(self.parameters["optimal"])
