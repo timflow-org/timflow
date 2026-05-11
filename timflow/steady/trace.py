@@ -100,6 +100,7 @@ def timtraceline(
             if vz > 0:  # upward through leaky layer
                 if modellayer == 0:  # steps out of the top
                     z1 = aq.z[modellayer]
+                    message = "at top of leaky layer"
                     terminate = True
                 else:
                     modellayer -= 1
