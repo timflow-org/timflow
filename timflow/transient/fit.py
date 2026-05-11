@@ -35,8 +35,8 @@ class Calibrate:
             columns=[
                 "layers",
                 "optimal",
-                #"std",
-                #"perc_std",
+                # "std",
+                # "perc_std",
                 "pmin",
                 "pmax",
                 "initial",
@@ -157,8 +157,8 @@ class Calibrate:
         self.parameters.loc[pname] = {
             "layers": layers,
             "optimal": float(initial),
-            #"std": None,
-            #"perc_std": None,
+            # "std": None,
+            # "perc_std": None,
             "pmin": float(pmin),
             "pmax": float(pmax),
             "initial": float(initial),
@@ -193,8 +193,8 @@ class Calibrate:
             p = parameter
         self.parameters.loc[name] = {
             "optimal": float(initial),
-            #"std": None,
-            #"perc_std": None,
+            # "std": None,
+            # "perc_std": None,
             "pmin": float(pmin),
             "pmax": float(pmax),
             "initial": float(initial),
@@ -313,13 +313,13 @@ class Calibrate:
         self.sig = np.sqrt(np.diag(self.covmat))
         D = np.diag(1 / self.sig)
         self.cormat = D @ self.covmat @ D
-        #self.parameters["std"] = self.sig
-        #self.parameters["perc_std"] = self.sig / self.parameters["optimal"] * 100
+        # self.parameters["std"] = self.sig
+        # self.parameters["perc_std"] = self.sig / self.parameters["optimal"] * 100
         if report:
             print(self.parameters)
-            #print(self.sig)
-            #print(self.covmat)
-            #print(self.cormat)
+            # print(self.sig)
+            # print(self.covmat)
+            # print(self.cormat)
 
     def fit_lmfit(self, report=False, printdot=True, **kwargs):
         import lmfit
@@ -353,8 +353,8 @@ class Calibrate:
             #         100 * self.parameters["std"] / np.abs(self.parameters["optimal"])
             #     )
             # else:
-            #self.parameters["std"] = np.nan
-            #self.parameters["perc_std"] = np.nan
+            # self.parameters["std"] = np.nan
+            # self.parameters["perc_std"] = np.nan
         if report:
             print(lmfit.fit_report(self.fitresult, show_correl=False))
 
