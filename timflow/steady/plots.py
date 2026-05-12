@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
 
+import timflow.steady.trace as tst
 from timflow.plots.plots import PlotBase
-from timflow.steady.trace import traceline
 from timflow.steady.well import WellBase
 
 
@@ -35,6 +35,7 @@ def _pop_deprecated_metadata_kwarg(kwargs: dict, *, fname: str) -> None:
     elif meta is not True:
         msg = "metadata must be True or False"
         raise TypeError(msg)
+
 
 __all__ = ["PlotSteady"]
 
@@ -362,7 +363,7 @@ class PlotSteady(PlotBase):
         if return_traces:
             traces = []
         for i, _ in enumerate(xstart):
-            trace_result = traceline(
+            trace_result = tst.traceline(
                 self._ml,
                 xstart[i],
                 ystart[i],
