@@ -889,8 +889,10 @@ class ModelXsection(Model):
         if not check.all():
             raise ValueError(f"Number of aquifers does not match {self.aq.naq}:\n{naqs}")
         # check -inf to inf
-        xmin = min([inhom.x1 for inhom in self.aq.inhomlist])
-        xmax = max([inhom.x2 for inhom in self.aq.inhomlist])
+        x1list = np.array([inhom.x1 for inhom in self.aq.inhomlist])
+        x2list = np.array([inhom.x2 for inhom in self.aq.inhomlist])
+        xmin = x1list.min()
+        xmax = x2list.max()
         if not (np.isinf(xmin) and np.sign(xmin) < 0):
             raise ValueError(
                 f"XsectionModel boundary error: left-most boundary must be at x=-np.inf, "
@@ -905,6 +907,16 @@ class ModelXsection(Model):
                 f"x=+np.inf, got x={xmax}. "
                 f"(Model may consist of multiple Xsections, but their combined "
                 f"domain must span from -∞ to +∞)"
+            )
+        # check domain for gaps
+        if not np.allclose(x1list[1:], x2list[:-1]):
+            mask = (x1list[1:] - x2list[:-1]) > 1e-10
+            x1missing = x1list[1:][mask]
+            x2missing = x2list[:-1][mask]
+            msg = [f"{ix1}-{ix2}" for ix1, ix2 in zip(x2missing, x1missing, strict=True)]
+            raise ValueError(
+                "XsectionModel boundary error: missing section(s) between: "
+                + ", ".join(msg)
             )
 
         # # shared boundary check
