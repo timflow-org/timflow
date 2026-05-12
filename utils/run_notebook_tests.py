@@ -40,10 +40,7 @@ SLOW_NOTEBOOKS = [
 if __name__ == "__main__":
     dirs = [d for d in NOTEBOOK_DIRS if (root / d).exists()]
     ignores = [
-        arg
-        for nb in SLOW_NOTEBOOKS
-        if (root / nb).exists()
-        for arg in ("--ignore", nb)
+        arg for nb in SLOW_NOTEBOOKS if (root / nb).exists() for arg in ("--ignore", nb)
     ]
 
     cmd = [
