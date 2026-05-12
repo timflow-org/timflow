@@ -505,7 +505,7 @@ class PlotSteady(PlotBase):
         nt : int
             number of path lines
         zstart : scalar
-            starting elevation of the path lines
+            starting elevation of the path lines. Halfway aquifer thickness if None
         hstepmax : scalar
             maximum step in horizontal space
         vstepfrac : float
