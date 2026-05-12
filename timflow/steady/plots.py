@@ -312,7 +312,7 @@ class PlotSteady(PlotBase):
             axes with plot
         traces : list of dict
             only if ``return_traces`` is True; each dict matches
-            :func:`~timflow.steady.trace.traceline` output (including ``layers``).
+            :func:`~timflow.steady.trace.traceline` output.
         """
         _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.tracelines")
         if kwargs:
@@ -374,7 +374,6 @@ class PlotSteady(PlotBase):
                 nstepmax=nstepmax,
                 silent=silent,
                 win=win,
-                returnlayers=True,
             )
             if return_traces:
                 traces.append(trace_result)

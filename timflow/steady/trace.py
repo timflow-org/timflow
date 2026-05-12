@@ -19,7 +19,6 @@ def traceline(
     nstepmax=100,
     win=None,
     silent=False,
-    returnlayers=False,
 ):
     """Function to trace one pathline.
 
@@ -45,8 +44,6 @@ def traceline(
         list with [xmin, xmax, ymin, ymax]
     silent : string
         if '.', prints dot upon completion of each traceline
-    returnlayers : boolean
-        if True, add a ``layers`` key with model layer index per trace step.
 
     Returns
     -------
@@ -57,7 +54,7 @@ def traceline(
         - ``message``: termination message
         - ``complete``: whether tracing stopped at a terminal condition
         - ``total_travel_time``: final time in the trace
-        - ``layers`` (optional): per-step layer indices if ``returnlayers`` is True
+        - ``layers``: model layer index for each trace segment / step
     """
     verbose = False  # used for debugging
     if win is None:
@@ -267,15 +264,13 @@ def traceline(
         message = "reached nstepmax iterations"
     if not silent:
         print(message)
-    result = {
+    return {
         "trace": np.array(xyzt),
         "message": message,
         "complete": terminate,
         "total_travel_time": xyzt[-1][-1],
+        "layers": layerlist,
     }
-    if returnlayers:
-        result["layers"] = layerlist
-    return result
 
 
 def timtraceline(
@@ -297,8 +292,8 @@ def timtraceline(
 
     .. deprecated::
         Use :func:`traceline` instead. This function will be removed in a
-        future version. It returns only the ``trace`` array (not the full
-        result dict).
+        future version. It returns only the ``trace`` array, or
+        ``(trace, layers)`` when ``returnlayers`` is True (not the full dict).
     """
     warnings.warn(
         "timtraceline is deprecated. Use traceline instead.",
@@ -316,8 +311,9 @@ def timtraceline(
         nstepmax=nstepmax,
         win=win,
         silent=silent,
-        returnlayers=returnlayers,
     )
+    if returnlayers:
+        return result["trace"], result["layers"]
     return result["trace"]
 
 
@@ -361,7 +357,8 @@ def tracelines(
     Returns
     -------
     list of dict
-        One result dict per starting point, in the same form as :func:`traceline`.
+        One result dict per starting point, in the same form as :func:`traceline`
+        (each dict always includes a ``layers`` entry).
     """
     if win is None:
         win = [-1e30, 1e30, -1e30, 1e30]
@@ -401,12 +398,14 @@ def timtracelines(
     win=None,
     *,
     metadata=False,
+    returnlayers=False,
 ):
     """Deprecated alias for :func:`tracelines`.
 
     .. deprecated::
         Use :func:`tracelines` instead. This function will be removed in a
-        future version. It returns a list of ``trace`` arrays (not result
+        future version. It returns a list of ``trace`` arrays, or a list of
+        ``(trace, layers)`` pairs when ``returnlayers`` is True (not result
         dicts).
     """
     warnings.warn(
@@ -426,6 +425,8 @@ def timtracelines(
         silent=silent,
         win=win,
     )
+    if returnlayers:
+        return [(r["trace"], r["layers"]) for r in results]
     return [r["trace"] for r in results]
 
 
