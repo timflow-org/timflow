@@ -7,6 +7,7 @@ Example::
     ml.plots.topview()
 """
 
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -14,8 +15,26 @@ import numpy as np
 from matplotlib.collections import LineCollection
 
 from timflow.plots.plots import PlotBase
-from timflow.steady.trace import timtraceline
+from timflow.steady.trace import traceline
 from timflow.steady.well import WellBase
+
+
+def _pop_deprecated_metadata_kwarg(kwargs: dict, *, fname: str) -> None:
+    """Warn on legacy ``metadata=False``; strip ``metadata`` from ``kwargs``."""
+    try:
+        meta = kwargs.pop("metadata")
+    except KeyError:
+        return
+    if meta is False:
+        warnings.warn(
+            f"{fname}: metadata=False is deprecated; full trace result dicts are "
+            "always returned (omit the metadata argument).",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    elif meta is not True:
+        msg = "metadata must be True or False"
+        raise TypeError(msg)
 
 __all__ = ["PlotSteady"]
 
@@ -247,14 +266,12 @@ class PlotSteady(PlotBase):
         figsize=None,
         *,
         return_traces=False,
-        metadata=False,
+        **kwargs,
     ):
-        """Function to trace multiple pathlines.
+        """Plot or compute multiple pathlines.
 
         Parameters
         ----------
-        ml : Model object
-            model to which the element is added
         xstart : array
             x-coordinates of starting locations
         ystart : array
@@ -281,18 +298,25 @@ class PlotSteady(PlotBase):
         ax : matplotlib.Axes or list of Axes
             axes to plot on, default is None which creates a new figure
         return_traces : boolean
-            return traces if True
-        metadata: boolean
-            if False, return list of xyzt arrays
-            if True, return list of result dictionaries
+            if True, also return one trace result dict per pathline
+        **kwargs
+            For backward compatibility only: a deprecated ``metadata`` keyword
+            is accepted and removed. ``metadata=False`` emits a
+            ``DeprecationWarning``; results always use the dict form from
+            :func:`~timflow.steady.trace.traceline`.
 
         Returns
         -------
         ax : matplotlib.Axes or list of Axes
             axes with plot
-        traces : result
-            only if return_traces = True
+        traces : list of dict
+            only if ``return_traces`` is True; each dict matches
+            :func:`~timflow.steady.trace.traceline` output (including ``layers``).
         """
+        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.tracelines")
+        if kwargs:
+            bad = ", ".join(sorted(kwargs))
+            raise TypeError(f"tracelines() got unexpected keyword arguments: {bad}")
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
 
@@ -337,10 +361,8 @@ class PlotSteady(PlotBase):
 
         if return_traces:
             traces = []
-        else:
-            metadata = True  # suppress future warning from timtraceline
         for i, _ in enumerate(xstart):
-            trace = timtraceline(
+            trace_result = traceline(
                 self._ml,
                 xstart[i],
                 ystart[i],
@@ -352,14 +374,10 @@ class PlotSteady(PlotBase):
                 silent=silent,
                 win=win,
                 returnlayers=True,
-                metadata=metadata,
             )
             if return_traces:
-                traces.append(trace)
-            if metadata:
-                xyzt, layerlist = trace["trace"], trace["layers"]
-            else:
-                xyzt, layerlist = trace
+                traces.append(trace_result)
+            xyzt, layerlist = trace_result["trace"], trace_result["layers"]
             if silent == ".":
                 print(".", end="", flush=True)
             if "hor" in axes_dict:
@@ -493,7 +511,7 @@ class PlotSteady(PlotBase):
         figsize=None,
         *,
         return_traces=False,
-        metadata=False,
+        **kwargs,
     ):
         """Plot a capture zone.
 
@@ -528,20 +546,24 @@ class PlotSteady(PlotBase):
             width, height in inches.
         return_traces : boolean (default False)
             return the traces instead of plotting
-        metadata : boolean (default False)
-            return metadata along with traces
+        **kwargs
+            For backward compatibility only: deprecated ``metadata`` keyword
+            (see :meth:`tracelines`).
 
         Returns
         -------
         ax : matplotlib.Axes or list of Axes
             axes with plot
-        traces : list of arrays of x, y, z, and t values
-            only if return_traces is True
+        traces : list of list of dict
+            only if return_traces is True; outer list is per well, inner list
+            matches :meth:`tracelines` with ``return_traces=True``
         """
+        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.plotcapzone")
+        if kwargs:
+            bad = ", ".join(sorted(kwargs))
+            raise TypeError(f"plotcapzone() got unexpected keyword arguments: {bad}")
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
-        if not return_traces:
-            metadata = True  # suppress future warning from timtraceline
         # make well a list
         if isinstance(well, (str, WellBase)):
             well = [well]
@@ -567,7 +589,6 @@ class PlotSteady(PlotBase):
                     ax=ax,
                     figsize=figsize,
                     return_traces=return_traces,
-                    metadata=metadata,
                 )
             )
         if return_traces:

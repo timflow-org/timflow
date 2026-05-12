@@ -17,7 +17,7 @@ from scipy.special import k0, k1
 
 from timflow.steady.element import Element
 from timflow.steady.equation import HeadEquation, MscreenWellNoflowEquation
-from timflow.steady.trace import timtracelines
+from timflow.steady.trace import tracelines
 
 __all__ = [
     "Well",
@@ -224,13 +224,20 @@ class WellBase(Element):
         silent : boolean or string
             True (no messages), False (all messages), or '.'
             (print dot for each path line)
+        metadata : bool, default False
+            If True, return full per-pathline result dicts from
+            :func:`~timflow.steady.trace.traceline`. If False, return only the
+            trace arrays.
 
         Returns
         -------
-        xyzt : list of arrays of x, y, z, and t values
+        xyzt : list of dict or list of ndarray
+            With ``metadata=False`` (default), each item is only the ``(x, y, z, t)``
+            trace array. With ``metadata=True``, each item is a result dict from
+            :func:`~timflow.steady.trace.traceline`.
         """
         xstart, ystart, zstart = self.capzonestart(nt, zstart)
-        xyzt = timtracelines(
+        results = tracelines(
             self.model,
             xstart,
             ystart,
@@ -240,9 +247,10 @@ class WellBase(Element):
             tmax=tmax,
             nstepmax=nstepmax,
             silent=silent,
-            metadata=metadata,
         )
-        return xyzt
+        if metadata:
+            return results
+        return [r["trace"] for r in results]
 
     def capzonestart(self, nt, zstart):
         eps = 1e-1
@@ -258,94 +266,14 @@ class WellBase(Element):
         if (layer is None) or np.isin(layer, self.layers).any():
             ax.plot(self.xw, self.yw, "k.")
 
-    def plotcapzone(
-        self,
-        nt=10,
-        zstart=None,
-        hstepmax=20,
-        vstepfrac=0.2,
-        tmax=365,
-        nstepmax=100,
-        silent=".",
-        color=None,
-        orientation="hor",
-        win=None,
-        ax=None,
-        figsize=None,
-        *,
-        return_traces=False,
-        metadata=False,
-    ):
-        """Plot a capture zone.
-
-        Parameters
-        ----------
-        nt : int
-            number of path lines
-        zstart : scalar
-            starting elevation of the path lines
-        hstepmax : scalar
-            maximum step in horizontal space
-        vstepfrac : float
-            maximum fraction of aquifer layer thickness during one step
-        tmax : scalar
-            maximum time
-        nstepmax : scalar(int)
-            maximum number of steps
-        silent : boolean or string
-            True (no messages), False (all messages), or '.'
-            (print dot for each path line)
-        color : color
-        orientation : string
-            'hor' for horizontal, 'ver' for vertical, or 'both' for both
-        win : array_like (length 4)
-            [xmin, xmax, ymin, ymax]
-        axes : matplotlib.Axes, tuple of 2 matplotlib.Axes, or None
-            axes to plot on, default is None which creates a new figure
-        figsize : tuple of integers, optional, default: None
-            width, height in inches.
-        return_traces : boolean (default False)
-            return the traces instead of plotting
-        metadata : boolean (default False)
-            return metadata along with traces
-
-        Returns
-        -------
-        ax : matplotlib.Axes
-            axes with plot
-        traces : list of arrays of x, y, z, and t values
-            only if return_traces is True
-        """
+    def plotcapzone(self, *args, **kwargs):
+        """Capture-zone plotting was moved to the model's ``plots.plotcapzone`` method."""
         warnings.warn(
-            "Well.plotcapzone is deprecated. Use Model.plots.plotcapzone instead.",
+            "Well.plotcapzone has been removed. Use Model.plots.plotcapzone instead, "
+            "e.g. ml.plots.plotcapzone(w, ...) with the same plotting options.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if win is None:
-            win = [-1e30, 1e30, -1e30, 1e30]
-        if not return_traces:
-            metadata = True  # suppress future warning from timtraceline
-        xstart, ystart, zstart = self.capzonestart(nt, zstart)
-        traces = self.model.plots.tracelines(
-            xstart,
-            ystart,
-            zstart,
-            hstepmax=-abs(hstepmax),
-            vstepfrac=vstepfrac,
-            tmax=tmax,
-            nstepmax=nstepmax,
-            silent=silent,
-            color=color,
-            orientation=orientation,
-            win=win,
-            ax=ax,
-            figsize=figsize,
-            return_traces=return_traces,
-            metadata=metadata,
-        )
-        if return_traces:
-            return ax, traces
-        return ax
 
 
 class Well(WellBase):
