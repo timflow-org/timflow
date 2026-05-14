@@ -1135,6 +1135,28 @@ class ModelXsection(TimModel):
         # if not np.all(np.diff(xcoords[1:-1])[::2] < 1e-10):
         #     raise ValueError("Not all inhomogeneities have shared boundaries.")
 
+    def check_elements(self):
+        """Check elements.
+
+        Checks that no elements are located exactly on the boundaries between
+        inhomogeneities.
+        """
+        x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        elements = [e for e in self.elementlist if not e.inhomelement]
+        mask = np.isin([e.xc.squeeze() for e in elements], x1list) | np.isin(
+            [e.xc.squeeze() for e in elements], x2list
+        )
+        if mask.any():
+            elems = [str(e) for e, m in zip(elements, mask, strict=True) if m]
+            raise ValueError(
+                "Elements cannot be located exactly on the boundaries between "
+                "inhomogeneities.\nConsider nudging the location(s) of the following "
+                "element(s) (by e.g. 1e-6):\n- "
+                + "\n- ".join(elems)
+            )
+
     def initialize(self):
         self.check_inhoms()
         super().initialize()
+        self.check_elements()
