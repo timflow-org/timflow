@@ -75,12 +75,12 @@ class AreaSinkXsection(Element):
         return qx, qy
 
     def plot(self, ax, n_arrows=10, **kwargs):
-        Ly = self.model.aq.z[0] - self.model.aq.z[-1]
+        Ly = self.aq.z[0] - self.aq.z[-1]
         Lx = self.x2 - self.x1
 
         for i in np.linspace(self.x1, self.x2, n_arrows):
             xtail = i
-            ytail = self.model.aq.z[0] + Ly / 20.0
+            ytail = self.aq.z[0] + Ly / 20.0
             dx = 0
             dy = -0.9 * Ly / 20.0
             ax.arrow(
