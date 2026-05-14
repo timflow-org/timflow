@@ -44,7 +44,14 @@ class AreaSinkXsection(Element):
         return f"{self.__class__.__name__}: " + str([self.x1, self.x2])
 
     def initialize(self):
-        self.xc = (self.x1 + self.x2) / 2.0
+        if np.isfinite(self.x1) and np.isfinite(self.x2):
+            self.xc = (self.x1 + self.x2) / 2.0
+        elif np.isneginf(self.x1):
+            self.xc = self.x2 - 1e-5
+        elif np.isposinf(self.x2):
+            self.xc = self.x1 + 1e-5
+        else:
+            self.xc = 0.0
         self.L = np.abs(self.x2 - self.x1)
         self.aq = self.model.aq.find_aquifer_data(self.xc, 0.0)
         self.setbc()
@@ -128,12 +135,14 @@ class HstarXsection(Element):
         return f"{self.__class__.__name__}: " + str([self.x1, self.x2])
 
     def initialize(self):
+        if np.isfinite(self.x1) and np.isfinite(self.x2):
+            self.xc = (self.x1 + self.x2) / 2.0
         if not np.isfinite(self.x1):
             self.xc = self.x2 - 1e-5
         elif not np.isfinite(self.x2):
             self.xc = self.x1 + 1e-5
         else:
-            self.xc = (self.x1 + self.x2) / 2.0
+            self.xc = 0.0
         self.L = np.abs(self.x2 - self.x1)
         self.aq = self.model.aq.find_aquifer_data(self.xc, 0.0)
         self.setbc()
