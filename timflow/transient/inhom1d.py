@@ -177,7 +177,7 @@ class Xsection(AquiferData):
                     self.model, self.x1, range(self.naq), label=None, aq=aqin
                 )
         # HeadDiff on right side, FluxDiff on left side
-        elif np.isneginf(self.x1):
+        elif np.isneginf(self.x1) and not np.isposinf(self.x2):
             xin = self.x2 - self.tiny
             # xoutright = self.x2 + self.tiny
             aqin = self.model.aq.find_aquifer_data(xin, 0)
@@ -190,7 +190,7 @@ class Xsection(AquiferData):
                     aq=aqin,
                     label=None,
                 )
-        elif np.isposinf(self.x2):
+        elif np.isposinf(self.x2) and not np.isneginf(self.x1):
             xin = self.x1 + self.tiny
             # xoutleft = self.x1 - self.tiny
             aqin = self.model.aq.find_aquifer_data(xin, 0)
