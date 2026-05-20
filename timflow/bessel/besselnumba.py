@@ -22,6 +22,7 @@ c = np.log(0.5) + 0.577215664901532860
 
 fac = 1.0
 
+# max number of terms fixed to 20
 nrange = np.arange(21, dtype=np.float64)
 
 a = np.zeros(21, dtype=np.float64)
