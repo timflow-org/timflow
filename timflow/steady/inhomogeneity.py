@@ -424,7 +424,7 @@ class BuildingPit(AquiferData):
             "BuildingPit: layers "
             + str(list(self.layers))
             + ", "
-            + str(list(zip(self.x.tolist(), self.y.tolist())))
+            + str(list(zip(self.x.tolist(), self.y.tolist(), strict=False)))
         )
 
     def isinside(self, x, y):
@@ -815,7 +815,7 @@ class LeakyBuildingPit(BuildingPit):
             "LeakyBuildingPit: layers "
             + str(list(self.layers))
             + ", "
-            + str(list(zip(self.x.tolist(), self.y.tolist())))
+            + str(list(zip(self.x.tolist(), self.y.tolist(), strict=False)))
         )
 
     def create_elements(self):
