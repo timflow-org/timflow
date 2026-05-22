@@ -804,8 +804,8 @@ def lapls_int_ho_wdis(x, y, z1, z2, order):
 
 
 @numba.njit(nogil=True, cache=True)
-def lapls_gauss_ho_qxqy(x, y, z1, z2, order):
-    """lapls_gauss_ho_qxqy.
+def lapls_gauss_ho_wdis(x, y, z1, z2, order):
+    """lapls_gauss_ho_wdis.
 
     implicit none
     integer, intent(in) :: order
@@ -910,6 +910,70 @@ def lapld_int_ho(x, y, z1, z2, order):
 
     omega = 1.0 / (complex(0.0, 2.0) * np.pi) * (omega + qm)
     return omega
+    
+
+@numba.njit(nogil=True, cache=True)
+def lapld_gauss_ho(x, y, z1, z2, order):
+    """lapld_gauss_ho.
+
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y
+    complex(kind=8), intent(in) :: z1,z2
+    complex(kind=8), dimension(0:order) :: omega
+    integer :: n, p
+    real(kind=8) :: L, x0
+    complex(kind=8) :: bigz
+    complex(kind=8), dimension(8) :: pole
+    """
+    L = np.abs(z2 - z1)
+    bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+
+    pole = np.zeros(8, dtype=np.complex128)
+    for n in range(8):
+        pole[n] = 1 / (bigz - xg[n])
+
+    omega = np.zeros(order + 1, dtype=np.complex128)
+    for p in range(order + 1):
+        omega[p] = complex(0, 0)
+        for n in range(8):
+            omega[p] = omega[p] + wg[n] * xg[n] ** p * pole[n]
+        omega[p] = -1 / (2 * np.pi * 1j) * omega[p]
+
+    return omega
+
+
+@numba.njit(nogil=True, cache=True)
+def lapld_gauss_ho_wdis(x, y, z1, z2, order):
+    """lapld_gauss_ho_wdis.
+
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y
+    complex(kind=8), intent(in) :: z1,z2
+    integer :: n, p
+    real(kind=8) :: L
+    complex(kind=8) :: bigz
+    complex(kind=8), dimension(8) :: pole
+    complex(kind=8), dimension(0:order) :: W
+    """
+
+    L = np.abs(z2 - z1)
+    bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+
+    polesq = np.zeros(8, dtype=np.complex128)
+    for n in range(8):
+        polesq[n] = 1.0 / (bigz - xg[n]) ** 2
+
+    W = np.zeros(order + 1, dtype=np.complex128)
+    for p in range(order + 1):
+        W[p] = complex(0, 0)
+        for n in range(8):
+            W[p] = W[p] + wg[n] * xg[n] ** p * polesq[n]
+        W[p] = -1 / (2 * np.pi * 1j) * W[p]
+        W[p] = W[p] * 2 / (z2 - z1)
+
+    return W
 
 
 @numba.njit(nogil=True, cache=True)
@@ -1758,14 +1822,33 @@ def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz) - wlap.imag
     return qxqy
 
+@numba.njit(nogil=True, cache=True)
+def laplacels(x, y, z1, z2, order):
+    Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
+    if np.abs(Z) < 10:
+        rv = lapls_int_ho(x, y, z1, z2, order)
+    else:
+        rv = lapls_gauss_ho(x, y, z1, z2, order)
+    return rv
+
+
+@numba.njit(nogil=True, cache=True)
+def laplacelswdis(x, y, z1, z2, order):
+    Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
+    if np.abs(Z) < 10:
+        rv = lapls_int_ho_wdis(x, y, z1, z2, order)
+    else:
+        rv = lapls_gauss_ho_wdis(x, y, z1, z2, order)
+    return rv
+
 
 @numba.njit(nogil=True, cache=True)
 def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Potential of line-sink for use in timflow."""
+    """Potential of line-sink for use in timflow.steady"""
     z = x + y * 1j
     pot = np.zeros((order + 1, naq))
     if ilap:
-        pot[:, 0] = lapls_int_ho(x, y, z1, z2, order).real
+        pot[:, 0] = laplacels(x, y, z1, z2, order).real
     for n in range(ilap, len(lab)):
         if isinside(z1, z2, z, R * lab[n]):
             d1, d2 = find_d1d2(z1, z2, z, R * lab[n])
@@ -1775,11 +1858,11 @@ def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def disbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Disvec of line-sink for use in timflow."""
+    """Disvec of line-sink for use in timflow.steady"""
     z = x + y * 1j
     qxqy = np.zeros((2 * (order + 1), naq))
     if ilap:
-        wdis = lapls_int_ho_wdis(x, y, z1, z2, order)
+        wdis = laplacewdis(x, y, z1, z2, order)
         qxqy[: order + 1, 0] = wdis.real
         qxqy[order + 1 :, 0] = -wdis.imag
     for n in range(ilap, len(lab)):
@@ -1793,7 +1876,7 @@ def disbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Potential of line-doublet for use in timflow."""
+    """Potential of line-doublet for use in timflow.steady"""
     z = x + y * 1j
     pot = np.zeros((order + 1, naq))
     if ilap:
@@ -1807,7 +1890,7 @@ def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
 
 @numba.njit(nogil=True, cache=True)
 def disbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
-    """Disvec of line-doublet for use in timflow."""
+    """Disvec of line-doublet for use in timflow.steady"""
     z = x + y * 1j
     qxqy = np.zeros((2 * (order + 1), naq))
     if ilap:
