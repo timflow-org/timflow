@@ -743,6 +743,37 @@ def lapls_int_ho(x, y, z1, z2, order):
 
 
 @numba.njit(nogil=True, cache=True)
+def lapls_gauss_ho(x, y, z1, z2, order):
+    """lapls_gauss_ho.
+
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y
+    complex(kind=8), intent(in) :: z1,z2
+    complex(kind=8), dimension(0:order) :: omega
+    integer :: n, p
+    real(kind=8) :: L, x0
+    complex(kind=8) :: bigz
+    complex(kind=8), dimension(8) :: log
+    """
+    L = np.abs(z2 - z1)
+    bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+
+    log = np.zeros(8, dtype=np.complex128)
+    for n in range(8):
+        log[n] = np.log(bigz - xg[n])
+
+    omega = np.zeros(order + 1, dtype=np.complex128)
+    for p in range(order + 1):
+        omega[p] = complex(0, 0)
+        for n in range(8):
+            omega[p] = omega[p] + wg[n] * xg[n] ** p * log[n]
+        omega[p] = L / (4 * np.pi) * omega[p]
+
+    return omega.real
+
+
+@numba.njit(nogil=True, cache=True)
 def lapls_int_ho_wdis(x, y, z1, z2, order):
     """Note this is W andReturns Qx - iQy."""
     wdis = np.zeros(order + 1, dtype=np.complex128)
@@ -770,6 +801,39 @@ def lapls_int_ho_wdis(x, y, z1, z2, order):
         wdis[p] = wdis[p] + qm[p + 1] - termzmin + (-1) ** (p + 1) * termzplus
         wdis[p] = L / (2 * np.pi * (z2 - z1) * (p + 1)) * wdis[p]
     return wdis
+
+
+@numba.njit(nogil=True, cache=True)
+def lapls_gauss_ho_qxqy(x, y, z1, z2, order):
+    """lapls_gauss_ho_qxqy.
+
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y
+    complex(kind=8), intent(in) :: z1,z2
+    integer :: n, p
+    real(kind=8) :: L
+    complex(kind=8) :: bigz
+    complex(kind=8), dimension(8) :: pole
+    complex(kind=8), dimension(0:order) :: W
+    """
+
+    L = np.abs(z2 - z1)
+    bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+
+    pole = np.zeros(8, dtype=np.complex128)
+    for n in range(8):
+        pole[n] = 1.0 / (bigz - xg[n])
+
+    W = np.zeros(order + 1, dtype=np.complex128)
+    for p in range(order + 1):
+        W[p] = complex(0, 0)
+        for n in range(8):
+            W[p] = W[p] + wg[n] * xg[n] ** p * pole[n]
+        W[p] = -L / (4 * np.pi) * W[p]
+        W[p] = W[p] * 2 / (z2 - z1)
+
+    return W
 
 
 @numba.njit(nogil=True, cache=True)
