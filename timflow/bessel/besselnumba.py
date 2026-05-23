@@ -1838,6 +1838,24 @@ def laplacelswdis(x, y, z1, z2, order):
         rv = lapls_gauss_ho_wdis(x, y, z1, z2, order)
     return rv
 
+@numba.njit(nogil=True, cache=True)
+def laplaceld(x, y, z1, z2, order):
+    Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
+    if np.abs(Z) < 10:
+        rv = lapld_int_ho(x, y, z1, z2, order)
+    else:
+        rv = lapld_gauss_ho(x, y, z1, z2, order)
+    return rv
+
+
+@numba.njit(nogil=True, cache=True)
+def laplaceldwdis(x, y, z1, z2, order): 
+    Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
+    if np.abs(Z) < 10:
+        rv = lapld_int_ho_wdis(x, y, z1, z2, order)
+    else:
+        rv = lapld_gauss_ho_wdis(x, y, z1, z2, order)
+    return rv
 
 @numba.njit(nogil=True, cache=True)
 def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
@@ -1877,7 +1895,7 @@ def potbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
     z = x + y * 1j
     pot = np.zeros((order + 1, naq))
     if ilap:
-        pot[:, 0] = lapld_int_ho(x, y, z1, z2, order).real
+        pot[:, 0] = laplaceld(x, y, z1, z2, order).real
     for n in range(ilap, len(lab)):
         if isinside(z1, z2, z, R * lab[n]):
             d1, d2 = find_d1d2(z1, z2, z, R * lab[n])
@@ -1891,7 +1909,7 @@ def disbesldv(x, y, z1, z2, lab, order, ilap, naq, R=8):
     z = x + y * 1j
     qxqy = np.zeros((2 * (order + 1), naq))
     if ilap:
-        wdis = lapld_int_ho_wdis(x, y, z1, z2, order)
+        wdis = laplaceldwdis(x, y, z1, z2, order)
         qxqy[: order + 1, 0] = wdis.real
         qxqy[order + 1 :, 0] = -wdis.imag
     for n in range(ilap, len(lab)):
