@@ -1838,6 +1838,7 @@ def laplacelswdis(x, y, z1, z2, order):
         rv = lapls_gauss_ho_wdis(x, y, z1, z2, order)
     return rv
 
+
 @numba.njit(nogil=True, cache=True)
 def laplaceld(x, y, z1, z2, order):
     Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
@@ -1849,13 +1850,14 @@ def laplaceld(x, y, z1, z2, order):
 
 
 @numba.njit(nogil=True, cache=True)
-def laplaceldwdis(x, y, z1, z2, order): 
+def laplaceldwdis(x, y, z1, z2, order):
     Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
     if np.abs(Z) < 10:
         rv = lapld_int_ho_wdis(x, y, z1, z2, order)
     else:
         rv = lapld_gauss_ho_wdis(x, y, z1, z2, order)
     return rv
+
 
 @numba.njit(nogil=True, cache=True)
 def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
