@@ -234,7 +234,7 @@ class Element(ABC):
         derivative : when derivative=0, returns discharge (default)
                      when derivative=1, returns derivative of the discharge
                      when derivative=-1, returns integrated discharge
-                     
+
 
         Returns
         -------
