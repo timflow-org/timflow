@@ -933,7 +933,7 @@ class LineSinkHoBase(Element):
         fac = np.zeros(self.order + 1)
         for n in range(self.order + 1):
             fac[n] = (1 ** (n + 1) - (-1) ** (n + 1)) / (n + 1) / 2
-        self.dischargeinf = self.dischargeinf * fac[:, np.newaxis, np.newaxis] 
+        self.dischargeinf = self.dischargeinf * fac[:, np.newaxis, np.newaxis]
         self.dischargeinflayers = np.sum(
             self.dischargeinf * self.aq.eigvec[self.layers, :, :], 1
         )
@@ -1042,6 +1042,7 @@ class LineSinkHoBase(Element):
         if layer is None or np.isin(self.layers, layer).any():
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
+
 class LineSinkHo(LineSinkHoBase):
     """LineSinkHo with non-zero and potentially variable discharge through time.
 
@@ -1065,7 +1066,7 @@ class LineSinkHo(LineSinkHoBase):
     ):
         self.storeinput(inspect.currentframe())
         super().__init__(
-                    model,
+            model,
             x1=x1,
             y1=y1,
             x2=x2,
@@ -1080,6 +1081,7 @@ class LineSinkHo(LineSinkHoBase):
             label=label,
             addtomodel=addtomodel,
         )
+
 
 class RiverHo(LineSinkHoBase, HeadEquationNores):
     """River of which the head varies through time.
