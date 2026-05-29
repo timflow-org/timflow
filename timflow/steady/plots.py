@@ -135,7 +135,7 @@ class PlotSteady(PlotBase):
     def headalongline(self, x, y, layers=None, ax=None, **kwargs):
         """Plot head along the line provided by x and y coordinates.
 
-        .. Deprecated:: 0.3.0
+        .. deprecated:: 0.3.0
             Use :meth:`head_along_line` instead.
 
         Parameters
