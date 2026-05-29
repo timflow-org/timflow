@@ -774,6 +774,11 @@ class Model:
         pandas.DataFrame
             dataframe with summary of aquifer(s) parameters
         """
+        if type(self) is Model:
+            raise NotImplementedError(
+                "aquifer_summary is not supported for the base Model class; "
+                "use ModelMaq, Model3D instead."
+            )
         aqs = {}
         if not isinstance(self.aq, SimpleAquifer):
             aqs["background"] = self.aq.summary()

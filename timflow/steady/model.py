@@ -58,7 +58,7 @@ class Model:
         # That should be checked outside this function
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
-        self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d)
+        self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d=model3d)
         self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
@@ -659,6 +659,11 @@ class Model:
         pandas.DataFrame
             dataframe with summary of aquifer(s) parameters
         """
+        if type(self) is Model:
+            raise NotImplementedError(
+                "aquifer_summary is not supported for the base Model class; "
+                "use ModelMaq, Model3D instead."
+            )
         aqs = {}
         if not isinstance(self.aq, SimpleAquifer):
             aqs["background"] = self.aq.summary()
