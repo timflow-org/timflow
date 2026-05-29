@@ -70,12 +70,12 @@ class LineSink1DBase(Element):
         self.cosnorm = np.cos(self.theta_norm_out) * np.ones(self.ncp)
         self.sinnorm = np.sin(self.theta_norm_out) * np.ones(self.ncp)
         if self.wh == "H":
-            self.wh = self.aq.Haq[self.layers]
+            self._wh = self.aq.Haq[self.layers]
         elif self.wh == "2H":
-            self.wh = 2.0 * self.aq.Haq[self.layers]
+            self._wh = 2.0 * self.aq.Haq[self.layers]
         elif np.isscalar(self.wh):
-            self.wh = self.wh * np.ones(self.nlayers)
-        self.resfac = self.aq.Haq[self.layers] * self.res / self.wh
+            self._wh = self.wh * np.ones(self.nlayers)
+        self.resfac = self.aq.Haq[self.layers] * self.res / self._wh
 
     def potinf(self, x, y, aq=None):
         if aq is None:
