@@ -450,21 +450,132 @@ class Model:
             Qx[:, i], Qy[:, i] = self.disvec(xg[i], yg[i], layers)
         return Qx, Qy
 
-    #    def disvec_direction(self, s, x1, y1, cdirection):
-    #        pass
-    #
-    #    def discharge_across_line(self, x1, y1, x2,  y2, layers=None):
-    #        if layers is None:
-    #            nlayers = self.aq.find_aquifer_data(x1, y1).naq
-    #        else:
-    #            nlayers = len(np.atleast_1d(layers))
-    #        z1 = x1 + y1 * 1j
-    #        z2 = x2 + y2 * 1j
-    #        normvec = (z2 - z1) / np.abs(z2 - z1) * np.exp(-np.pi * 1j / 2)
-    #        disvec = self.disvec(xg[i], yg[i], layers)
+    def stream_function(self, x, radial=False):
+        """Stream function along line x (or r).
+
+        Only applicable to models where flow is 1D (along a line), e.g. flow in a
+        vertical cross-section or flow in a radially symmetric model.
+
+        Parameters
+        ----------
+        x : array
+            x values of line
+        radial : bool, optional
+            if `True`, assumes that flow is radially symmetric and multiplies result
+            by x, by default `False`
+
+        Returns
+        -------
+        stream_function : array
+            stream function along line, size (2*naq, len(x))
+        zflow : array
+            z values of flow grid, size (2*naq,)
+        """
+        naq = self.aq.naq
+        nx = len(x)
+        Qx = self.disvecalongline(x, np.zeros_like(x))[0]  # only Qx
+        if radial:
+            Qx *= x
+        zflow = np.empty(2 * naq)
+        for i in range(self.aq.naq):
+            aq = self.aq.find_aquifer_data(x[0], 0)  # use first x as reference
+            zflow[2 * i] = aq.zaqtop[i]
+            zflow[2 * i + 1] = aq.zaqbot[i]
+        Qx = Qx[::-1]  # set upside down
+        Qxgrid = np.empty((2 * naq, nx))
+        Qxgrid[0] = 0
+        for i in range(naq - 1):
+            Qxgrid[2 * i + 1] = Qxgrid[2 * i] - Qx[i]
+            Qxgrid[2 * i + 2] = Qxgrid[2 * i + 1]
+        Qxgrid[-1] = Qxgrid[-2] - Qx[-1]
+        Qxgrid = Qxgrid[::-1]  # index 0 at top
+        return Qxgrid, zflow
 
     def velocity(self, x, y, z):
+        """Compute velocity at point x, y, z.
+
+        Parameters
+        ----------
+        x : float
+        y : float
+        z : float
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vx, vy, vz) at point x, y, z
+        """
         return self.velocomp(x, y, z)
+
+    def velocity_grid(self, x, y, z, show_progress=True, parallel=False):
+        """Compute velocity grid.
+
+        Parameters
+        ----------
+        x : array
+            x values of grid
+        y : array
+            y values of grid
+        z : array
+            z values of grid
+        parallel : bool, optional
+            if `True`, computes velocity grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vz, vy, vx) at each point in grid,
+            size (3, len(z), len(y), len(x))
+        """
+        if parallel:
+            try:
+                from tqdm.contrib.concurrent import thread_map
+            except ImportError:
+                warnings.warn(
+                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
+                    " enable parallel execution. Falling back to serial execution.",
+                    category=ImportWarning,
+                    stacklevel=2,
+                )
+                parallel = False
+                thread_map = None
+
+        def compute(kij):
+            k, i, j = kij
+            try:
+                vv = self.velocomp(x[j], y[i], z[k])
+            except ZeroDivisionError:
+                vv = np.full((3,), np.nan)
+            return k, i, j, vv
+
+        nz, ny, nx = len(z), len(y), len(x)
+        v = np.empty((3, nz, ny, nx))
+        if not parallel:
+            for k in range(nz):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(ny):
+                    for j in range(nx):
+                        try:
+                            vv = self.velocomp(x[j], y[i], z[k])
+                        except ZeroDivisionError:
+                            vv = np.full((3,), np.nan)
+                        v[:, k, i, j] = vv
+            if show_progress:
+                print("", flush=True)
+        else:
+            results = thread_map(
+                compute,
+                [(k, i, j) for k in range(nz) for i in range(ny) for j in range(nx)],
+                total=nz * nx * ny,
+                desc="velocity grid",
+                disable=not show_progress,
+            )
+            for k, i, j, result in results:
+                v[:, k, i, j] = result
+
+        return v
 
     def velocomp(self, x, y, z, aq=None, layer_ltype=None):
         if aq is None:
@@ -703,11 +814,11 @@ class Model:
     def vcontoursf1D(self, *args, **kwargs):
         warnings.warn(
             "The 'ml.vcontoursf1D' method is deprecated. "
-            "Use 'ml.plots.vcontoursf1D' instead.",
+            "Use 'ml.plots.vcontour_stream_function' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.plots.vcontoursf1D(*args, **kwargs)
+        return self.plots.vcontour_stream_function(*args, **kwargs)
 
 
 class ModelMaq(Model):
