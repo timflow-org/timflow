@@ -57,7 +57,7 @@ class Parameter:
     """
 
     name: str
-    initial: float
+    initial: float | None
     pmin: float = -np.inf
     pmax: float = np.inf
     targets: list[ParameterTarget] = field(default_factory=list)
@@ -66,19 +66,37 @@ class Parameter:
     log_scale: bool = False
 
     # filled after fitting
-    optimal: Optional[float] = None
+    optimal: float = np.nan
     std: Optional[float] = None
+
+    @property
+    def effective_initial(self) -> float:
+        """Effective starting value for optimization.
+
+        Returns ``initial`` if set explicitly, otherwise reads the current
+        value from the model parameter arrays. This allows calibration to
+        start from the current model state when ``initial=None``.
+        """
+        if self.initial is not None:
+            return self.initial
+        return self.get()
 
     def set(self, value: float) -> None:
         """Push value to all model arrays this parameter controls."""
+        if self.initial is None:
+            initial = float(self.targets[0].get()[0])  # read current model value
+        else:
+            initial = self.initial
+        if value is None:
+            value = initial
         if self.log_scale:
-            value = np.sign(self.initial) * 10**value
+            value = np.sign(initial) * 10**value
         for target in self.targets:
             target.set(value)
 
     def get(self) -> float:
         """Read back current value from first target."""
-        if self.targets:
+        if self.targets or self.initial is None:
             value = float(self.targets[0].get()[0])
         else:
             value = self.initial
@@ -178,6 +196,7 @@ class HeadSeries:
     t: np.ndarray
     h: np.ndarray
     weights: Optional[np.ndarray] = None
+    normalized: bool = False
     model_key: str = field(default="transient", init=False)  # 'transient'
     constant: float | tuple[float, float, float] | None = (
         None  # constant parameter and optional bounds
@@ -329,7 +348,6 @@ class Calibrate:
         if transient_model is None and steady_model is None:
             raise ValueError("At least one model must be provided.")
         self.transient_model = transient_model
-        self.steady_model = steady_model
         self.reference_time = reference_time
         self._parameters: dict[str, Parameter] = {}
         self.observations_dict: dict[str, HeadSeries | SteadyHead] = {}
@@ -337,11 +355,31 @@ class Calibrate:
             str, (SteadyHeadInWell | HeadSeriesInWell)
         ] = {}
 
+        embedded_steady = getattr(transient_model, "steady", None)
+        if embedded_steady is not None:
+            if steady_model is not None and steady_model is not embedded_steady:
+                warnings.warn(
+                    "The transient model already has a steady model embedded "
+                    "(transient_model.steady). The steady_model argument will be "
+                    "ignored and the embedded steady model will be used instead.",
+                    stacklevel=2,
+                )
+            elif steady_model is None:
+                warnings.warn(
+                    "The transient model has an embedded steady model "
+                    "(transient_model.steady). Using it as the steady model for "
+                    "this calibration.",
+                    stacklevel=2,
+                )
+            self.steady_model = embedded_steady
+        else:
+            self.steady_model = steady_model
+
     def set_aquifer_parameter(
         self,
         name: str,
         layers: int | Iterable[int],
-        initial: float = 0.0,
+        initial: float | None = None,
         pmin: float = -np.inf,
         pmax: float = np.inf,
         log_scale: bool = False,
@@ -358,7 +396,9 @@ class Calibrate:
             Layer(s) affected. Consecutive layers are grouped under one
             scalar parameter.
         initial : float
-            Starting value (in linear space).
+            Starting value (in linear space). if None, uses current model parameter
+            value. In case of coupled parameters between inhoms or models, uses
+            first value it encounters.
         pmin, pmax : float
             Bounds for the optimizer.
         log_scale : bool
@@ -393,20 +433,21 @@ class Calibrate:
         models = self._resolve_models(model)
         pname = self._make_pname(name, from_lay, to_lay, inhoms, models)
 
+        # set up parameter and add target arrays
         param = Parameter(
             name=pname, initial=initial, pmin=pmin, pmax=pmax, log_scale=log_scale
         )
-
         for ml in models:
             for iaq in self._resolve_inhoms(ml, inhoms):
                 arr = self._get_aquifer_parameter_array(ml, iaq, name)
                 slc = slice(from_lay, to_lay + 1)
                 param.add_target(arr, slc, model=ml, inhom=iaq)
 
-        if log_scale:
-            param.set(np.log10(np.abs(initial)))  # initialise arrays immediately
-        else:
-            param.set(initial)  # initialise arrays immediately
+        if initial is not None:
+            if log_scale:
+                param.set(np.log10(np.abs(initial)))  # initialise arrays immediately
+            else:
+                param.set(initial)  # initialise arrays immediately
         self._parameters[pname] = param
 
     def set_parameter_by_reference(
@@ -450,6 +491,8 @@ class Calibrate:
             layer(s) it applies to.
         """
         assert isinstance(parameter, np.ndarray), "parameter must be a numpy array"
+        if initial is None:
+            initial = parameter[0]
         param = Parameter(
             name=name, initial=initial, pmin=pmin, pmax=pmax, log_scale=log_scale
         )
@@ -577,6 +620,7 @@ class Calibrate:
         t: np.ndarray,
         h: np.ndarray,
         weights: np.ndarray | None = None,
+        normalized: bool = False,
         constant: float | tuple[float, float, float] | None = None,
         time_shift: float | tuple[float, float, float] | None = None,
     ) -> None:
@@ -597,6 +641,10 @@ class Calibrate:
         weights : float, np.ndarray, optional
             Per time-series (float) or per-timestep weights (array). Defaults to
             uniform weight of 1.0 if ``None``.
+        normalized : bool
+            Indicates whether head observations were normalized relative to some 
+            reference level, e.g. heads fluctuate around 0, or whether heads were
+            provided in absolute values.
         constant : float or (float, float, float), optional
             Add a calibrated constant offset to this series. Supply a float
             for the initial value (unbounded), or a ``(initial, pmin, pmax)``
@@ -627,6 +675,7 @@ class Calibrate:
             t=t,
             h=h,
             weights=weights,
+            normalized=normalized,
             constant=constant,
             time_shift=time_shift,
         )
@@ -736,8 +785,8 @@ class Calibrate:
         if needs_steady and self.steady_model is not None:
             self.steady_model.solve(silent=True)
         if needs_transient and self.transient_model is not None:
-            # if steady model is provided, also solve steady, even if there are no
-            # steady calibration targets
+            # Solve the steady model first so transient_model.head() returns
+            # up-to-date h_transient + h_steady values.
             if self.steady_model is not None:
                 self.steady_model.solve(silent=True)
             self.transient_model.solve(silent=True)
@@ -747,7 +796,28 @@ class Calibrate:
         for obs in self.observations_dict.values():
             if obs.model_key == "transient":
                 dt = obs._time_shift if obs.time_shift is not None else 0.0
-                h = self.transient_model.head(obs.x, obs.y, obs.t - dt, layers=obs.layer)
+                _tr_has_steady = getattr(self.transient_model, "steady", None) is not None
+                if obs.normalized or _tr_has_steady:
+                    # Normalized obs need no steady component; and when the
+                    # transient model already embeds a steady model, its head()
+                    # call already returns h_transient + h_steady, so there is
+                    # nothing to add manually.
+                    hsteady = 0.0
+                elif self.steady_model is not None:
+                    hsteady = self.steady_model.head(obs.x, obs.y, layers=obs.layer)
+                else:
+                    warnings.warn(
+                        f"Observation '{obs.x},{obs.y}' is not marked as normalized "
+                        "but no steady model is provided and the transient model has "
+                        "no embedded steady model. Residuals will be computed against "
+                        "transient heads only.",
+                        stacklevel=2,
+                    )
+                    hsteady = 0.0
+                h = (
+                    self.transient_model.head(obs.x, obs.y, obs.t - dt, layers=obs.layer)
+                    + hsteady
+                )
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
                 if self.reference_time is not None:
@@ -816,7 +886,13 @@ class Calibrate:
         p = np.array(list(lmfitparams.valuesdict().values()))
         return self.residuals(p, printdot=printdot)
 
-    def lmfit(self, printdot: bool = True, report: bool = True, **kwargs) -> None:
+    def lmfit(
+        self,
+        printdot: bool = True,
+        report: bool = True,
+        initial: bool = True,
+        **kwargs,
+    ) -> None:
         """Run the least-squares fit using ``lmfit``.
 
         Uses the Levenberg-Marquardt algorithm via :func:`lmfit.minimize`.
@@ -829,6 +905,12 @@ class Calibrate:
             Print a dot per function evaluation to indicate progress.
         report : bool
             Print a fit summary (message, parameter table, RMSE) on completion.
+        initial : bool
+            When ``True`` (default) the optimizer starts from the registered
+            ``initial`` values.  Set to ``False`` to warm-start from the
+            previously fitted optimal values instead.  If no optimal values
+            are available yet the method silently falls back to the initial
+            values.
         **kwargs
             Forwarded to :func:`lmfit.minimize`.
 
@@ -837,6 +919,11 @@ class Calibrate:
         Basic usage::
 
             cal.lmfit()
+
+        Warm-start from a previous fit::
+
+            cal.lmfit()              # phase 1
+            cal.lmfit(initial=False) # phase 2: start from phase-1 optimal
 
         See Also
         --------
@@ -847,16 +934,17 @@ class Calibrate:
 
         lmfitparams = lmfit.Parameters()
         for name, p in self._parameters.items():
+            sv = self._start_value(p, initial)
             if p.log_scale:
-                lb, ub = self._log_scale_bounds(p.pmin, p.pmax, np.sign(p.initial))
+                lb, ub = self._log_scale_bounds(p.pmin, p.pmax, np.sign(sv))
                 lmfitparams.add(
                     name,
-                    value=np.log10(np.abs(p.initial)),
+                    value=np.log10(np.abs(sv)),
                     min=lb if np.isfinite(lb) else None,
                     max=ub if np.isfinite(ub) else None,
                 )
             else:
-                lmfitparams.add(name, value=p.initial, min=p.pmin, max=p.pmax)
+                lmfitparams.add(name, value=sv, min=p.pmin, max=p.pmax)
         fit_kws = {"epsfcn": 1e-4}  # this is essential to specify step for the Jacobian
         self.result = lmfit.minimize(
             self.residuals_lmfit,
@@ -874,7 +962,8 @@ class Calibrate:
                 self.result.params.items(), self._parameters.values(), strict=True
             ):
                 if param.log_scale:
-                    param.optimal = np.sign(param.initial) * 10**popt.value
+                    sv = self._start_value(param, initial)
+                    param.optimal = np.sign(sv) * 10**popt.value
                 else:
                     param.optimal = popt.value
 
@@ -884,6 +973,20 @@ class Calibrate:
             print(self.parameters)
             print(f"RMSE: {np.sqrt(np.mean(res**2)):.3e}")
 
+    @staticmethod
+    def _start_value(p: "Parameter", use_initial: bool) -> float:
+        """Return the linear-space starting value for parameter ``p``.
+
+        When *use_initial* is ``True`` (the default) the registered
+        ``initial`` value (or the current model-array value when
+        ``initial=None``) is used.  When ``False`` the previously fitted
+        optimal is used instead; if no optimal is available yet the method
+        silently falls back to the initial value.
+        """
+        if not use_initial and not np.isnan(p.optimal):
+            return p.optimal
+        return p.effective_initial
+
     def fit(
         self,
         method: str = "trf",
@@ -891,6 +994,7 @@ class Calibrate:
         xtol: float = 1e-8,
         report: bool = True,
         printdot: bool = True,
+        initial: bool = True,
         **kwargs,
     ) -> None:
         """Run the least-squares fit using :func:`scipy.optimize.least_squares`.
@@ -909,6 +1013,15 @@ class Calibrate:
             Print a fit summary (parameter table, RMSE) on completion.
         printdot : bool
             Print a dot per function evaluation to indicate progress.
+        initial : bool
+            When ``True`` (default) the optimizer starts from the registered
+            ``initial`` values (or the current model-array values when
+            ``initial=None`` was passed to :meth:`set_aquifer_parameter`).
+            Set to ``False`` to warm-start from the previously fitted optimal
+            values instead — useful for sequential calibration workflows (e.g.
+            calibrate on steady observations first, then continue with
+            transient observations). If no optimal values are available yet
+            the method silently falls back to the initial values.
         **kwargs
             Forwarded to :func:`scipy.optimize.least_squares`.
 
@@ -918,9 +1031,16 @@ class Calibrate:
 
             cal.fit()
 
-        Levenberg-Marquardt with looser tolerance (does not support bounds):
+        Levenberg-Marquardt with looser tolerance (does not support bounds)::
 
             cal.fit(method="lm", xtol=1e-6)
+
+        Warm-start from a previous fit (e.g. after calibrating steady-state
+        observations first)::
+
+            cal.fit()                    # phase 1: steady calibration
+            cal.add_head_time_series(...)  # add transient observations
+            cal.fit(initial=False)       # phase 2: start from steady optimal
 
         See Also
         --------
@@ -929,13 +1049,17 @@ class Calibrate:
         """
         p0 = np.array(
             [
-                p.initial if not p.log_scale else np.log10(np.abs(p.initial))
+                self._start_value(p, initial)
+                if not p.log_scale
+                else np.log10(np.abs(self._start_value(p, initial)))
                 for p in self._parameters.values()
             ]
         )
         lb = np.array(
             [
-                self._log_scale_bounds(p.pmin, p.pmax, np.sign(p.initial))[0]
+                self._log_scale_bounds(
+                    p.pmin, p.pmax, np.sign(self._start_value(p, initial))
+                )[0]
                 if p.log_scale
                 else p.pmin
                 for p in self._parameters.values()
@@ -943,7 +1067,9 @@ class Calibrate:
         )
         ub = np.array(
             [
-                self._log_scale_bounds(p.pmin, p.pmax, np.sign(p.initial))[1]
+                self._log_scale_bounds(
+                    p.pmin, p.pmax, np.sign(self._start_value(p, initial))
+                )[1]
                 if p.log_scale
                 else p.pmax
                 for p in self._parameters.values()
@@ -969,7 +1095,7 @@ class Calibrate:
         res = self.residuals(self.result.x)
         for value, param in zip(self.result.x, self._parameters.values(), strict=True):
             if param.log_scale:
-                param.optimal = np.sign(param.initial) * 10**value
+                param.optimal = np.sign(self._start_value(param, initial)) * 10**value
             else:
                 param.optimal = value
 
@@ -993,9 +1119,17 @@ class Calibrate:
             values = []
             for p in self._parameters.values():
                 if getattr(p, "log_scale", False):
-                    values.append(np.log10(np.abs(p.optimal)))
+                    values.append(
+                        np.log10(
+                            np.abs(p.effective_initial)
+                            if np.isnan(p.optimal)
+                            else np.abs(p.optimal)
+                        )
+                    )
                 else:
-                    values.append(p.optimal)
+                    values.append(
+                        p.effective_initial if np.isnan(p.optimal) else p.optimal
+                    )
             params_vec = np.array(values, dtype=float)
 
         r = self.residuals(params_vec)
