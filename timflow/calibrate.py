@@ -642,7 +642,7 @@ class Calibrate:
             Per time-series (float) or per-timestep weights (array). Defaults to
             uniform weight of 1.0 if ``None``.
         normalized : bool
-            Indicates whether head observations were normalized relative to some 
+            Indicates whether head observations were normalized relative to some
             reference level, e.g. heads fluctuate around 0, or whether heads were
             provided in absolute values.
         constant : float or (float, float, float), optional
