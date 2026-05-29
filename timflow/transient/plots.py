@@ -1,11 +1,11 @@
-"""Plot helpers for TTim.
+"""Plot helpers for timflow.transient.
 
-Provides top-view, contours, and tracing visualization functions
-for transient flow simulations.
+Provides contours, vcontours head along line plotting utilities for
+transient flow simulations.
 
 Example::
 
-    ml.plots.topview()
+    ml.plots.contour()
 """
 
 from typing import Literal
@@ -23,13 +23,6 @@ class PlotTransient(PlotBase):
     transient model results.
     """
 
-    def __repr__(self):
-        """Return string representation of Plots submodule."""
-        methods = "".join(
-            [f"\n - {meth}" for meth in dir(self) if not meth.startswith("_")]
-        )
-        return "timflow.transient plots, available methods:" + methods
-
     def head_along_line(
         self,
         x1=0,
@@ -38,7 +31,7 @@ class PlotTransient(PlotBase):
         y2=0,
         npoints=100,
         t=1.0,
-        layers=0,
+        layers=None,
         sstart=0,
         color=None,
         lw=1,
@@ -46,6 +39,7 @@ class PlotTransient(PlotBase):
         ax=None,
         legend=True,
         grid=True,
+        **kwargs,
     ):
         """Plot head along line.
 
@@ -57,8 +51,8 @@ class PlotTransient(PlotBase):
             number of points along line
         t : scalar or array
             times at which to plot heads
-        layers :
-            layers for which to plot heads
+        layers : int, list of ints, optional
+            layers for which to plot heads, default is None, which plots all layers
         sstart : float
             starting distance for cross-section
         color : str
@@ -79,22 +73,22 @@ class PlotTransient(PlotBase):
         ax : matplotlib.Axes
             axes with plot
         """
-        layers = np.atleast_1d(layers)
         t = np.atleast_1d(t)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
         x = np.linspace(x1, x2, npoints)
         y = np.linspace(y1, y2, npoints)
         s = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2) + sstart
-        h = self._ml.headalongline(x, y, t, layers)
+        h = self._ml.headalongline(x, y, t, layers=layers)
+        if layers is None:
+            plotlayers = np.arange(self._ml.aq.naq)
+        else:
+            plotlayers = np.atleast_1d(layers)
         nlayers, ntime, npoints = h.shape
         for i in range(nlayers):
             for j in range(ntime):
-                lbl = f"head (t={t[j]}, layer={layers[i]})"
-                if color is None:
-                    ax.plot(s, h[i, j, :], lw=lw, label=lbl)
-                else:
-                    ax.plot(s, h[i, j, :], color, lw=lw, label=lbl)
+                lbl = f"head (t={t[j]}, layer={plotlayers[i]})"
+                ax.plot(s, h[i, j, :], c=color, lw=lw, label=lbl, **kwargs)
         if legend:
             ax.legend(loc=(0, 1), ncol=3, frameon=False)
         if grid:
@@ -112,19 +106,22 @@ class PlotTransient(PlotBase):
         labels=True,
         decimals=1,
         color=None,
+        cmap=None,
         ax=None,
         figsize=None,
         legend=True,
+        return_contours=False,
         parallel=False,
+        **kwargs,
     ):
-        """Contour plot.
+        """Head contour plot.
 
         Parameters
         ----------
         win : list or tuple
             [x1, x2, y1, y2]
         ngr : scalar, tuple or list
-            if scalar: number of grid points in x and y direction
+            if scalar: number of grid points in x and y directions
             if tuple or list: nx, ny, number of grid points in x and y direction
         t : scalar
             time
@@ -140,6 +137,8 @@ class PlotTransient(PlotBase):
             number of decimals of labels along contours
         color : str or list of strings
             color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
         ax : matplotlib.Axes
             axes to plot on, default is None which creates a new figure
         figsize : tuple of 2 values (default is mpl default)
@@ -147,60 +146,40 @@ class PlotTransient(PlotBase):
         legend : list or boolean (default True)
             add legend to figure
             if list of strings: use strings as names in legend
+        return_contours : bool, optional
+            if True, return list of contour sets for each contoured layer
         parallel : bool, optional
             if True, compute headgrid in parallel using multiple threads,
             default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
 
         Returns
         -------
         ax : matplotlib.Axes
             axes with plot
         """
-        x1, x2, y1, y2 = win
-        if np.isscalar(ngr):
-            nx = ny = ngr
-        else:
-            nx, ny = ngr
-        layers = np.atleast_1d(layers)
-        xg = np.linspace(x1, x2, nx)
-        yg = np.linspace(y1, y2, ny)
-        h = self._ml.headgrid(xg, yg, t, layers, parallel=parallel)
-        if ax is None:
-            _, ax = plt.subplots(figsize=figsize)
-            ax.set_aspect("equal", adjustable="box")
-        # color
-        if color is None:
-            c = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        elif isinstance(color, str):
-            c = len(layers) * [color]
-        elif isinstance(color, list):
-            c = color
-        if len(c) < len(layers):
-            n = np.ceil(self._ml.aq.naq / len(c))
-            c = n * c
-
-        # contour
-        cslist = []
-        cshandlelist = []
-        for i in range(len(layers)):
-            cs = ax.contour(
-                xg, yg, h[i, 0], levels, colors=c[i], negative_linestyles="solid"
-            )
-            cslist.append(cs)
-            handles, _ = cs.legend_elements()
-            cshandlelist.append(handles[0])
-            if labels:
-                fmt = f"%1.{decimals}f"
-                ax.clabel(cs, fmt=fmt)
-        if isinstance(legend, list):
-            ax.legend(cshandlelist, legend, loc=(0, 1), ncol=3, frameon=False)
-        elif legend:
-            legendlist = ["layer " + str(i) for i in layers]
-            ax.legend(cshandlelist, legendlist, loc=(0, 1), ncol=3, frameon=False)
-
-        if layout:
-            self.topview(win=[x1, x2, y1, y2], ax=ax)
-        return ax
+        xg, yg = self._get_xy_arrays(win, ngr)
+        h = self._ml.headgrid(
+            xg, yg, t=t, layers=np.atleast_1d(layers), parallel=parallel
+        )[:, 0, ...]  # squeeze time dimension
+        return self.contour_array(
+            xg,
+            yg,
+            h,
+            layers,
+            levels,
+            color=color,
+            cmap=cmap,
+            figsize=figsize,
+            ax=ax,
+            labels=labels,
+            decimals=decimals,
+            legend=legend,
+            layout=layout,
+            return_contours=return_contours,
+            **kwargs,
+        )
 
     def vcontour(
         self,
@@ -211,12 +190,15 @@ class PlotTransient(PlotBase):
         labels=True,
         decimals=0,
         color=None,
+        cmap=None,
         vinterp=True,
         nudge=1e-6,
-        newfig=True,
+        ax=None,
         figsize=None,
         layout=True,
         horizontal_axis: Literal["x", "y", "s"] = "s",
+        return_contours=False,
+        **kwargs,
     ):
         """Head contour plot in vertical cross-section.
 
@@ -236,13 +218,15 @@ class PlotTransient(PlotBase):
             number of decimals of labels along contours
         color : str or list of strings
             color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
         vinterp : boolean
             when True, interpolate between centers of layers
             when False, constant value vertically in each layer
         nudge : float
-            first value is computed nudge from the specified window
-        newfig : boolean (default True)
-            create new figure
+            small value to nudge grid points away from boundaries
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
         figsize : tuple of 2 values (default is mpl default)
             size of figure
         layout : boolean
@@ -251,46 +235,114 @@ class PlotTransient(PlotBase):
             's' for distance along cross-section on x-axis (default)
             'x' for using x-coordinates on x-axis
             'y' for using y-coordinates on x-axis
+        return_contours : bool
+            if True, return contour set, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
 
         Returns
         -------
         cs : contour set
         """
-        x1, x2, y1, y2 = win
-        xg = np.linspace(x1 + nudge, x2 - nudge, n)
-        yg = np.linspace(y1 + nudge, y2 - nudge, n)
-        h = self._ml.headalongline(xg, yg, t)[:, 0, :]
-        if horizontal_axis == "x":
-            xg = xg
-        elif horizontal_axis == "y":
-            xg = yg
-        elif horizontal_axis == "s":
-            L = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-            xg = np.linspace(0, L, n)
-        else:
-            raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
-        if vinterp:
-            zg = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
-            zg = np.hstack((self._ml.aq.zaqtop[0], zg, self._ml.aq.zaqbot[-1]))
-            h = np.vstack((h[0], h, h[-1]))
-        else:
-            zg = np.empty(2 * self._ml.aq.naq)
-            for i in range(self._ml.aq.naq):
-                zg[2 * i] = self._ml.aq.zaqtop[i]
-                zg[2 * i + 1] = self._ml.aq.zaqbot[i]
-            h = np.repeat(h, 2, 0)
-        if newfig:
-            _, ax = plt.subplots(figsize=figsize)
-        if layout:
-            self.xsection(
-                xy=[(x1, y1), (x2, y2)],
-                labels=False,
-                ax=ax,
-                horizontal_axis=horizontal_axis,
-            )
-        cs = ax.contour(xg, zg, h, levels, colors=color)
-        if labels:
-            fmt = "%1." + str(decimals) + "f"
-            ax.clabel(cs, fmt=fmt)
+        xg, yg = self._get_xy_arrays(win, n, nudge=nudge)
+        h = self._ml.headalongline(xg, yg, t=t)[:, 0, :]
+        return self.vcontour_array(
+            xg,
+            yg,
+            h,
+            levels=levels,
+            labels=labels,
+            decimals=decimals,
+            color=color,
+            cmap=cmap,
+            vinterp=vinterp,
+            ax=ax,
+            figsize=figsize,
+            layout=layout,
+            horizontal_axis=horizontal_axis,
+            return_contours=return_contours,
+            **kwargs,
+        )
 
-        return cs
+    def quiver_xy(
+        self, x, y, z, t, normalize=False, ax=None, figsize=None, parallel=False, **kwargs
+    ):
+        """Quiver plot of velocity field in xy-plane.
+
+        Parameters
+        ----------
+        x, y : 1D arrays
+            coordinates of grid points in x and y directions
+        z : scalar
+            z-coordinate of plane in which to plot velocity field
+        t : scalar
+            time at which to plot velocity field
+        normalize : bool
+            if True, normalize velocity vectors to have length 1
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values
+            size of figure
+        parallel : bool
+            if True, compute velocity grid in parallel using multiple threads,
+            default is False
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        # v has shape (3, nz, ny, nx) ordered as (vx, vy, vz)
+        v = self._ml.velocity_grid(x, y, np.atleast_1d(z), t, parallel=parallel)
+        U = v[0, 0]
+        V = v[1, 0]
+        return super().quiver_xy(
+            x, y, U, V, normalize=normalize, ax=ax, figsize=figsize, **kwargs
+        )
+
+    def quiver_z(
+        self, x, y, z, t, normalize=False, ax=None, figsize=None, parallel=False, **kwargs
+    ):
+        """Quiver plot of velocity field in xz- or yz-plane.
+
+        Parameters
+        ----------
+        x, y : 1D arrays
+            coordinates of grid points in x and y directions
+        z : scalar
+            z-coordinate of plane in which to plot velocity field
+        t : scalar
+            time at which to plot velocity field
+        normalize : bool
+            if True, normalize velocity vectors to have length 1
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values
+            size of figure
+        parallel : bool
+            if True, compute velocity grid in parallel using multiple threads,
+            default is False
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+        if len(x) > 1 and len(y) > 1:
+            raise ValueError(
+                "quiver_z is only implemented along the x-, or y-axis. "
+                "Either x, or y has to have length 1."
+            )
+        # v has shape (3, nz, ny, nx) ordered as (vx, vy, vz)
+        v = self._ml.velocity_grid(x, y, np.atleast_1d(z), t=t, parallel=parallel)
+        U = v[0].squeeze() if len(y) == 1 else v[1].squeeze()
+        W = v[2].squeeze()  # vz
+        return super().quiver_z(
+            x, y, z, U, W, normalize=normalize, ax=ax, figsize=figsize, **kwargs
+        )
