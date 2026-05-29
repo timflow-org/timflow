@@ -445,6 +445,80 @@ class TimModel:
 
         return velo
 
+    def velocity_grid(self, x, y, z, t, show_progress=True, parallel=False):
+        """Compute velocity grid.
+
+        Parameters
+        ----------
+        x : array
+            x values of grid
+        y : array
+            y values of grid
+        z : array
+            z values of grid
+        t : float
+            time for which grid is returned
+        show_progress : bool, optional
+            if `True`, shows progress bar when computing velocity grid, by default `True`
+        parallel : bool, optional
+            if `True`, computes velocity grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vz, vy, vx) at each point in grid,
+            size (3, len(z), len(y), len(x))
+        """
+        if parallel:
+            try:
+                from tqdm.contrib.concurrent import thread_map
+            except ImportError:
+                warn(
+                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
+                    " enable parallel execution. Falling back to serial execution.",
+                    category=ImportWarning,
+                    stacklevel=2,
+                )
+                parallel = False
+                thread_map = None
+
+        def compute(kij):
+            k, i, j = kij
+            try:
+                vv = self.velocomp(x[j], y[i], z[k], t)
+            except ZeroDivisionError:
+                vv = np.full((3,), np.nan)
+            return k, i, j, vv
+
+        nz, ny, nx = len(z), len(y), len(x)
+        v = np.empty((3, nz, ny, nx))
+        if not parallel:
+            for k in range(nz):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(ny):
+                    for j in range(nx):
+                        try:
+                            vv = self.velocomp(x[j], y[i], z[k], t)
+                        except ZeroDivisionError:
+                            vv = np.full((3,), np.nan)
+                        v[:, k, i, j] = vv
+            if show_progress:
+                print("", flush=True)
+        else:
+            results = thread_map(
+                compute,
+                [(k, i, j) for k in range(nz) for i in range(ny) for j in range(nx)],
+                total=nz * nx * ny,
+                desc="velocity grid",
+                disable=not show_progress,
+            )
+            for k, i, j, result in results:
+                v[:, k, i, j] = result
+
+        return v
+
     def velo_one(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer and one time
         vx, vy, vz = self.velocomp(x, y, z, t, aq, layer_ltype)
