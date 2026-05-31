@@ -97,6 +97,7 @@ xg[7] = 0.960289856497536
 
 ######## Bessel function approximations
 
+
 @numba.njit(nogil=True, cache=True)
 def besselk0near(z, Nt):
     """besselk0near.
@@ -188,6 +189,7 @@ def besselk0(x, y, lab):
 
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def besselk1near(z, Nt):
     """besselk1near.
@@ -209,6 +211,7 @@ def besselk1near(z, Nt):
         omega = omega + (a1[n] * log1 + b1[n]) * term
 
     return omega
+
 
 @numba.njit(nogil=True, cache=True)
 def besselk1cheb(z, Nt):
@@ -259,6 +262,7 @@ def besselk1cheb(z, Nt):
 
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def besselk1(x, y, lab):
     """besselk1.
@@ -279,7 +283,9 @@ def besselk1(x, y, lab):
 
     return omega
 
+
 ######## Laplace line-sink potential functions
+
 
 @numba.njit(nogil=True, cache=True)
 def lapls_int_ho(x, y, z1, z2, order):
@@ -321,7 +327,7 @@ def lapls_int_ho(x, y, z1, z2, order):
         )
         omega[p] = -L / (4 * np.pi * (p + 1)) * omega[p]
     return omega.real
-    
+
 
 @numba.njit(nogil=True, cache=True)
 def lapls_gauss_ho(x, y, z1, z2, order):
@@ -352,7 +358,7 @@ def lapls_gauss_ho(x, y, z1, z2, order):
         omega[p] = L / (4 * np.pi) * omega[p]
 
     return omega.real
-    
+
 
 @numba.njit(nogil=True, cache=True)
 def laplacels(x, y, z1, z2, order):
@@ -363,7 +369,9 @@ def laplacels(x, y, z1, z2, order):
         rv = lapls_gauss_ho(x, y, z1, z2, order)
     return rv
 
+
 ######## Laplace line-sink discharge vector functions
+
 
 @numba.njit(nogil=True, cache=True)
 def lapls_int_ho_wdis(x, y, z1, z2, order):
@@ -393,6 +401,7 @@ def lapls_int_ho_wdis(x, y, z1, z2, order):
         wdis[p] = wdis[p] + qm[p + 1] - termzmin + (-1) ** (p + 1) * termzplus
         wdis[p] = L / (2 * np.pi * (z2 - z1) * (p + 1)) * wdis[p]
     return wdis
+
 
 @numba.njit(nogil=True, cache=True)
 def lapls_gauss_ho_wdis(x, y, z1, z2, order):
@@ -425,6 +434,7 @@ def lapls_gauss_ho_wdis(x, y, z1, z2, order):
 
     return W
 
+
 @numba.njit(nogil=True, cache=True)
 def laplacelswdis(x, y, z1, z2, order):
     Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
@@ -434,7 +444,9 @@ def laplacelswdis(x, y, z1, z2, order):
         rv = lapls_gauss_ho_wdis(x, y, z1, z2, order)
     return rv
 
+
 ######## Laplace line-doublet potential functions
+
 
 @numba.njit(nogil=True, cache=True)
 def lapld_int_ho(x, y, z1, z2, order):
@@ -479,6 +491,39 @@ def lapld_int_ho(x, y, z1, z2, order):
     omega = 1.0 / (complex(0.0, 2.0) * np.pi) * (omega + qm)
     return omega
 
+
+@numba.njit(nogil=True, cache=True)
+def lapld_int_ho_d1d2(x, y, z1, z2, order, d1, d2):
+    """lapld_int_ho_d1d2.
+
+    Near field only
+    Returns integral from d1 to d2 along real axis while strength is still
+    Delta^order from -1 to +1
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y,d1,d2
+    complex(kind=8), intent(in) :: z1,z2
+    complex(kind=8), dimension(0:order) :: omega, omegac
+    integer :: n, m
+    real(kind=8) :: xp, yp, dc, fac
+    complex(kind=8) :: z1p,z2p,bigz1,bigz2
+    """
+    omega = np.zeros(order + 1, dtype=np.complex128)
+
+    bigz1 = complex(d1, 0.0)
+    bigz2 = complex(d2, 0.0)
+    z1p = 0.5 * (z2 - z1) * bigz1 + 0.5 * (z1 + z2)
+    z2p = 0.5 * (z2 - z1) * bigz2 + 0.5 * (z1 + z2)
+    omegac = lapld_int_ho(x, y, z1p, z2p, order)
+    dc = (d1 + d2) / (d2 - d1)
+    for n in range(order + 1):
+        for m in range(n + 1):
+            omega[n] = omega[n] + gam[n, m] * dc ** (n - m) * omegac[m]
+        omega[n] = (0.5 * (d2 - d1)) ** n * omega[n]
+
+    return omega
+
+
 @numba.njit(nogil=True, cache=True)
 def lapld_gauss_ho(x, y, z1, z2, order):
     """lapld_gauss_ho.
@@ -508,6 +553,7 @@ def lapld_gauss_ho(x, y, z1, z2, order):
 
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def laplaceld(x, y, z1, z2, order):
     Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
@@ -517,7 +563,9 @@ def laplaceld(x, y, z1, z2, order):
         rv = lapld_gauss_ho(x, y, z1, z2, order)
     return rv
 
+
 ######## Laplace line-doublet discharge vector functions
+
 
 @numba.njit(nogil=True, cache=True)
 def lapld_int_ho_wdis(x, y, z1, z2, order):
@@ -563,6 +611,39 @@ def lapld_int_ho_wdis(x, y, z1, z2, order):
     wdis = -wdis / (np.pi * complex(0.0, 1.0) * (z2 - z1))
     return wdis
 
+
+@numba.njit(nogil=True, cache=True)
+def lapld_int_ho_wdis_d1d2(x, y, z1, z2, order, d1, d2):
+    """lapld_int_ho_wdis_d1d2.
+
+    # Near field only
+    # Returns integral from d1 to d2 along real axis while strength is still
+    # Delta^order from -1 to +1
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y,d1,d2
+    complex(kind=8), intent(in) :: z1,z2
+    complex(kind=8), dimension(0:order) :: wdis, wdisc
+    integer :: n, m
+    real(kind=8) :: xp, yp, dc, fac
+    complex(kind=8) :: z1p,z2p,bigz1,bigz2
+    """
+    wdis = np.zeros(order + 1, dtype=np.complex128)
+
+    bigz1 = complex(d1, 0.0)
+    bigz2 = complex(d2, 0.0)
+    z1p = 0.5 * (z2 - z1) * bigz1 + 0.5 * (z1 + z2)
+    z2p = 0.5 * (z2 - z1) * bigz2 + 0.5 * (z1 + z2)
+    wdisc = lapld_int_ho_wdis(x, y, z1p, z2p, order)
+    dc = (d1 + d2) / (d2 - d1)
+    wdis[0 : order + 1] = 0.0
+    for n in range(order + 1):
+        for m in range(n + 1):
+            wdis[n] = wdis[n] + gam[n, m] * dc ** (n - m) * wdisc[m]
+        wdis[n] = (0.5 * (d2 - d1)) ** n * wdis[n]
+    return wdis
+
+
 @numba.njit(nogil=True, cache=True)
 def laplaceldwdis(x, y, z1, z2, order):
     Z = (2 * (x + y * 1j) - (z1 + z2)) / (z2 - z1)
@@ -571,8 +652,9 @@ def laplaceldwdis(x, y, z1, z2, order):
     else:
         rv = lapld_gauss_ho_wdis(x, y, z1, z2, order)
     return rv
-@numba.njit(nogil=True, cache=True)
 
+
+@numba.njit(nogil=True, cache=True)
 def lapld_gauss_ho_wdis(x, y, z1, z2, order):
     """lapld_gauss_ho_wdis.
 
@@ -602,7 +684,9 @@ def lapld_gauss_ho_wdis(x, y, z1, z2, order):
 
     return W
 
+
 ######## Functions to be used in Bessel line elements
+
 
 @numba.njit(nogil=True, cache=True)
 def isinside(z1, z2, zc, R):
@@ -625,6 +709,7 @@ def isinside(z1, z2, zc, R):
         if (xa < Lover2) and (xb > -Lover2):
             irv = 1
     return irv
+
 
 @numba.njit(nogil=True, cache=True)
 def find_d1d2(z1, z2, zc, R):
@@ -655,6 +740,7 @@ def find_d1d2(z1, z2, zc, R):
             else:
                 d2 = xb / Lover2
     return d1, d2
+
 
 @numba.njit(nogil=True, cache=True)
 def Fp(x, y, z1, z2, biga, order, d1, d2, a, b, nt):
@@ -736,6 +822,7 @@ def Fp(x, y, z1, z2, biga, order, d1, d2, a, b, nt):
 
 ######## Bessel line-sink potential functions
 
+
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
     """Docs.
@@ -752,6 +839,7 @@ def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
 
     omega = Fp(x, y, z1, z2, biga, order, d1, d2, ahat, bhat, nt)
     return -L / (4 * np.pi) * omega
+
 
 @numba.njit(nogil=True, cache=True)
 def bessells_gauss_ho(x, y, z1, z2, lab, order):
@@ -786,6 +874,7 @@ def bessells_gauss_ho(x, y, z1, z2, lab, order):
 
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
     """Returns integral from d1 to d2 along real axis.
@@ -814,6 +903,7 @@ def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
         omega[n] = (0.5 * (d2 - d1)) ** n * omega[n]
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def bessellsv2(x, y, z1, z2, lab, order, R):
     """bessellsv2.
@@ -836,6 +926,7 @@ def bessellsv2(x, y, z1, z2, lab, order, R):
     for n in range(nlab):
         omega[: nterms + 1, n] = bessells(x, y, z1, z2, lab[n], order, d1, d2)
     return omega
+
 
 @numba.njit(nogil=True, cache=True)
 def bessells(x, y, z1, z2, lab, order, d1in, d2in):
@@ -881,7 +972,9 @@ def bessells(x, y, z1, z2, lab, order, d1in, d2in):
                 omega = omega + bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2)
     return omega
 
+
 ######## Bessel line-sink discharge vector functions
+
 
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
@@ -921,6 +1014,55 @@ def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz)
     return qxqy
 
+
+@numba.njit(nogil=True, cache=True)
+def bessells_gauss_ho_qxqy(x, y, z1, z2, lab, order):
+    """bessells_gauss_ho_qxqy.
+
+    implicit none
+    integer, intent(in) :: order
+    real(kind=8), intent(in) :: x,y
+    complex(kind=8), intent(in) :: z1,z2
+    complex(kind=8), intent(in) :: lab
+    complex(kind=8), dimension(0:2*order+1) :: qxqy
+    integer :: n, p
+    real(kind=8) :: L, bigy, angz
+    complex(kind=8) :: bigz, biglab
+    real(kind=8), dimension(8) :: r, xmind
+    complex(kind=8), dimension(8) :: k1
+    complex(kind=8), dimension(0:order) :: qx,qy
+    """
+    qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
+    xmind = np.zeros(8, dtype=np.complex128)
+    k1 = np.zeros(8, dtype=np.complex128)
+    r = np.zeros(8, dtype=np.complex128)
+
+    L = np.abs(z2 - z1)
+    biglab = 2 * lab / L
+    bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+    bigy = bigz.imag
+    for n in range(8):
+        xmind[n] = bigz.real - xg[n]
+        r[n] = np.sqrt(xmind[n] ** 2 + bigz.imag**2)
+        k1[n] = besselk1(xmind[n], bigz.imag, biglab)
+
+    qx = np.zeros(order + 1, dtype=np.complex128)
+    qy = np.zeros(order + 1, dtype=np.complex128)
+    for p in range(order + 1):
+        for n in range(8):
+            qx[p] = qx[p] + wg[n] * xg[n] ** p * xmind[n] * k1[n] / r[n]
+            qy[p] = qy[p] + wg[n] * xg[n] ** p * bigy * k1[n] / r[n]
+
+    qx = -qx * L / (4 * np.pi * biglab) * 2 / L
+    qy = -qy * L / (4 * np.pi * biglab) * 2 / L
+
+    angz = np.arctan2((z2 - z1).imag, (z2 - z1).real)
+    qxqy[0 : order + 1] = qx * np.cos(angz) - qy * np.sin(angz)
+    qxqy[order + 1 : 2 * order + 2] = qx * np.sin(angz) + qy * np.cos(angz)
+
+    return qxqy
+
+
 @numba.njit(nogil=True, cache=True)
 def bessells_gauss_ho_qxqy_d1d2(x, y, z1, z2, lab, order, d1, d2):
     """Returns integral from d1 to d2 along real axis.
@@ -955,6 +1097,7 @@ def bessells_gauss_ho_qxqy_d1d2(x, y, z1, z2, lab, order, d1, d2):
 
     return qxqy
 
+
 @numba.njit(nogil=True, cache=True)
 def bessellsqxqyv2(x, y, z1, z2, lab, order, R):
     """bessellsqxqyv2.
@@ -980,6 +1123,7 @@ def bessellsqxqyv2(x, y, z1, z2, lab, order, R):
         qxqy[:nterms, n] = qxqylab[0 : order + 1]
         qxqy[nterms : 2 * nterms, n] = qxqylab[order + 1 : 2 * (order + 1)]
     return qxqy
+
 
 @numba.njit(nogil=True, cache=True)
 def bessellsqxqy(x, y, z1, z2, lab, order, d1in, d2in):
@@ -1033,6 +1177,7 @@ def bessellsqxqy(x, y, z1, z2, lab, order, d1in, d2in):
 
 ######## Bessel line-doublet potential functions
 
+
 @numba.njit(nogil=True, cache=True)
 def besselld_int_ho(x, y, z1, z2, lab, order, d1, d2):
     """Docs.
@@ -1059,6 +1204,7 @@ def besselld_int_ho(x, y, z1, z2, lab, order, d1, d2):
     )
 
     return rv
+
 
 @numba.njit(nogil=True, cache=True)
 def besselld_gauss_ho(x, y, z1, z2, lab, order):
@@ -1092,6 +1238,7 @@ def besselld_gauss_ho(x, y, z1, z2, lab, order):
         omega[p] = bigz.imag / (2.0 * np.pi * biglab) * omega[p]
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def besselld_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
     """besselld_gauss_ho_d1d2.
@@ -1122,6 +1269,7 @@ def besselld_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
         omega[n] = (0.5 * (d2 - d1)) ** n * omega[n]
     return omega
 
+
 @numba.njit(nogil=True, cache=True)
 def besselldv2(x, y, z1, z2, lab, order, R):
     """besselldv2.
@@ -1146,6 +1294,7 @@ def besselldv2(x, y, z1, z2, lab, order, R):
         omega[: nterms + 1, n] = besselld(x, y, z1, z2, lab[n], order, d1, d2)
 
     return omega
+
 
 @numba.njit(nogil=True, cache=True)
 def besselld(x, y, z1, z2, lab, order, d1in, d2in):
@@ -1192,7 +1341,9 @@ def besselld(x, y, z1, z2, lab, order, d1in, d2in):
                 omega = omega + besselld_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2)
     return omega
 
+
 ######## Bessel line-doublet discharge vector functions
+
 
 @numba.njit(nogil=True, cache=True)
 def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
@@ -1237,7 +1388,7 @@ def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz) - wlap.imag
     return qxqy
 
-    
+
 @numba.njit(nogil=True, cache=True)
 def besselld_gauss_ho_qxqy(x, y, z1, z2, lab, order):
     """besselld_gauss_ho_qxqy.
@@ -1327,6 +1478,7 @@ def besselld_gauss_ho_qxqy_d1d2(x, y, z1, z2, lab, order, d1, d2):
 
     return qxqy
 
+
 @numba.njit(nogil=True, cache=True)
 def besselldqxqyv2(x, y, z1, z2, lab, order, R):
     """besselldqxqyv2.
@@ -1352,6 +1504,7 @@ def besselldqxqyv2(x, y, z1, z2, lab, order, R):
         qxqy[:nterms, n] = qxqylab[0 : order + 1]
         qxqy[nterms : 2 * nterms, n] = qxqylab[order + 1 : 2 * order + 1 + 1]
     return qxqy
+
 
 @numba.njit(nogil=True, cache=True)
 def besselldqxqy(x, y, z1, z2, lab, order, d1in, d2in):
@@ -1404,7 +1557,9 @@ def besselldqxqy(x, y, z1, z2, lab, order, d1in, d2in):
                 )
     return qxqy
 
+
 ######## Line element functions for use in timflow.steady
+
 
 @numba.njit(nogil=True, cache=True)
 def potbeslsv(x, y, z1, z2, lab, order, ilap, naq, R=8):
