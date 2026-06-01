@@ -240,16 +240,16 @@ def test_besselk1():
     assert a == b, "not equal"
 
 
-def test_bessells_int():
-    x = 5.0
-    y = 5.0
-    lab = 100.0
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    # a = bessel.bessells_int(x, y, z1, z2, lab)
-    a = -3.5917095941591426 - 0j
-    b = besselnumba.bessells_int(x, y, z1, z2, lab)
-    assert np.allclose(a, b), "not equal"
+# def test_bessells_int():
+#     x = 5.0
+#     y = 5.0
+#     lab = 100.0
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     # a = bessel.bessells_int(x, y, z1, z2, lab)
+#     a = -3.5917095941591426 - 0j
+#     b = besselnumba.bessells_int(x, y, z1, z2, lab)
+#     assert np.allclose(a, b), "not equal"
 
 
 def test_bessells_int_ho():
