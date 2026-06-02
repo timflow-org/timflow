@@ -162,33 +162,7 @@ class Xsection(AquiferData):
 
     def create_elements(self):
         """Create linesinks to meet the continuity conditions the at the boundaries."""
-        if (self.x1 == -np.inf) and (self.x2 == np.inf):
-            # no reason to add elements
-            pass
-        # HeadDiff on right side, FluxDiff on left side
-        elif self.x1 == -np.inf:
-            xin = self.x2 - self.tiny
-            # xoutright = self.x2 + self.tiny
-            aqin = self.model.aq.find_aquifer_data(xin, 0)
-            # aqoutright = self.model.aq.find_aquifer_data(xoutright, 0)
-            if self.addlinesinks:
-                HeadDiffLineSink1D(
-                    self.model,
-                    self.x2,
-                    layers=range(self.naq),
-                    aq=aqin,
-                    label=None,
-                )
-        elif self.x2 == np.inf:
-            xin = self.x1 + self.tiny
-            # xoutleft = self.x1 - self.tiny
-            aqin = self.model.aq.find_aquifer_data(xin, 0)
-            # aqoutleft = self.model.aq.find_aquifer_data(xoutleft, 0)
-            if self.addlinesinks:
-                FluxDiffLineSink1D(
-                    self.model, self.x1, range(self.naq), aq=aqin, label=None
-                )
-        else:
+        if np.isfinite(self.x1) and np.isfinite(self.x2):
             xin = 0.5 * (self.x1 + self.x2)
             # xoutleft = self.x1 - self.tiny
             # xoutright = self.x2 + self.tiny
@@ -201,6 +175,29 @@ class Xsection(AquiferData):
                 )
                 FluxDiffLineSink1D(
                     self.model, self.x1, range(self.naq), label=None, aq=aqin
+                )
+        # HeadDiff on right side, FluxDiff on left side
+        elif np.isneginf(self.x1) and not np.isposinf(self.x2):
+            xin = self.x2 - self.tiny
+            # xoutright = self.x2 + self.tiny
+            aqin = self.model.aq.find_aquifer_data(xin, 0)
+            # aqoutright = self.model.aq.find_aquifer_data(xoutright, 0)
+            if self.addlinesinks:
+                HeadDiffLineSink1D(
+                    self.model,
+                    self.x2,
+                    layers=range(self.naq),
+                    aq=aqin,
+                    label=None,
+                )
+        elif np.isposinf(self.x2) and not np.isneginf(self.x1):
+            xin = self.x1 + self.tiny
+            # xoutleft = self.x1 - self.tiny
+            aqin = self.model.aq.find_aquifer_data(xin, 0)
+            # aqoutleft = self.model.aq.find_aquifer_data(xoutleft, 0)
+            if self.addlinesinks:
+                FluxDiffLineSink1D(
+                    self.model, self.x1, range(self.naq), aq=aqin, label=None
                 )
         if self.tsandN is not None:
             assert self.topboundary[:3] == "con" or self.topboundary[:3] == "phr", (

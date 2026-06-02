@@ -1096,8 +1096,10 @@ class ModelXsection(TimModel):
         if not check.all():
             raise ValueError(f"Number of aquifers does not match {self.aq.naq}:\n{naqs}")
         # check -inf to inf
-        xmin = min([inhom.x1 for inhom in self.aq.inhomdict.values()])
-        xmax = max([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        xmin = x1list.min()
+        xmax = x2list.max()
         if not (np.isinf(xmin) and np.sign(xmin) < 0):
             raise ValueError(
                 f"XsectionModel boundary error: left-most boundary must be at x=-np.inf, "
@@ -1113,6 +1115,16 @@ class ModelXsection(TimModel):
                 f"(Model may consist of multiple Xsections, but their combined "
                 f"domain must span from -∞ to +∞)"
             )
+        # check domain for gaps
+        if not np.allclose(x1list[1:], x2list[:-1]):
+            mask = (x1list[1:] - x2list[:-1]) > 1e-10
+            x1missing = x1list[1:][mask]
+            x2missing = x2list[:-1][mask]
+            msg = [f"{ix1}-{ix2}" for ix1, ix2 in zip(x2missing, x1missing, strict=True)]
+            raise ValueError(
+                "XsectionModel boundary error: missing section(s) between: "
+                + ", ".join(msg)
+            )
 
         # # shared boundary check
         # # NOTE: does not deal with nested inhoms
@@ -1123,6 +1135,27 @@ class ModelXsection(TimModel):
         # if not np.all(np.diff(xcoords[1:-1])[::2] < 1e-10):
         #     raise ValueError("Not all inhomogeneities have shared boundaries.")
 
+    def check_elements(self):
+        """Check elements.
+
+        Checks that no elements are located exactly on the boundaries between
+        inhomogeneities.
+        """
+        x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        elements = [e for e in self.elementlist if not e.inhomelement]
+        mask = np.isin([e.xc.squeeze() for e in elements], x1list) | np.isin(
+            [e.xc.squeeze() for e in elements], x2list
+        )
+        if mask.any():
+            elems = [str(e) for e, m in zip(elements, mask, strict=True) if m]
+            raise ValueError(
+                "Elements cannot be located exactly on the boundaries between "
+                "inhomogeneities.\nConsider nudging the location(s) of the following "
+                "element(s) (by e.g. 1e-6):\n- " + "\n- ".join(elems)
+            )
+
     def initialize(self):
         self.check_inhoms()
         super().initialize()
+        self.check_elements()

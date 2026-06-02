@@ -17,7 +17,7 @@ def param_maq(
     poraq=[0.3],
     porll=[0.3],
     topboundary="conf",
-    phreatictop=False,
+    phreatictop=False,  # deprecated
 ):
     # Computes the parameters for a TimModel from input for a maq model
     z = np.atleast_1d(z).astype(float)
@@ -29,9 +29,7 @@ def param_maq(
     porll = np.atleast_1d(porll).astype(float)
     leffaq = np.atleast_1d(leffaq).astype(float)
     H = z[:-1] - z[1:]
-    assert np.all(H >= 0), (
-        "Error: Not all layer thicknesses are" + " non-negative" + str(H)
-    )
+    assert np.all(H >= 0), "Error: Not all layer thicknesses are non-negative" + str(H)
     if topboundary[:3] == "con" or topboundary[:3] == "phr":
         assert len(z) % 2 == 0, (
             "Error: Length of z must be 2 * number of aquifers "
@@ -57,14 +55,10 @@ def param_maq(
         assert len(Sll) == naq - 1, "Error: Length of Sll needs to be " + str(naq - 1)
         assert len(porll) == naq - 1, "Error: Length of porll needs to be " + str(naq - 1)
         Haq = H[::2]
-        assert np.all(Haq > 0), (
-            "Error: Some thicknesses of aquifer layers " + "are negative"
-        )
+        assert np.all(Haq > 0), "Error: Some thicknesses of aquifer layers are negative"
         Hll = H[1::2]
         Hll = np.maximum(Hll, 1e-20)  # make sure none are negative
-        assert np.all(Hll > 0), (
-            "Error: Some thicknesses of leaky layers " + "are negative"
-        )
+        assert np.all(Hll > 0), "Error: Some thicknesses of leaky layers are negative"
         c = np.hstack((1e100, c))
         Sll = np.hstack((1e-20, Sll))
         Hll = np.hstack((1e-20, Hll))
@@ -76,7 +70,7 @@ def param_maq(
     else:  # leaky layers on top
         assert len(z) % 2 == 1, (
             "Error: Length of z must be 2 * number of aquifers + 1 "
-            "when topboundary is leaky in MaqModel"
+            "when topboundary is leaky in ModelMaq"
         )
         naq = int((len(z) - 1) / 2)
         if len(kaq) == 1:
