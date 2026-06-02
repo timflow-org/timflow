@@ -22,6 +22,7 @@ from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
+from timflow.version import check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
@@ -265,9 +266,9 @@ class Model:
 
         Parameters
         ----------
-        xg : array
+        xg : 1d-array
             x values of grid
-        yg : array
+        yg : 1d-array
             y values of grid
         layers : integer, list or array, optional
             layers for which grid is returned
@@ -298,19 +299,10 @@ class Model:
             )
             show_progress = printrow
 
-        if parallel:
-            try:
-                from tqdm.contrib.concurrent import thread_map
-            except ImportError:
-                warnings.warn(
-                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
-                    " enable parallel execution. Falling back to serial execution.",
-                    category=ImportWarning,
-                    stacklevel=2,
-                )
-                parallel = False
-                thread_map = None
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
 
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
         nx, ny = len(xg), len(yg)
         if layers is None:
             Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
@@ -337,6 +329,7 @@ class Model:
                 total=nx * ny,
                 desc="headgrid",
                 disable=not show_progress,
+                tqdm_class=tqdm,
             )
             for i, j, result in results:
                 h[:, j, i] = result
@@ -420,6 +413,76 @@ class Model:
         for i in range(nx):
             h[:, i] = self.head(xg[i], yg[i], layers)
         return h
+
+    def disvecgrid(
+        self,
+        xg,
+        yg,
+        layers=None,
+        show_progress=True,
+        parallel=False,
+    ):
+        """Compute grid of discharge vectors.
+
+        Parameters
+        ----------
+        xg : 1d-array
+            x values of grid
+        yg : 1d-array
+            y values of grid
+        layers : integer, list or array, optional
+            layers for which grid is returned
+        show_progress : bool
+            show computation progress, by printing dots per row or with tqdm progressbar
+            when parallel is True. Default is True.
+        parallel : bool, optional
+            if `True`, computes discharge vector grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        qx : array size (Nlayers, ny, nx)
+            x component of discharge vector at each point in grid
+        qy : array size (Nlayers, ny, nx)
+            y component of discharge vector at each point in grid
+        """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        nx, ny = len(xg), len(yg)
+        if layers is None:
+            Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
+        else:
+            Nlayers = len(np.atleast_1d(layers))
+        qx = np.empty((Nlayers, ny, nx))
+        qy = np.empty((Nlayers, ny, nx))
+        if not parallel:
+            for j in range(ny):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(nx):
+                    qx[:, j, i], qy[:, j, i] = self.disvec(xg[i], yg[j], layers)
+            if show_progress:
+                print("", flush=True)
+        else:
+
+            def compute(ij):
+                i, j = ij
+                return i, j, self.disvec(xg[i], yg[j], layers)
+
+            results = thread_map(
+                compute,
+                [(i, j) for j in range(ny) for i in range(nx)],
+                total=nx * ny,
+                desc="disvecgrid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for i, j, result in results:
+                qx[:, j, i], qy[:, j, i] = result
+
+        return qx, qy
 
     def disvecalongline(self, x, y, layers=None):
         """Compute discharge vector along line.
@@ -507,16 +570,16 @@ class Model:
         """
         return self.velocomp(x, y, z)
 
-    def velocity_grid(self, x, y, z, show_progress=True, parallel=False):
+    def velocity_grid(self, xg, yg, zg, show_progress=True, parallel=False):
         """Compute velocity grid.
 
         Parameters
         ----------
-        x : array
+        xg : 1d-array
             x values of grid
-        y : array
+        yg : 1d-array
             y values of grid
-        z : array
+        zg : 1d-array
             z values of grid
         parallel : bool, optional
             if `True`, computes velocity grid in parallel using multi threading,
@@ -528,28 +591,20 @@ class Model:
             velocity vector (vz, vy, vx) at each point in grid,
             size (3, len(z), len(y), len(x))
         """
-        if parallel:
-            try:
-                from tqdm.contrib.concurrent import thread_map
-            except ImportError:
-                warnings.warn(
-                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
-                    " enable parallel execution. Falling back to serial execution.",
-                    category=ImportWarning,
-                    stacklevel=2,
-                )
-                parallel = False
-                thread_map = None
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
 
         def compute(kij):
             k, i, j = kij
             try:
-                vv = self.velocomp(x[j], y[i], z[k])
+                vv = self.velocomp(xg[j], yg[i], zg[k])
             except ZeroDivisionError:
                 vv = np.full((3,), np.nan)
             return k, i, j, vv
 
-        nz, ny, nx = len(z), len(y), len(x)
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        zg = np.atleast_1d(zg)
+        nz, ny, nx = len(zg), len(yg), len(xg)
         v = np.empty((3, nz, ny, nx))
         if not parallel:
             for k in range(nz):
@@ -558,7 +613,7 @@ class Model:
                 for i in range(ny):
                     for j in range(nx):
                         try:
-                            vv = self.velocomp(x[j], y[i], z[k])
+                            vv = self.velocomp(xg[j], yg[i], zg[k])
                         except ZeroDivisionError:
                             vv = np.full((3,), np.nan)
                         v[:, k, i, j] = vv
@@ -571,6 +626,7 @@ class Model:
                 total=nz * nx * ny,
                 desc="velocity grid",
                 disable=not show_progress,
+                tqdm_class=tqdm,
             )
             for k, i, j, result in results:
                 v[:, k, i, j] = result
