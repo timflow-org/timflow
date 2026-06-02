@@ -24,6 +24,7 @@ from timflow.transient.linesink import (
     HeadLineSinkString,  # deprecated
     LineSink,
     LineSinkDitchString,  # deprecated
+    LineSinkHo,
     River,
     RiverHo,
     RiverString,
