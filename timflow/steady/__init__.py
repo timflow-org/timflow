@@ -45,17 +45,18 @@ from timflow.steady.linesink import (
     Ditch,
     DitchString,
     HeadLineSink,  # Deprecated alias for River
-    # HeadLineSinkContainer,
     HeadLineSinkString,  # Deprecated alias for RiverString
-    # HeadLineSinkZero,
-    LineSinkBase,
     LineSinkDitch,  # Deprecated alias for Ditch
     LineSinkDitchString,  # Deprecated alias for DitchString
     RadialCollectorWell,
     River,
     RiverString,
 )
-from timflow.steady.linesink1d import HeadLineSink1D, LineSink1D, River1D
+from timflow.steady.linesink1d import (
+    HeadLineSink1D,  # Deprecated alias for River1D
+    LineSink1D,
+    River1D,
+)
 from timflow.steady.model import Model, Model3D, ModelMaq, ModelXsection
 from timflow.steady.stripareasink import XsectionAreaSink
 from timflow.steady.trace import timtraceline, timtracelines, traceline, tracelines
@@ -63,11 +64,8 @@ from timflow.steady.uflow import Uflow
 from timflow.steady.well import (
     HeadWell,
     HeadWellString,
-    LargeDiameterWell,
     TargetHeadWell,
     TargetHeadWellString,
     Well,
-    WellBase,
     WellString,
-    WellStringBase,
 )

@@ -231,6 +231,10 @@ class Element(ABC):
         t : scalar, list or array
             times at which discharge is computed.
             t must be ordered and tmin <= t <= tmax
+        derivative : when derivative=0, returns discharge (default)
+                     when derivative=1, returns derivative of the discharge
+                     when derivative=-1, returns integrated discharge
+
 
         Returns
         -------

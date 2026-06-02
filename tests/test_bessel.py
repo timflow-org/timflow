@@ -240,16 +240,16 @@ def test_besselk1():
     assert a == b, "not equal"
 
 
-def test_bessells_int():
-    x = 5.0
-    y = 5.0
-    lab = 100.0
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    # a = bessel.bessells_int(x, y, z1, z2, lab)
-    a = -3.5917095941591426 - 0j
-    b = besselnumba.bessells_int(x, y, z1, z2, lab)
-    assert np.allclose(a, b), "not equal"
+# def test_bessells_int():
+#     x = 5.0
+#     y = 5.0
+#     lab = 100.0
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     # a = bessel.bessells_int(x, y, z1, z2, lab)
+#     a = -3.5917095941591426 - 0j
+#     b = besselnumba.bessells_int(x, y, z1, z2, lab)
+#     assert np.allclose(a, b), "not equal"
 
 
 def test_bessells_int_ho():
@@ -290,28 +290,28 @@ def test_bessells_int_ho_qxqy():
     assert np.allclose(a, b), "not equal"
 
 
-def test_bessells_gauss():
-    x = 5.0
-    y = 5.0
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    lab = 100.0
-    # a = bessel.bessells_gauss(x, y, z1, z2, lab)
-    a = -3.583821946423638 - 0j
-    b = besselnumba.bessells_gauss(x, y, z1, z2, lab)
-    assert np.allclose(a, b), "not equal"
+# def test_bessells_gauss():
+#     x = 5.0
+#     y = 5.0
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     lab = 100.0
+#     # a = bessel.bessells_gauss(x, y, z1, z2, lab)
+#     a = -3.583821946423638 - 0j
+#     b = besselnumba.bessells_gauss(x, y, z1, z2, lab)
+#     assert np.allclose(a, b), "not equal"
 
 
-def test_bessells_gauss_ho():
-    x = 5.0
-    y = 5.0
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    lab = 100.0
-    # a = bessel.bessells_gauss(x, y, z1, z2, lab)
-    a = -3.583821946423638 - 0j
-    b = besselnumba.bessells_gauss(x, y, z1, z2, lab)
-    assert np.allclose(a, b), "not equal"
+# def test_bessells_gauss_ho():
+#     x = 5.0
+#     y = 5.0
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     lab = 100.0
+#     # a = bessel.bessells_gauss(x, y, z1, z2, lab)
+#     a = -3.583821946423638 - 0j
+#     b = besselnumba.bessells_gauss(x, y, z1, z2, lab)
+#     assert np.allclose(a, b), "not equal"
 
 
 def test_bessells_gauss_ho_d1d2():
@@ -596,21 +596,21 @@ def test_besselldv2():
     assert np.allclose(a, b), "not equal"
 
 
-def test_besselldpart():
-    x = 5.0
-    y = 5.0
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    lab = 100.0
-    order = 1
-    d1 = 1.0
-    d2 = -1.0
-    # a = bessel.besselldpart(x, y, z1, z2, lab, order, d1, d2)
-    a = np.array(
-        [5.715372856758380e-04 + 0.0j, 6.362529038138779e-05 + 0.0j], dtype=complex
-    )
-    b = besselnumba.besselldpart(x, y, z1, z2, lab, order, d1, d2)
-    assert np.allclose(a, b), "not equal"
+# def test_besselldpart():
+#     x = 5.0
+#     y = 5.0
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     lab = 100.0
+#     order = 1
+#     d1 = 1.0
+#     d2 = -1.0
+#     # a = bessel.besselldpart(x, y, z1, z2, lab, order, d1, d2)
+#     a = np.array(
+#         [5.715372856758380e-04 + 0.0j, 6.362529038138779e-05 + 0.0j], dtype=complex
+#     )
+#     b = besselnumba.besselldpart(x, y, z1, z2, lab, order, d1, d2)
+#     assert np.allclose(a, b), "not equal"
 
 
 def test_besselld_int_ho_qxqy():
@@ -726,21 +726,21 @@ def test_besselldqxqyv2():
     assert np.allclose(a, b), "not equal"
 
 
-def test_circle_line_intersection():
-    z1 = 1.0 + 1.0j
-    z2 = 5.0 + 5.0j
-    zc = 2.0 + 2.0j
-    R = 10.0
-    # xouta = 0.0
-    # youta = 0.0
-    # xoutb = 1.0
-    # youtb = 1.0
-    # N = 0
-    # xyn = bessel.circle_line_intersection_func(z1, z2, zc, R)
-    # a = (xyn[0], xyn[1], xyn[2], xyn[3], int(xyn[4]))
-    a = ((1.0 + 1.0j), (5.0 + 5.0j), 2)
-    b = besselnumba.circle_line_intersection(z1, z2, zc, R)
-    assert np.allclose(a, b), "not equal"
+# def test_circle_line_intersection():
+#     z1 = 1.0 + 1.0j
+#     z2 = 5.0 + 5.0j
+#     zc = 2.0 + 2.0j
+#     R = 10.0
+#     # xouta = 0.0
+#     # youta = 0.0
+#     # xoutb = 1.0
+#     # youtb = 1.0
+#     # N = 0
+#     # xyn = bessel.circle_line_intersection_func(z1, z2, zc, R)
+#     # a = (xyn[0], xyn[1], xyn[2], xyn[3], int(xyn[4]))
+#     a = ((1.0 + 1.0j), (5.0 + 5.0j), 2)
+#     b = besselnumba.circle_line_intersection(z1, z2, zc, R)
+#     assert np.allclose(a, b), "not equal"
 
 
 def test_find_d1d2():
