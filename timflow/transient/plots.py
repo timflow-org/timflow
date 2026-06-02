@@ -101,6 +101,86 @@ class PlotTransient(PlotBase):
             ax.grid(True)
         return ax
 
+    def discharge_along_line(
+        self,
+        x1=0,
+        x2=1,
+        y1=0,
+        y2=0,
+        npoints=100,
+        t=1.0,
+        layers=0,
+        sstart=0,
+        color=None,
+        lw=1,
+        figsize=None,
+        ax=None,
+        legend=True,
+        grid=True,
+    ):
+        """Plot head along line.
+
+        Parameters
+        ----------
+        x1, x2, y1, y2 : float
+            start and end coordinates of line
+        npoints : int
+            number of points along line
+        t : scalar or array
+            times at which to plot discharge
+        layers :
+            layers for which to plot discharge
+        sstart : float
+            starting distance for cross-section
+        color : str
+            color of line
+        lw : float
+            line width
+        figsize : tuple of 2 values
+            size of figure
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        legend : bool
+            add legend to plot
+        grid : bool
+            add grid to plot
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        layers = np.atleast_1d(layers)
+        t = np.atleast_1d(t)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+        x = np.linspace(x1, x2, npoints)
+        y = np.linspace(y1, y2, npoints)
+        s = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2) + sstart
+        qx, qy = self._ml.disvecalongline(x, y, t, layers)
+        if x1 == x2:
+            direction = "y"
+            qs = qy
+        elif y1 == y2:
+            direction = "x"
+            qs = qx
+        else:
+            direction = "s"
+            qs = np.sqrt(qx**2 + qy**2)
+        nlayers, ntime, npoints = qx.shape
+        for i in range(nlayers):
+            for j in range(ntime):
+                lbl = f"q$_{direction}$ (t={t[j]}, layer={layers[i]})"
+                if color is None:
+                    ax.plot(s, qs[i, j, :], lw=lw, label=lbl)
+                else:
+                    ax.plot(s, qs[i, j, :], color, lw=lw, label=lbl)
+        if legend:
+            ax.legend(loc=(0, 1), ncol=3, frameon=False)
+        if grid:
+            ax.grid(True)
+        return ax
+
     def contour(
         self,
         win,
