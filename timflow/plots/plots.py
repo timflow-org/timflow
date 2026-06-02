@@ -88,6 +88,7 @@ class PlotBase:
         fmt=None,
         units=None,
         hstar=None,
+        boundaries=True,
         horizontal_axis: Literal["x", "y", "s"] = "s",
         sep: Literal[", ", "\n"] = ", ",
         **kwargs,
@@ -124,6 +125,9 @@ class PlotBase:
             override hstar value for plotting water level in transient
             1D inhomogeneities that use hstar, useful for plotting pretty
             cross-sections when reference level is not equal to 0.
+        boundaries : bool, optional
+            whether to plot aquifer boundaries for cross-section models,
+            default is True
         sep : str
             Separator between parameters, either ", " or "\n"
         **kwargs
@@ -151,6 +155,7 @@ class PlotBase:
                 fmt=fmt,
                 units=units,
                 hstar=hstar,
+                boundaries=boundaries,
                 sep=sep,
             )
 
@@ -270,6 +275,7 @@ class PlotBase:
         fmt,
         units=None,
         hstar=None,
+        boundaries=True,
         sep: Literal[", ", "\n"] = ", ",
     ):
         """Handle cross-section plotting for SimpleAquifer models."""
@@ -324,7 +330,8 @@ class PlotBase:
             if isinstance(e, HstarXsection):
                 e.plot(ax=ax, hstar=hstar)
             else:
-                e.plot(ax=ax)
+                if not e.inhomelement or boundaries:
+                    e.plot(ax=ax)
 
         return ax
 
@@ -340,7 +347,7 @@ class PlotBase:
         units,
         sep: Literal[", ", "\n"] = ", ",
     ):
-        """Plot inhomogeneities for SimpleAquifer models.
+        r"""Plot inhomogeneities for SimpleAquifer models.
 
         Parameters
         ----------
@@ -359,6 +366,8 @@ class PlotBase:
         units : dict or None
             Dictionary of units for parameters (unused in transient, kept for
             compatibility)
+        sep : str, optional
+            Separator between parameters, either ", " or "\n"
         """
         for inhom in self._ml.aq.inhomdict.values():
             inhom.plot(
