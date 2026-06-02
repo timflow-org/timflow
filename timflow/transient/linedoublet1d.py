@@ -158,7 +158,7 @@ class LineDoublet1DBase(Element):
 
 
 class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
-    r"""Leaky line doublet with specified resistance.
+    r"""Leaky wall with specified resistance.
 
     Parameters
     ----------
@@ -166,8 +166,9 @@ class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
         model to which the element is added
     xld : float
         x-coordinate of the line doublet
-    res : float
-        resistance of the line doublet
+    res : float or str
+        resistance of the line doublet, default is "imp" for impermeable,
+        use float to specify a finite resistance.
     layers : int, array or list
         layer (int) or layers (list or array) in which line doublet is located
     label : string or None (default: None)
@@ -191,6 +192,31 @@ class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
         super().initialize()
         self.parameters = np.zeros(
             (self.model.ngvbc, self.nparam, self.model.npval), dtype=complex
+        )
+
+
+class ImpermeableWall1D(LeakyWall1D):
+    """Impermeable wall.
+
+    Parameters
+    ----------
+    model : Model object
+        model to which the element is added
+    xld : float
+        x-coordinate of the line doublet
+    layers : int, array or list
+        layer (int) or layers (list or array) in which line doublet is located
+    label : string or None (default: None)
+        label of the element
+    """
+
+    def __init__(self, model, xld=0, layers=0, label=None):
+        super().__init__(
+            model,
+            xld,
+            res="imp",
+            layers=layers,
+            label=label,
         )
 
 
