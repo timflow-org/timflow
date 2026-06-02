@@ -1383,3 +1383,171 @@ class Calibrate:
             )
             base += "_" + "_".join(inhom_names)
         return base
+
+    @staticmethod
+    def _nse(h_obs: np.ndarray, h_mod: np.ndarray) -> float:
+        """Compute the Nash-Sutcliffe Efficiency (NSE).
+
+        NSE = 1 - Σ(h_obs - h_mod)² / Σ(h_obs - mean(h_obs))²
+
+        Parameters
+        ----------
+        h_obs : np.ndarray
+            Observed heads.
+        h_mod : np.ndarray
+            Modeled heads.
+
+        Returns
+        -------
+        nse : float
+            NSE value, where 1 is a perfect fit, 0 means the model is as good as using
+            the mean of the observations, and negative values indicate a worse fit.
+            Returns NaN when all observations are identical (zero variance).
+        """
+        denom = float(np.sum((h_obs - np.mean(h_obs)) ** 2))
+        if denom == 0.0:
+            return np.nan
+        return float(1.0 - np.sum((h_obs - h_mod) ** 2) / denom)
+
+    def plot_transient_results(
+        self,
+        tmin: float | None = None,
+        tmax: float | None = None,
+        figsize: tuple[float, float] = (10, 8),
+        obs_kwargs: dict | None = None,
+        model_kwargs: dict | None = None,
+        sharey: bool = False,
+    ) -> tuple[plt.Figure, np.ndarray]:
+        """Plot modeled vs observed transient head time series.
+
+        Creates one subplot per transient observation with a shared x-axis,
+        comparing observed heads to the current model response. Call this
+        method before calibration to inspect the initial fit, or after
+        calibration to inspect the calibrated fit.
+
+        Parameters
+        ----------
+        tmin : float, optional
+            Start of the plotted time window. Defaults to the earliest
+            observation time across all series.
+        tmax : float, optional
+            End of the plotted time window. Defaults to the latest
+            observation time across all series.
+        figsize : tuple of float, optional
+            Figure size ``(width, height)`` in inches. Default is ``(10, 8)``.
+        obs_kwargs : dict, optional
+            Keyword arguments passed to :func:`matplotlib.axes.Axes.plot` for
+            the observed data. Default: black dots.
+        model_kwargs : dict, optional
+            Keyword arguments passed to :func:`matplotlib.axes.Axes.plot` for
+            the modeled response. Default: blue solid line.
+        sharey : bool, optional
+            If ``True``, all subplots share the same y-axis limits.
+            Default is ``False``.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        axes : np.ndarray of matplotlib.axes.Axes
+            One Axes per transient observation.
+        """
+        # Collect transient observations in insertion order
+        transient_items = [
+            (name, obs)
+            for name, obs in self.observations_dict.items()
+            if obs.model_key == "transient"
+        ]
+        transient_well_items = [
+            (name, obs)
+            for name, obs in self.observations_in_well_dict.items()
+            if obs.model_key == "transient"
+        ]
+        all_items = transient_items + transient_well_items
+        n_obs = len(all_items)
+
+        if n_obs == 0:
+            raise ValueError("No transient observations to plot.")
+
+        # Default styling
+        obs_kw: dict = {"color": "k", "marker": ".", "linestyle": "none"}
+        obs_kw.update(obs_kwargs or {})
+
+        model_kw: dict = {"color": "tab:blue", "label": "model"}
+        model_kw.update(model_kwargs or {})
+
+        _tr_has_steady = getattr(self.transient_model, "steady", None) is not None
+
+        # Solve the current model state, just in case, but should already be done usually.
+        if self.steady_model is not None:
+            self.steady_model.solve(silent=True)
+        if self.transient_model is not None:
+            self.transient_model.solve(silent=True)
+
+        # Create subplots
+        fig, ax_array = plt.subplots(
+            n_obs, 1, sharex=True, sharey=sharey, figsize=figsize
+        )
+        axes = np.atleast_1d(ax_array)
+
+        for ax, (name, obs) in zip(axes, all_items, strict=True):
+            dt = obs._time_shift if obs.time_shift is not None else 0.0
+            t_plot = obs.t - dt  # shared time axis for observed and modeled
+
+            # Build observed label, annotating any corrections
+            obs_label_parts = []
+            if obs.time_shift is not None:
+                obs_label_parts.append(f"\u0394t={float(obs._time_shift[0]):.2f}")
+            if obs.constant is not None:
+                obs_label_parts.append(f"\u0394h={float(obs._constant[0]):.2f}")
+            obs_suffix = f" ({', '.join(obs_label_parts)})" if obs_label_parts else ""
+            obs_label = f"{name}{obs_suffix}"
+
+            # Compute observed heads with corrections applied
+            if self.reference_time is not None:
+                tref_idx = np.abs(obs.t - self.reference_time).argmin()
+                h_obs_plot = obs.h - obs.h[tref_idx]
+            else:
+                c = float(obs._constant[0]) if obs.constant is not None else 0.0
+                h_obs_plot = obs.h - c
+
+            # Compute modeled heads
+            if name in dict(transient_items):
+                if obs.normalized or _tr_has_steady:
+                    hsteady = 0.0
+                elif self.steady_model is not None:
+                    hsteady = float(
+                        np.squeeze(self.steady_model.head(obs.x, obs.y, layers=obs.layer))
+                    )
+                else:
+                    hsteady = 0.0
+                h_mod = (
+                    self.transient_model.head(obs.x, obs.y, obs.t - dt, layers=obs.layer)
+                    + hsteady
+                ).squeeze()
+            else:
+                h_mod = obs.element.headinside(obs.t - dt)[0]
+
+            if self.reference_time is not None:
+                h_mod = h_mod - h_mod[tref_idx]
+
+            # Apply tmin/tmax window
+            mask = np.ones(len(t_plot), dtype=bool)
+            if tmin is not None:
+                mask &= t_plot >= tmin
+            if tmax is not None:
+                mask &= t_plot <= tmax
+
+            nse = self._nse(h_obs_plot[mask], h_mod[mask])
+            nse_str = f"NSE={nse:.2f}" if np.isfinite(nse) else "NSE=n/a"
+            model_label = f"{model_kw.get('label', 'model')} ({nse_str})"
+
+            ax.plot(t_plot[mask], h_obs_plot[mask], label=obs_label, **obs_kw)
+            ax.plot(t_plot[mask], h_mod[mask], **{**model_kw, "label": model_label})
+            ax.set_ylabel("head")
+            ax.grid(True)
+            ax.legend(loc=(0, 1), frameon=False, ncol=2)
+            ax.set_xlim(left=t_plot[mask][0], right=t_plot[mask][-1])
+
+        axes[-1].set_xlabel("time")
+        fig.tight_layout()
+        return fig, axes
