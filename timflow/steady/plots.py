@@ -132,7 +132,7 @@ class PlotSteady(PlotBase):
             **kwargs,
         )
 
-    def headalongline(self, x, y, layers=None, ax=None, **kwargs):
+    def headalongline(self, x, y, layers=None, ax=None, sstart=0, **kwargs):
         """Plot head along the line provided by x and y coordinates.
 
         .. deprecated:: 0.3.0
@@ -165,7 +165,7 @@ class PlotSteady(PlotBase):
         if ax is None:
             _, ax = plt.subplots()
         head = self._ml.headalongline(x, y, layers=layers)
-        r = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
+        r = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2) + sstart
         if layers is None:
             layers = np.arange(self._ml.aq.naq)
         for ilay in layers:
