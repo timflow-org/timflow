@@ -105,6 +105,7 @@ nb_merge_streams = True
 nb_execution_excludepatterns = [
     "besselnumba_timing.ipynb",
     "vertical_anisotropy.ipynb",
+    "transient/04pumpingtests/*.ipynb",
 ]
 
 myst_enable_extensions = ["dollarmath", "amsmath", "html_image"]
