@@ -112,7 +112,7 @@ class PlotTransient(PlotBase):
         legend=True,
         grid=True,
     ):
-        """Plot head along line.
+        """Plot discharge along line.
 
         Parameters
         ----------
@@ -192,6 +192,7 @@ class PlotTransient(PlotBase):
         legend=True,
         return_contours=False,
         parallel=False,
+        show_progress=False,
         **kwargs,
     ):
         """Head contour plot.
@@ -231,6 +232,9 @@ class PlotTransient(PlotBase):
         parallel : bool, optional
             if True, compute headgrid in parallel using multiple threads,
             default is False
+        show_progress : bool, optional
+            if True, show progress bar when computing headgrid in parallel,
+            default is False.
         **kwargs
             additional keyword arguments passed to ax.contour()
 
@@ -241,7 +245,12 @@ class PlotTransient(PlotBase):
         """
         xg, yg = self._get_xy_arrays(win, ngr)
         h = self._ml.headgrid(
-            xg, yg, t=t, layers=np.atleast_1d(layers), parallel=parallel
+            xg,
+            yg,
+            t=t,
+            layers=np.atleast_1d(layers),
+            parallel=parallel,
+            show_progress=show_progress,
         )[:, 0, ...]  # squeeze time dimension
         return self.contour_array(
             xg,
@@ -417,7 +426,7 @@ class PlotTransient(PlotBase):
         if len(x) > 1 and len(y) > 1:
             raise ValueError(
                 "quiver_z is only implemented along the x-, or y-axis. "
-                "Either x, or y has to have length 1."
+                "Either x or y array has to have length 1."
             )
         # v has shape (3, nz, ny, nx) ordered as (vx, vy, vz)
         v = self._ml.velocity_grid(x, y, np.atleast_1d(z), t=t, parallel=parallel)
