@@ -83,6 +83,13 @@ autoapi_own_page_level = "class"
 autoapi_template_dir = "_templates/autoapi"
 suppress_warnings = ["autoapi"]
 
+# Keep API signatures and section navigation compact by omitting module prefixes
+# (e.g., show `River` instead of `timflow.steady.linesink.River`).
+add_module_names = False
+
+# Keep local object TOC entries compact in the right sidebar.
+toc_object_entries_show_parents = "hide"
+
 # -- Numpydoc settings ----------------------------------------------------------------
 
 numpydoc_class_members_toctree = True
