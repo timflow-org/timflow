@@ -104,7 +104,7 @@ nb_execution_mode = "cache"
 
 nb_execution_allow_errors = True  # Allow errors in notebooks, to see the error online
 nb_execution_show_tb = True
-nb_execution_timeout = 60
+nb_execution_timeout = 100
 nb_execution_excludepatterns = [
     "besselnumba_timing.ipynb",
     "vertical_anisotropy.ipynb",
