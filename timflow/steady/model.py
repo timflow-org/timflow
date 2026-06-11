@@ -22,6 +22,7 @@ from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
+from timflow.version import check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
@@ -58,7 +59,7 @@ class Model:
         # That should be checked outside this function
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
-        self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d)
+        self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d=model3d)
         self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
@@ -265,9 +266,9 @@ class Model:
 
         Parameters
         ----------
-        xg : array
+        xg : 1d-array
             x values of grid
-        yg : array
+        yg : 1d-array
             y values of grid
         layers : integer, list or array, optional
             layers for which grid is returned
@@ -298,19 +299,10 @@ class Model:
             )
             show_progress = printrow
 
-        if parallel:
-            try:
-                from tqdm.contrib.concurrent import thread_map
-            except ImportError:
-                warnings.warn(
-                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
-                    " enable parallel execution. Falling back to serial execution.",
-                    category=ImportWarning,
-                    stacklevel=2,
-                )
-                parallel = False
-                thread_map = None
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
 
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
         nx, ny = len(xg), len(yg)
         if layers is None:
             Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
@@ -337,6 +329,7 @@ class Model:
                 total=nx * ny,
                 desc="headgrid",
                 disable=not show_progress,
+                tqdm_class=tqdm,
             )
             for i, j, result in results:
                 h[:, j, i] = result
@@ -421,6 +414,76 @@ class Model:
             h[:, i] = self.head(xg[i], yg[i], layers)
         return h
 
+    def disvecgrid(
+        self,
+        xg,
+        yg,
+        layers=None,
+        show_progress=True,
+        parallel=False,
+    ):
+        """Compute grid of discharge vectors.
+
+        Parameters
+        ----------
+        xg : 1d-array
+            x values of grid
+        yg : 1d-array
+            y values of grid
+        layers : integer, list or array, optional
+            layers for which grid is returned
+        show_progress : bool
+            show computation progress, by printing dots per row or with tqdm progressbar
+            when parallel is True. Default is True.
+        parallel : bool, optional
+            if `True`, computes discharge vector grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        qx : array size (Nlayers, ny, nx)
+            x component of discharge vector at each point in grid
+        qy : array size (Nlayers, ny, nx)
+            y component of discharge vector at each point in grid
+        """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        nx, ny = len(xg), len(yg)
+        if layers is None:
+            Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
+        else:
+            Nlayers = len(np.atleast_1d(layers))
+        qx = np.empty((Nlayers, ny, nx))
+        qy = np.empty((Nlayers, ny, nx))
+        if not parallel:
+            for j in range(ny):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(nx):
+                    qx[:, j, i], qy[:, j, i] = self.disvec(xg[i], yg[j], layers)
+            if show_progress:
+                print("", flush=True)
+        else:
+
+            def compute(ij):
+                i, j = ij
+                return i, j, self.disvec(xg[i], yg[j], layers)
+
+            results = thread_map(
+                compute,
+                [(i, j) for j in range(ny) for i in range(nx)],
+                total=nx * ny,
+                desc="disvecgrid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for i, j, result in results:
+                qx[:, j, i], qy[:, j, i] = result
+
+        return qx, qy
+
     def disvecalongline(self, x, y, layers=None):
         """Compute discharge vector along line.
 
@@ -450,21 +513,125 @@ class Model:
             Qx[:, i], Qy[:, i] = self.disvec(xg[i], yg[i], layers)
         return Qx, Qy
 
-    #    def disvec_direction(self, s, x1, y1, cdirection):
-    #        pass
-    #
-    #    def discharge_across_line(self, x1, y1, x2,  y2, layers=None):
-    #        if layers is None:
-    #            nlayers = self.aq.find_aquifer_data(x1, y1).naq
-    #        else:
-    #            nlayers = len(np.atleast_1d(layers))
-    #        z1 = x1 + y1 * 1j
-    #        z2 = x2 + y2 * 1j
-    #        normvec = (z2 - z1) / np.abs(z2 - z1) * np.exp(-np.pi * 1j / 2)
-    #        disvec = self.disvec(xg[i], yg[i], layers)
+    def stream_function(self, x, radial=False):
+        """Stream function along line x (or r).
+
+        Only applicable to models where flow is 1D (along a line), e.g. flow in a
+        vertical cross-section or flow in a radially symmetric model.
+
+        Parameters
+        ----------
+        x : array
+            x values of line
+        radial : bool, optional
+            if `True`, assumes that flow is radially symmetric and multiplies result
+            by x, by default `False`
+
+        Returns
+        -------
+        stream_function : array
+            stream function along line, size (2*naq, len(x))
+        zflow : array
+            z values of flow grid, size (2*naq,)
+        """
+        naq = self.aq.naq
+        nx = len(x)
+        Qx = self.disvecalongline(x, np.zeros_like(x))[0]  # only Qx
+        if radial:
+            Qx *= x
+        zflow = np.empty(2 * naq)
+        for i in range(self.aq.naq):
+            aq = self.aq.find_aquifer_data(x[0], 0)  # use first x as reference
+            zflow[2 * i] = aq.zaqtop[i]
+            zflow[2 * i + 1] = aq.zaqbot[i]
+        Qx = Qx[::-1]  # set upside down
+        Qxgrid = np.empty((2 * naq, nx))
+        Qxgrid[0] = 0
+        for i in range(naq - 1):
+            Qxgrid[2 * i + 1] = Qxgrid[2 * i] - Qx[i]
+            Qxgrid[2 * i + 2] = Qxgrid[2 * i + 1]
+        Qxgrid[-1] = Qxgrid[-2] - Qx[-1]
+        Qxgrid = Qxgrid[::-1]  # index 0 at top
+        return Qxgrid, zflow
 
     def velocity(self, x, y, z):
+        """Compute velocity at point x, y, z.
+
+        Parameters
+        ----------
+        x : float
+        y : float
+        z : float
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vx, vy, vz) at point x, y, z
+        """
         return self.velocomp(x, y, z)
+
+    def velocity_grid(self, xg, yg, zg, show_progress=True, parallel=False):
+        """Compute velocity grid.
+
+        Parameters
+        ----------
+        xg : 1d-array
+            x values of grid
+        yg : 1d-array
+            y values of grid
+        zg : 1d-array
+            z values of grid
+        parallel : bool, optional
+            if `True`, computes velocity grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vz, vy, vx) at each point in grid,
+            size (3, len(z), len(y), len(x))
+        """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        def compute(kij):
+            k, i, j = kij
+            try:
+                vv = self.velocomp(xg[j], yg[i], zg[k])
+            except ZeroDivisionError:
+                vv = np.full((3,), np.nan)
+            return k, i, j, vv
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        zg = np.atleast_1d(zg)
+        nz, ny, nx = len(zg), len(yg), len(xg)
+        v = np.empty((3, nz, ny, nx))
+        if not parallel:
+            for k in range(nz):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(ny):
+                    for j in range(nx):
+                        try:
+                            vv = self.velocomp(xg[j], yg[i], zg[k])
+                        except ZeroDivisionError:
+                            vv = np.full((3,), np.nan)
+                        v[:, k, i, j] = vv
+            if show_progress:
+                print("", flush=True)
+        else:
+            results = thread_map(
+                compute,
+                [(k, i, j) for k in range(nz) for i in range(ny) for j in range(nx)],
+                total=nz * nx * ny,
+                desc="velocity grid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for k, i, j, result in results:
+                v[:, k, i, j] = result
+
+        return v
 
     def velocomp(self, x, y, z, aq=None, layer_ltype=None):
         if aq is None:
@@ -659,11 +826,16 @@ class Model:
         pandas.DataFrame
             dataframe with summary of aquifer(s) parameters
         """
+        if type(self) is Model:
+            raise NotImplementedError(
+                "aquifer_summary is not supported for the base Model class; "
+                "use ModelMaq, Model3D instead."
+            )
         aqs = {}
         if not isinstance(self.aq, SimpleAquifer):
             aqs["background"] = self.aq.summary()
-        for i, iaq in enumerate(self.aq.inhomlist):
-            aqs[f"inhom{i}"] = iaq.summary()
+        for iaq in self.aq.inhomdict.values():
+            aqs[iaq.name] = iaq.summary()
         if aqs:
             return pd.concat(aqs, axis=0)
 
@@ -703,11 +875,11 @@ class Model:
     def vcontoursf1D(self, *args, **kwargs):
         warnings.warn(
             "The 'ml.vcontoursf1D' method is deprecated. "
-            "Use 'ml.plots.vcontoursf1D' instead.",
+            "Use 'ml.plots.vcontour_stream_function' instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.plots.vcontoursf1D(*args, **kwargs)
+        return self.plots.vcontour_stream_function(*args, **kwargs)
 
 
 class ModelMaq(Model):
@@ -883,14 +1055,16 @@ class ModelXsection(Model):
         """
         # check aquifers
         naqs = {}
-        for inhom in self.aq.inhomlist:
+        for inhom in self.aq.inhomdict.values():
             naqs[inhom.name] = inhom.naq
         check = np.array(list(naqs.values())) == self.aq.naq
         if not check.all():
             raise ValueError(f"Number of aquifers does not match {self.aq.naq}:\n{naqs}")
         # check -inf to inf
-        xmin = min([inhom.x1 for inhom in self.aq.inhomlist])
-        xmax = max([inhom.x2 for inhom in self.aq.inhomlist])
+        x1list = np.array([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.array([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        xmin = x1list.min()
+        xmax = x2list.max()
         if not (np.isinf(xmin) and np.sign(xmin) < 0):
             raise ValueError(
                 f"XsectionModel boundary error: left-most boundary must be at x=-np.inf, "
@@ -905,6 +1079,16 @@ class ModelXsection(Model):
                 f"x=+np.inf, got x={xmax}. "
                 f"(Model may consist of multiple Xsections, but their combined "
                 f"domain must span from -∞ to +∞)"
+            )
+        # check domain for gaps
+        if not np.allclose(x1list[1:], x2list[:-1]):
+            mask = (x1list[1:] - x2list[:-1]) > 1e-10
+            x1missing = x1list[1:][mask]
+            x2missing = x2list[:-1][mask]
+            msg = [f"{ix1}-{ix2}" for ix1, ix2 in zip(x2missing, x1missing, strict=True)]
+            raise ValueError(
+                "XsectionModel boundary error: missing section(s) between: "
+                + ", ".join(msg)
             )
 
         # # shared boundary check

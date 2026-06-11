@@ -54,5 +54,7 @@ view the code documentation.
 
    Steady <steady/index>
    Transient <transient/index>
+   Utilities <utils/index>
    Code Reference <api/index>
+   Timings <timings>
    Cite <about/index>

@@ -317,6 +317,11 @@ class River1D(LineSink1DBase, HeadEquation):
         layers=0,
         label=None,
     ):
+        if isinstance(tsandh, str) and tsandh == "fixed":
+            tsandh = [(0, 0)]
+            etype = "z"
+        else:
+            etype = "v"
         super().__init__(
             model,
             xls,
@@ -324,7 +329,7 @@ class River1D(LineSink1DBase, HeadEquation):
             res=res,
             wh=wh,
             layers=layers,
-            type="v",
+            type=etype,
             name="River1D",
             label=label,
         )

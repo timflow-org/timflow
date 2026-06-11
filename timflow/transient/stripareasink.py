@@ -44,7 +44,14 @@ class AreaSinkXsection(Element):
         return f"{self.__class__.__name__}: " + str([self.x1, self.x2])
 
     def initialize(self):
-        self.xc = (self.x1 + self.x2) / 2.0
+        if np.isfinite(self.x1) and np.isfinite(self.x2):
+            self.xc = (self.x1 + self.x2) / 2.0
+        elif np.isneginf(self.x1):
+            self.xc = self.x2 - 1e-5
+        elif np.isposinf(self.x2):
+            self.xc = self.x1 + 1e-5
+        else:
+            self.xc = 0.0
         self.L = np.abs(self.x2 - self.x1)
         self.aq = self.model.aq.find_aquifer_data(self.xc, 0.0)
         self.setbc()
@@ -75,12 +82,12 @@ class AreaSinkXsection(Element):
         return qx, qy
 
     def plot(self, ax, n_arrows=10, **kwargs):
-        Ly = self.model.aq.z[0] - self.model.aq.z[-1]
+        Ly = self.aq.z[0] - self.aq.z[-1]
         Lx = self.x2 - self.x1
 
         for i in np.linspace(self.x1, self.x2, n_arrows):
             xtail = i
-            ytail = self.model.aq.z[0] + Ly / 20.0
+            ytail = self.aq.z[0] + Ly / 20.0
             dx = 0
             dy = -0.9 * Ly / 20.0
             ax.arrow(
@@ -128,9 +135,11 @@ class HstarXsection(Element):
         return f"{self.__class__.__name__}: " + str([self.x1, self.x2])
 
     def initialize(self):
-        if not np.isfinite(self.x1):
+        if np.isneginf(self.x1) and np.isposinf(self.x2):
+            self.xc = 0.0
+        elif np.isneginf(self.x1):
             self.xc = self.x2 - 1e-5
-        elif not np.isfinite(self.x2):
+        elif np.isposinf(self.x2):
             self.xc = self.x1 + 1e-5
         else:
             self.xc = (self.x1 + self.x2) / 2.0

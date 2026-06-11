@@ -237,24 +237,44 @@ class AquiferData:
         return layernumber, ltype, modellayer
 
     def summary(self):
+        if self.nlayers == self.naq:
+            model3d = True
+            add_cols = ["kzoverkh"]
+        else:
+            model3d = False
+            add_cols = []
         summary = pd.DataFrame(
             index=range(self.nlayers),
-            columns=["layer", "layer_type", "k_h", "c", "S_s"],
+            columns=["layer", "layer_type", "H", "k_h"] + add_cols + ["c", "S_s"],
         )
         summary.index.name = "#"
         layertype = {"a": "aquifer", "l": "leaky layer"}
         summary["layer_type"] = [layertype[lt] for lt in self.ltype]
+        maskaq = self.ltype == "a"
         if self.topboundary.startswith("con"):
-            summary.iloc[::2, 2] = self.kaq
-            summary.iloc[::2, 4] = self.Saq
-            summary.iloc[1::2, 3] = self.c
-            summary.iloc[1::2, 4] = self.Sll
+            summary.loc[maskaq, "H"] = self.Haq
+            summary.loc[maskaq, "k_h"] = self.kaq
+            summary.loc[maskaq, "S_s"] = self.Saq
+            if model3d:
+                summary.loc[maskaq, "c"] = self.c
+                summary.loc[0, "c"] = np.nan  # reset confined resistance to nan
+                summary.loc[maskaq, "kzoverkh"] = self.kzoverkh
+            else:
+                summary.loc[~maskaq, "c"] = self.c
+                summary.loc[~maskaq, "S_s"] = self.Sll
 
         else:
-            summary.iloc[1::2, 2] = self.kaq
-            summary.iloc[1::2, 4] = self.Saq
-            summary.iloc[::2, 4] = self.Sll
-            summary.iloc[::2, 3] = self.c
+            summary.loc[maskaq, "H"] = self.Haq
+            summary.loc[maskaq, "k_h"] = self.kaq
+            summary.loc[maskaq, "S_s"] = self.Saq
+            if model3d:
+                summary.loc[~maskaq, "H"] = self.Hll[0]
+                summary.loc[maskaq, "c"] = self.c
+                summary.loc[maskaq, "kzoverkh"] = self.kzoverkh
+            else:
+                summary.loc[~maskaq, "H"] = self.Hll
+                summary.loc[~maskaq, "c"] = self.c
+                summary.loc[~maskaq, "S_s"] = self.Sll
         summary.loc[:, "layer"] = self.layernumber
         return summary  # .set_index("layer")
 
@@ -313,8 +333,11 @@ class Aquifer(AquiferData):
 
     def initialize(self):
         super().initialize()
+        # 2 passes to ensure all data is present prior to creating elements
         for inhom in self.inhomdict.values():
             inhom.initialize()
+        for inhom in self.inhomdict.values():
+            inhom.create_elements()
 
     def is_inside(self, x, y):
         return True
@@ -347,5 +370,8 @@ class SimpleAquifer(Aquifer):
         return f"Simple Aquifer: {self.naq} aquifer(s)"
 
     def initialize(self):
+        # 2 passes to ensure all data is present prior to creating elements
         for inhom in self.inhomdict.values():
             inhom.initialize()
+        for inhom in self.inhomdict.values():
+            inhom.create_elements()

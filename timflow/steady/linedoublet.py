@@ -470,7 +470,7 @@ class ImpermeableWallString(LineDoubletStringBase, DisvecEquation):
         self.model.add_element(self)
 
     def initialize(self):
-        LeakyWallString.initialize(self)
+        LineDoubletStringBase.initialize(self)
         self.aq.add_element(self)
 
     def setparams(self, sol):

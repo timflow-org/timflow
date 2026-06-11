@@ -214,8 +214,13 @@ def invlapcomp(time, pot, npint, M, tintervals, enumber, etstart, ebc, nlayers):
                 it = np.argmax(t > 0)  # find_first
         if t[it] < tintervals[0]:  # there are times before first interval
             if print_tmin_warning:
-                print("Warning, some of the times are smaller than tmin after")
-                print("a change in boundary condition. nans are substituted")
+                print(
+                    "Warning, some of the times (",
+                    t[it],
+                    ") are smaller than tmin =",
+                    tintervals[0],
+                    "after a change in boundary condition. Nans are substituted.",
+                )
                 print_tmin_warning = False
             if t[-1] < tintervals[0]:  # all times before first interval
                 itnew = len(t)

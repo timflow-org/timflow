@@ -24,9 +24,10 @@ from timflow.transient.invlapnumba import (
     invlapcomp,
 )
 from timflow.transient.plots import PlotTransient
+from timflow.version import check_tqdm_parallel
 
 
-class TimModel:
+class Model:
     def __init__(
         self,
         kaq=[1, 1],
@@ -445,6 +446,73 @@ class TimModel:
 
         return velo
 
+    def velocity_grid(self, xg, yg, zg, t, show_progress=True, parallel=False):
+        """Compute velocity grid.
+
+        Parameters
+        ----------
+        xg : 1d-array
+            x values of grid
+        yg : 1d-array
+            y values of grid
+        zg : 1d-array
+            z values of grid
+        t : float
+            time for which grid is returned
+        show_progress : bool, optional
+            if `True`, shows progress bar when computing velocity grid, by default `True`
+        parallel : bool, optional
+            if `True`, computes velocity grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        velocity : array
+            velocity vector (vz, vy, vx) at each point in grid,
+            size (3, len(z), len(y), len(x))
+        """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        def compute(kij):
+            k, i, j = kij
+            try:
+                vv = self.velocomp(xg[j], yg[i], zg[k], t)
+            except ZeroDivisionError:
+                vv = np.full((3,), np.nan)
+            return k, i, j, vv
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        zg = np.atleast_1d(zg)
+        nz, ny, nx = len(zg), len(yg), len(xg)
+        v = np.empty((3, nz, ny, nx))
+        if not parallel:
+            for k in range(nz):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(ny):
+                    for j in range(nx):
+                        try:
+                            vv = self.velocomp(xg[j], yg[i], zg[k], t)
+                        except ZeroDivisionError:
+                            vv = np.full((3,), np.nan)
+                        v[:, k, i, j] = vv
+            if show_progress:
+                print("", flush=True)
+        else:
+            results = thread_map(
+                compute,
+                [(k, i, j) for k in range(nz) for i in range(ny) for j in range(nx)],
+                total=nz * nx * ny,
+                desc="velocity grid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for k, i, j, result in results:
+                v[:, k, i, j] = result
+
+        return v
+
     def velo_one(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer and one time
         vx, vy, vz = self.velocomp(x, y, z, t, aq, layer_ltype)
@@ -565,27 +633,20 @@ class TimModel:
             )
             show_progress = printrow
 
-        if parallel:
-            try:
-                from tqdm import tqdm
-                from tqdm.contrib.concurrent import thread_map
-            except ImportError:
-                warn(
-                    "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
-                    " enable parallel execution. Falling back to serial execution.",
-                    category=ImportWarning,
-                    stacklevel=2,
-                )
-                parallel = False
-                thread_map = None
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        t = np.atleast_1d(t)
         nx = len(xg)
         ny = len(yg)
+        ntimes = len(t)
         if layers is None:
             nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
         else:
             nlayers = len(np.atleast_1d(layers))
         t = np.atleast_1d(t)
-        h = np.empty((nlayers, len(t), ny, nx))
+        h = np.empty((nlayers, ntimes, ny, nx))
         if not parallel:
             for j in range(ny):
                 if show_progress:
@@ -667,6 +728,81 @@ class TimModel:
             printrow=printrow,
             parallel=parallel,
         )
+
+    def disvecgrid(
+        self,
+        x,
+        y,
+        t,
+        layers=None,
+        show_progress=True,
+        parallel=False,
+    ):
+        """Compute grid of discharge vectors.
+
+        Parameters
+        ----------
+        x : array
+            x values of grid
+        y : array
+            y values of grid
+        t : list or array
+            times for which grid is returned
+        layers : integer, list or array, optional
+            layers for which grid is returned
+        show_progress : bool
+            show computation progress, by printing dots per row or with tqdm progressbar
+            when parallel is True. Default is True.
+        parallel : bool, optional
+            if `True`, computes discharge vector grid in parallel using multi threading,
+            by default `False`
+
+        Returns
+        -------
+        qx : array size (nlayers, ntimes, ny, nx)
+            x component of discharge vector at each point in grid
+        qy : array size (nlayers, ntimes, ny, nx)
+            y component of discharge vector at each point in grid
+        """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+        t = np.atleast_1d(t)
+        nx, ny = len(x), len(y)
+        ntimes = len(t)
+        if layers is None:
+            nlayers = self.aq.find_aquifer_data(x[0], y[0]).naq
+        else:
+            nlayers = len(np.atleast_1d(layers))
+        qx = np.empty((nlayers, ntimes, ny, nx))
+        qy = np.empty((nlayers, ntimes, ny, nx))
+        if not parallel:
+            for j in range(ny):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(nx):
+                    qx[:, :, j, i], qy[:, :, j, i] = self.disvec(x[i], y[j], t, layers)
+            if show_progress:
+                print("", flush=True)
+        else:
+
+            def compute(ij):
+                i, j = ij
+                return i, j, self.disvec(x[i], y[j], t, layers)
+
+            results = thread_map(
+                compute,
+                [(i, j) for j in range(ny) for i in range(nx)],
+                total=nx * ny,
+                desc="disvecgrid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for i, j, result in results:
+                qx[:, :, j, i], qy[:, :, j, i] = result
+
+        return qx, qy
 
     def inverseLapTran(self, pot, t):
         """Returns array of potentials of len(t) t must be ordered and tmin<=t<=tmax."""
@@ -774,6 +910,11 @@ class TimModel:
         pandas.DataFrame
             dataframe with summary of aquifer(s) parameters
         """
+        if type(self) is Model:
+            raise NotImplementedError(
+                "aquifer_summary is not supported for the base Model class; "
+                "use ModelMaq, Model3D instead."
+            )
         aqs = {}
         if not isinstance(self.aq, SimpleAquifer):
             aqs["background"] = self.aq.summary()
@@ -782,7 +923,7 @@ class TimModel:
         return pd.concat(aqs, axis=0)
 
 
-class ModelMaq(TimModel):
+class ModelMaq(Model):
     """Create model specifying a multi-aquifer sequence of aquifer-leakylayer-etc.
 
     Parameters
@@ -892,7 +1033,7 @@ class ModelMaq(TimModel):
         self.name = "ModelMaq"
 
 
-class Model3D(TimModel):
+class Model3D(Model):
     """Create a multi-layer model object consisting of many aquifer layers.
 
     The
@@ -1021,7 +1162,7 @@ class Model3D(TimModel):
         self.name = "Model3D"
 
 
-class ModelXsection(TimModel):
+class ModelXsection(Model):
     r"""Model class for cross-section models.
 
     Parameters
@@ -1096,8 +1237,10 @@ class ModelXsection(TimModel):
         if not check.all():
             raise ValueError(f"Number of aquifers does not match {self.aq.naq}:\n{naqs}")
         # check -inf to inf
-        xmin = min([inhom.x1 for inhom in self.aq.inhomdict.values()])
-        xmax = max([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        xmin = x1list.min()
+        xmax = x2list.max()
         if not (np.isinf(xmin) and np.sign(xmin) < 0):
             raise ValueError(
                 f"XsectionModel boundary error: left-most boundary must be at x=-np.inf, "
@@ -1113,6 +1256,16 @@ class ModelXsection(TimModel):
                 f"(Model may consist of multiple Xsections, but their combined "
                 f"domain must span from -∞ to +∞)"
             )
+        # check domain for gaps
+        if not np.allclose(x1list[1:], x2list[:-1]):
+            mask = (x1list[1:] - x2list[:-1]) > 1e-10
+            x1missing = x1list[1:][mask]
+            x2missing = x2list[:-1][mask]
+            msg = [f"{ix1}-{ix2}" for ix1, ix2 in zip(x2missing, x1missing, strict=True)]
+            raise ValueError(
+                "XsectionModel boundary error: missing section(s) between: "
+                + ", ".join(msg)
+            )
 
         # # shared boundary check
         # # NOTE: does not deal with nested inhoms
@@ -1123,6 +1276,27 @@ class ModelXsection(TimModel):
         # if not np.all(np.diff(xcoords[1:-1])[::2] < 1e-10):
         #     raise ValueError("Not all inhomogeneities have shared boundaries.")
 
+    def check_elements(self):
+        """Check elements.
+
+        Checks that no elements are located exactly on the boundaries between
+        inhomogeneities.
+        """
+        x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
+        x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
+        elements = [e for e in self.elementlist if not e.inhomelement]
+        mask = np.isin([e.xc.squeeze() for e in elements], x1list) | np.isin(
+            [e.xc.squeeze() for e in elements], x2list
+        )
+        if mask.any():
+            elems = [str(e) for e, m in zip(elements, mask, strict=True) if m]
+            raise ValueError(
+                "Elements cannot be located exactly on the boundaries between "
+                "inhomogeneities.\nConsider nudging the location(s) of the following "
+                "element(s) (by e.g. 1e-6):\n- " + "\n- ".join(elems)
+            )
+
     def initialize(self):
         self.check_inhoms()
         super().initialize()
+        self.check_elements()

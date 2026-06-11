@@ -1,21 +1,41 @@
-"""Plot helpers for timflow.
+"""Plot helpers for timflow.steady.
 
-Provides top-view, contours, and tracing visualization functions.
+Provides contours, vcontours and particle tracking visualization functions.
 
 Example::
 
-    ml.plots.topview()
+    ml.plots.contour()
 """
 
+import warnings
 from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
 
+import timflow.steady.trace as tst
 from timflow.plots.plots import PlotBase
-from timflow.steady.trace import timtraceline
 from timflow.steady.well import WellBase
+
+
+def _pop_deprecated_metadata_kwarg(kwargs: dict, *, fname: str) -> None:
+    """Warn on legacy ``metadata=False``; strip ``metadata`` from ``kwargs``."""
+    try:
+        meta = kwargs.pop("metadata")
+    except KeyError:
+        return
+    if meta is False:
+        warnings.warn(
+            f"{fname}: metadata=False is deprecated; full trace result dicts are "
+            "always returned (omit the metadata argument).",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+    elif meta is not True:
+        msg = "metadata must be True or False"
+        raise TypeError(msg)
+
 
 __all__ = ["PlotSteady"]
 
@@ -27,13 +47,6 @@ class PlotSteady(PlotBase):
     and other model results.
     """
 
-    def __repr__(self):
-        """Return string representation of Plots submodule."""
-        methods = "".join(
-            [f"\n - {meth}" for meth in dir(self) if not meth.startswith("_")]
-        )
-        return f"timflow {self._ml.model_type} plots, available methods:" + methods
-
     def contour(
         self,
         win,
@@ -42,8 +55,9 @@ class PlotSteady(PlotBase):
         levels=20,
         layout=True,
         labels=True,
-        decimals=0,
+        decimals=1,
         color=None,
+        cmap=None,
         ax=None,
         figsize=None,
         legend=True,
@@ -73,6 +87,8 @@ class PlotSteady(PlotBase):
             number of decimals of labels along contours
         color : str or list of strings
             color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
         ax : matplotlib.Axes
             axes to plot on, default is None which creates a new figure
         figsize : tuple of 2 values (default is mpl default)
@@ -96,48 +112,126 @@ class PlotSteady(PlotBase):
         cs : list
             of contour sets for each contoured layer, only if return_contours=True
         """
-        x1, x2, y1, y2 = win
-        if np.isscalar(ngr):
-            nx = ny = ngr
-        else:
-            nx, ny = ngr
-        layers = np.atleast_1d(layers)
-        xg = np.linspace(x1, x2, nx)
-        yg = np.linspace(y1, y2, ny)
-        h = self._ml.headgrid(xg, yg, layers, parallel=parallel)
+        xg, yg = self._get_xy_arrays(win, ngr)
+        h = self._ml.headgrid(xg, yg, np.atleast_1d(layers), parallel=parallel)
+        return self.contour_array(
+            xg,
+            yg,
+            h,
+            layers,
+            levels,
+            color=color,
+            cmap=cmap,
+            figsize=figsize,
+            ax=ax,
+            labels=labels,
+            decimals=decimals,
+            legend=legend,
+            layout=layout,
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def headalongline(self, x, y, layers=None, ax=None, sstart=0, **kwargs):
+        """Plot head along the line provided by x and y coordinates.
+
+        .. deprecated:: 0.3.0
+            Use :meth:`head_along_line` instead.
+
+        Parameters
+        ----------
+        x : array
+            x-coordinates of the line
+        y : array
+            y-coordinates of the line
+        layers : integer, list or array
+            layers for which head is plotted, default is all layers
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        **kwargs
+            additional keyword arguments passed to ax.plot()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        warnings.warn(
+            "The 'ml.plots.headalongline' method is deprecated. Use "
+            "'ml.plots.head_along_line' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if ax is None:
+            _, ax = plt.subplots()
+        head = self._ml.headalongline(x, y, layers=layers)
+        r = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2) + sstart
+        if layers is None:
+            layers = np.arange(self._ml.aq.naq)
+        for ilay in layers:
+            ax.plot(r, head[ilay], label=kwargs.pop("label", f"Layer {ilay}"), **kwargs)
+        return ax
+
+    def head_along_line(
+        self,
+        x1=0,
+        x2=1,
+        y1=0,
+        y2=0,
+        npoints=100,
+        layers=None,
+        sstart=0,
+        color=None,
+        lw=1,
+        figsize=None,
+        ax=None,
+        legend=True,
+        grid=True,
+        **kwargs,
+    ):
+        """Plot head along line.
+
+        Parameters
+        ----------
+        x1, x2, y1, y2 : float
+            start and end coordinates of line
+        npoints : int
+            number of points along line
+        layers : int, list or array
+            layers for which head is plotted, default is all layers
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        **kwargs
+            additional keyword arguments passed to ax.plot()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
-            ax.set_aspect("equal", adjustable="box")
-        # color
-        if color is None:
-            c = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        elif isinstance(color, str):
-            c = len(layers) * [color]
-        elif isinstance(color, list):
-            c = color
-        if len(c) < len(layers):
-            n = np.ceil(self._ml.aq.naq / len(c))
-            c = n * c
-        # contour
-        cslist = []
-        cshandlelist = []
-        for i in range(len(layers)):
-            cs = ax.contour(xg, yg, h[i], levels, colors=c[i], **kwargs)
-            cslist.append(cs)
-            handles, _ = cs.legend_elements()
-            cshandlelist.append(handles[0])
-            if labels:
-                fmt = "%1." + str(decimals) + "f"
-                ax.clabel(cs, fmt=fmt)
-        if isinstance(legend, list):
-            ax.legend(cshandlelist, legend, loc=(0, 1), frameon=False, ncol=3)
-        elif legend:
-            legendlist = ["layer " + str(i) for i in layers]
-            ax.legend(cshandlelist, legendlist, loc=(0, 1), frameon=False, ncol=3)
-        if layout:
-            self.topview(win=[x1, x2, y1, y2], layers=layers, ax=ax)
-        if return_contours:
-            return ax, cslist
+        x = np.linspace(x1, x2, npoints)
+        y = np.linspace(y1, y2, npoints)
+        s = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2) + sstart
+        head = self._ml.headalongline(x, y, layers=layers)
+        if layers is None:
+            plotlayers = np.arange(self._ml.aq.naq)
+        else:
+            plotlayers = np.atleast_1d(layers)
+        for ilay in plotlayers:
+            ax.plot(
+                s,
+                head[ilay],
+                label=kwargs.pop("label", f"head (layer={ilay}"),
+                c=color,
+                lw=lw,
+                **kwargs,
+            )
+        if legend:
+            ax.legend(loc=(0, 1), ncol=3, frameon=False)
+        if grid:
+            ax.grid(True)
         return ax
 
     def vcontour(
@@ -148,12 +242,15 @@ class PlotSteady(PlotBase):
         labels=True,
         decimals=0,
         color=None,
+        cmap=None,
         vinterp=True,
         nudge=1e-6,
-        newfig=True,
+        ax=None,
         figsize=None,
         layout=True,
         horizontal_axis: Literal["x", "y", "s"] = "s",
+        return_contours=False,
+        **kwargs,
     ):
         """Head contour plot in vertical cross-section.
 
@@ -171,13 +268,15 @@ class PlotSteady(PlotBase):
             number of decimals of labels along contours
         color : str or list of strings
             color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
         vinterp : boolean
             when True, interpolate between centers of layers
             when False, constant value vertically in each layer
         nudge : float
-            first value is computed nudge from the specified window
-        newfig : boolean (default True)
-            create new figure
+            small value to nudge grid points away from boundaries
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
         figsize : tuple of 2 values (default is mpl default)
             size of figure
         layout : boolean
@@ -186,49 +285,115 @@ class PlotSteady(PlotBase):
             's' for distance along cross-section on x-axis (default)
             'x' for using x-coordinates on x-axis
             'y' for using y-coordinates on x-axis
+        return_contours : bool
+            if True, return contour set, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
 
         Returns
         -------
         cs : contour set
         """
-        x1, x2, y1, y2 = win
-        xg = np.linspace(x1 + nudge, x2 - nudge, n)
-        yg = np.linspace(y1 + nudge, y2 - nudge, n)
+        xg, yg = self._get_xy_arrays(win, n, nudge=nudge)
         h = self._ml.headalongline(xg, yg)
-        if horizontal_axis == "x":
-            xg = xg
-        elif horizontal_axis == "y":
-            xg = yg
-        elif horizontal_axis == "s":
-            L = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-            xg = np.linspace(0, L, n)
-        else:
-            raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
-        if vinterp:
-            zg = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
-            zg = np.hstack((self._ml.aq.zaqtop[0], zg, self._ml.aq.zaqbot[-1]))
-            h = np.vstack((h[0], h, h[-1]))
-        else:
-            zg = np.empty(2 * self._ml.aq.naq)
-            for i in range(self._ml.aq.naq):
-                zg[2 * i] = self._ml.aq.zaqtop[i]
-                zg[2 * i + 1] = self._ml.aq.zaqbot[i]
-            h = np.repeat(h, 2, 0)
-        if newfig:
-            _, ax = plt.subplots(figsize=figsize)
+        return self.vcontour_array(
+            xg,
+            yg,
+            h,
+            levels=levels,
+            labels=labels,
+            decimals=decimals,
+            color=color,
+            cmap=cmap,
+            vinterp=vinterp,
+            ax=ax,
+            figsize=figsize,
+            layout=layout,
+            horizontal_axis=horizontal_axis,
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def vcontour_stream_function(
+        self,
+        x1,
+        x2,
+        nx,
+        levels,
+        labels=False,
+        decimals=0,
+        color=None,
+        cmap=None,
+        ax=None,
+        figsize=None,
+        layout=True,
+        nudge=1e-6,
+        radial=False,
+        horizontal_axis: Literal["x", "y", "s"] = "s",
+        **kwargs,
+    ):
+        """Contour stream_function.
+
+        Only applicable to models where flow is 1D (along a line), e.g. flow in a
+        vertical cross-section or flow in a radially symmetric model.
+
+        Parameters
+        ----------
+        x1 : scalar
+            left edge of contour domain
+        x2 : scalar
+            right edge of contour domain
+        nx : integer
+            number of grid points along cross-section
+        levels : integer or array (default 20)
+            levels that are contoured
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        color : str or list of strings
+            color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
+        ax : matplotlib axis
+            add plot to specified axis
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        layout : boolean
+            plot layout if True
+        nudge : float
+            first value is computed nudge from the specified x1 and x2
+        radial : bool
+            if True, compute stream function for radially symmetric flow. Default is
+            False.
+        horizontal_axis : str, optional
+            's' for distance along cross-section on x-axis (default)
+            'x' for using x-coordinates on x-axis
+            'y' for using y-coordinates on x-axis
+
+        Returns
+        -------
+        ax : axis
+        """
+        xflow = np.linspace(x1 + nudge, x2 - nudge, nx)
+        Qxgrid, zflow = self._ml.stream_function(xflow, radial=radial)
+
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=figsize)
+        if color is not None and cmap is not None:
+            cmap = None
+        cs = ax.contour(xflow, zflow, Qxgrid, levels, colors=color, cmap=cmap, **kwargs)
+        if labels:
+            fmt = "%1." + str(decimals) + "f"
+            plt.clabel(cs, fmt=fmt)
         if layout:
             self.xsection(
-                xy=[(x1, y1), (x2, y2)],
+                xy=[(x1, 0), (x2, 0)],
                 labels=False,
                 ax=ax,
                 horizontal_axis=horizontal_axis,
             )
-        cs = ax.contour(xg, zg, h, levels, colors=color)
-        if labels:
-            fmt = "%1." + str(decimals) + "f"
-            ax.clabel(cs, fmt=fmt)
-
-        return cs
+        return ax
 
     def tracelines(
         self,
@@ -247,14 +412,12 @@ class PlotSteady(PlotBase):
         figsize=None,
         *,
         return_traces=False,
-        metadata=False,
+        **kwargs,
     ):
-        """Function to trace multiple pathlines.
+        """Plot or compute multiple pathlines.
 
         Parameters
         ----------
-        ml : Model object
-            model to which the element is added
         xstart : array
             x-coordinates of starting locations
         ystart : array
@@ -281,18 +444,23 @@ class PlotSteady(PlotBase):
         ax : matplotlib.Axes or list of Axes
             axes to plot on, default is None which creates a new figure
         return_traces : boolean
-            return traces if True
-        metadata: boolean
-            if False, return list of xyzt arrays
-            if True, return list of result dictionaries
+            if True, also return one trace result dict per pathline
+        **kwargs
+            kwargs are passed on to LineCollections for plotting.
+            For backward compatibility a deprecated ``metadata`` keyword
+            is accepted and removed. ``metadata=False`` emits a
+            ``DeprecationWarning``; results always use the dict form from
+            :func:`~timflow.steady.trace.traceline`.
 
         Returns
         -------
         ax : matplotlib.Axes or list of Axes
             axes with plot
-        traces : result
-            only if return_traces = True
+        traces : list of dict
+            only if ``return_traces`` is True; each dict matches
+            :func:`~timflow.steady.trace.traceline` output.
         """
+        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.tracelines")
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
 
@@ -337,10 +505,8 @@ class PlotSteady(PlotBase):
 
         if return_traces:
             traces = []
-        else:
-            metadata = True  # suppress future warning from timtraceline
         for i, _ in enumerate(xstart):
-            trace = timtraceline(
+            trace_result = tst.traceline(
                 self._ml,
                 xstart[i],
                 ystart[i],
@@ -351,15 +517,10 @@ class PlotSteady(PlotBase):
                 nstepmax=nstepmax,
                 silent=silent,
                 win=win,
-                returnlayers=True,
-                metadata=metadata,
             )
             if return_traces:
-                traces.append(trace)
-            if metadata:
-                xyzt, layerlist = trace["trace"], trace["layers"]
-            else:
-                xyzt, layerlist = trace
+                traces.append(trace_result)
+            xyzt, layerlist = trace_result["trace"], trace_result["layers"]
             if silent == ".":
                 print(".", end="", flush=True)
             if "hor" in axes_dict:
@@ -371,7 +532,7 @@ class PlotSteady(PlotBase):
                     )
                 points = np.array([xyzt[:, 0], xyzt[:, 1]]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
-                lc = LineCollection(segments, colors=color)
+                lc = LineCollection(segments, colors=color, **kwargs)
                 axes_dict["hor"].add_collection(lc)
                 # ax1.plot(xyzt[:, 0], xyzt[:, 1], color=color)
             if "ver" in axes_dict:
@@ -383,97 +544,13 @@ class PlotSteady(PlotBase):
                     )
                 points = np.array([xyzt[:, 0], xyzt[:, 2]]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
-                lc = LineCollection(segments, colors=color)
+                lc = LineCollection(segments, colors=color, **kwargs)
                 axes_dict["ver"].add_collection(lc)
                 axes_dict["ver"].set_ylim(aq.z[-1], aq.z[0])
         if silent == ".":
             print("")  # Print the final newline after the dots
         if return_traces:
             return ax, traces
-        return ax
-
-    def vcontoursf1D(
-        self,
-        x1,
-        x2,
-        nx,
-        levels,
-        labels=False,
-        decimals=0,
-        color=None,
-        nudge=1e-6,
-        figsize=None,
-        layout=True,
-        ax=None,
-        horizontal_axis: Literal["x", "y", "s"] = "s",
-    ):
-        """Contour plot in vertical cross-section of 1D model.
-
-        Parameters
-        ----------
-        x1 : scalar
-            left edge of contour domain
-        x2 : scalar
-            right edge of contour domain
-        nx : integer
-            number of grid points along cross-section
-        levels : integer or array (default 20)
-            levels that are contoured
-        labels : boolean (default True)
-            print labels along contours
-        decimals : integer (default 0)
-            number of decimals of labels along contours
-        color : str or list of strings
-            color of contour lines
-        nudge : float
-            first value is computed nudge from the specified x1 and x2
-        figsize : tuple of 2 values (default is mpl default)
-            size of figure
-        layout : boolean
-            plot layout if True
-        ax : matplotlib axis
-            add plot to specified axis
-        horizontal_axis : str, optional
-            's' for distance along cross-section on x-axis (default)
-            'x' for using x-coordinates on x-axis
-            'y' for using y-coordinates on x-axis
-
-        Returns
-        -------
-        ax : axis
-        """
-        naq = self._ml.aq.naq
-        xflow = np.linspace(x1 + nudge, x2 - nudge, nx)
-        Qx = np.empty((naq, nx))
-        for i in range(nx):
-            Qx[:, i], _ = self._ml.disvec(xflow[i], 0)
-        zflow = np.empty(2 * naq)
-        for i in range(self._ml.aq.naq):
-            aq = self._ml.aq.find_aquifer_data(xflow[0], 0)  # use first x as reference
-            zflow[2 * i] = aq.zaqtop[i]
-            zflow[2 * i + 1] = aq.zaqbot[i]
-        Qx = Qx[::-1]  # set upside down
-        Qxgrid = np.empty((2 * naq, nx))
-        Qxgrid[0] = 0
-        for i in range(naq - 1):
-            Qxgrid[2 * i + 1] = Qxgrid[2 * i] - Qx[i]
-            Qxgrid[2 * i + 2] = Qxgrid[2 * i + 1]
-        Qxgrid[-1] = Qxgrid[-2] - Qx[-1]
-        Qxgrid = Qxgrid[::-1]  # index 0 at top
-
-        if ax is None:
-            _, ax = plt.subplots(1, 1, figsize=figsize)
-        cs = ax.contour(xflow, zflow, Qxgrid, levels, colors=color)
-        if labels:
-            fmt = "%1." + str(decimals) + "f"
-            plt.clabel(cs, fmt=fmt)
-        if layout:
-            self.xsection(
-                xy=[(x1, 0), (x2, 0)],
-                labels=False,
-                ax=ax,
-                horizontal_axis=horizontal_axis,
-            )
         return ax
 
     def plotcapzone(
@@ -493,7 +570,7 @@ class PlotSteady(PlotBase):
         figsize=None,
         *,
         return_traces=False,
-        metadata=False,
+        **kwargs,
     ):
         """Plot a capture zone.
 
@@ -505,7 +582,7 @@ class PlotSteady(PlotBase):
         nt : int
             number of path lines
         zstart : scalar
-            starting elevation of the path lines
+            starting elevation of the path lines. Halfway aquifer thickness if None
         hstepmax : scalar
             maximum step in horizontal space
         vstepfrac : float
@@ -528,20 +605,21 @@ class PlotSteady(PlotBase):
             width, height in inches.
         return_traces : boolean (default False)
             return the traces instead of plotting
-        metadata : boolean (default False)
-            return metadata along with traces
+        **kwargs
+            For backward compatibility only: deprecated ``metadata`` keyword
+            (see :meth:`tracelines`).
 
         Returns
         -------
         ax : matplotlib.Axes or list of Axes
             axes with plot
-        traces : list of arrays of x, y, z, and t values
-            only if return_traces is True
+        traces : list of list of dict
+            only if return_traces is True; outer list is per well, inner list
+            matches :meth:`tracelines` with ``return_traces=True``
         """
+        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.plotcapzone")
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
-        if not return_traces:
-            metadata = True  # suppress future warning from timtraceline
         # make well a list
         if isinstance(well, (str, WellBase)):
             well = [well]
@@ -567,40 +645,97 @@ class PlotSteady(PlotBase):
                     ax=ax,
                     figsize=figsize,
                     return_traces=return_traces,
-                    metadata=metadata,
+                    **kwargs,
                 )
             )
         if return_traces:
             return ax, traces
         return ax
 
-    def headalongline(self, x, y, layers=None, ax=None, **kwargs):
-        """Plot head along the line provided by x and y coordinates.
+    def vcontoursf1D(self, *args, **kwargs):
+        warnings.warn(
+            "The 'ml.plots.vcontoursf1D' method is deprecated. "
+            "Use 'ml.plots.vcontour_stream_function' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.vcontour_stream_function(*args, **kwargs)
+
+    def quiver_xy(
+        self, x, y, z, normalize=False, ax=None, figsize=None, parallel=False, **kwargs
+    ):
+        """Quiver plot of velocity field in xy-plane.
 
         Parameters
         ----------
-        x : array
-            x-coordinates of the line
-        y : array
-            y-coordinates of the line
-        layers : integer, list or array
-            layers for which head is plotted, default is all layers
+        x, y : 1D arrays
+            coordinates of grid points in x and y directions
+        z : scalar
+            z-coordinate of plane in which to plot velocity field
+        normalize : bool
+            if True, normalize velocity vectors to have length 1
         ax : matplotlib.Axes
             axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values
+            size of figure
+        parallel : bool
+            if True, compute velocity grid in parallel using multiple threads,
+            default is False
         **kwargs
-            additional keyword arguments passed to ax.plot()
+            additional keyword arguments passed to ax.quiver()
 
         Returns
         -------
         ax : matplotlib.Axes
             axes with plot
         """
-        if ax is None:
-            _, ax = plt.subplots()
-        head = self._ml.headalongline(x, y, layers=layers)
-        r = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
-        if layers is None:
-            layers = np.arange(self._ml.aq.naq)
-        for ilay in layers:
-            ax.plot(r, head[ilay], label=kwargs.pop("label", f"Layer {ilay}"), **kwargs)
-        return ax
+        # v has shape (3, nz, ny, nx) ordered as (vx, vy, vz)
+        v = self._ml.velocity_grid(x, y, np.atleast_1d(z), parallel=parallel)
+        U = v[0, 0]
+        V = v[1, 0]
+        return super().quiver_xy(
+            x, y, U, V, normalize=normalize, ax=ax, figsize=figsize, **kwargs
+        )
+
+    def quiver_z(
+        self, x, y, z, normalize=False, ax=None, figsize=None, parallel=False, **kwargs
+    ):
+        """Quiver plot of velocity field in xz- or yz-plane.
+
+        Parameters
+        ----------
+        x, y : 1D arrays
+            coordinates of grid points in x and y directions
+        z : scalar
+            z-coordinate of plane in which to plot velocity field
+        normalize : bool
+            if True, normalize velocity vectors to have length 1
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values
+            size of figure
+        parallel : bool
+            if True, compute velocity grid in parallel using multiple threads,
+            default is False
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+        if len(x) > 1 and len(y) > 1:
+            raise ValueError(
+                "quiver_z is only implemented along the x-, or y-axis. "
+                "Either x, or y has to have length 1."
+            )
+        # v has shape (3, nz, ny, nx) ordered as (vx, vy, vz)
+        v = self._ml.velocity_grid(x, y, np.atleast_1d(z), parallel=parallel)
+        U = v[0].squeeze() if len(y) == 1 else v[1].squeeze()
+        V = v[2, 0]  # vz
+        return super().quiver_z(
+            x, y, z, U, V, normalize=normalize, ax=ax, figsize=figsize, **kwargs
+        )

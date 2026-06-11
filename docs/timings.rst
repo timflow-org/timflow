@@ -1,0 +1,4 @@
+Timings
+=======
+
+.. nb-exec-table::

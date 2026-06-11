@@ -7,14 +7,8 @@ import warnings
 
 import numpy as np
 
-_future_warning_metadata = (
-    "In a future version traces will be returned as a dictionary containing "
-    "metadata together with the trace. To already get the new behavior use "
-    "metadata=True."
-)
 
-
-def timtraceline(
+def traceline(
     ml,
     xstart,
     ystart,
@@ -25,9 +19,6 @@ def timtraceline(
     nstepmax=100,
     win=None,
     silent=False,
-    returnlayers=False,
-    *,
-    metadata=False,
 ):
     """Function to trace one pathline.
 
@@ -53,20 +44,21 @@ def timtraceline(
         list with [xmin, xmax, ymin, ymax]
     silent : string
         if '.', prints dot upon completion of each traceline
-    returnlayers : boolean
-        if True, return layers numbers
-    metadata: boolean
-        if False, return xyzt array or xyzt array plus layer array
-        if True, return list of result dictionaries with three entries:
-        - "trace": np.array(xyzt)
-        - "message": termination message
-        - "complete": True if terminated correctly
+
+    Returns
+    -------
+    dict
+        Result dictionary with keys:
+
+        - ``trace``: np.array of ``(x, y, z, t)`` along the path
+        - ``message``: termination message
+        - ``complete``: whether tracing stopped at a terminal condition
+        - ``total_travel_time``: final time in the trace
+        - ``layers``: model layer index for each trace segment / step
     """
     verbose = False  # used for debugging
     if win is None:
         win = [-1e30, 1e30, -1e30, 1e30]
-    if not metadata:
-        warnings.warn(_future_warning_metadata, FutureWarning, stacklevel=2)
     # treating aquifer layers and leaky layers the same way
     xw1, xw2, yw1, yw2 = win
     terminate = False
@@ -99,6 +91,7 @@ def timtraceline(
             if vz > 0:  # upward through leaky layer
                 if modellayer == 0:  # steps out of the top
                     z1 = aq.z[modellayer]
+                    message = "at top of leaky layer"
                     terminate = True
                 else:
                     modellayer -= 1
@@ -271,19 +264,60 @@ def timtraceline(
         message = "reached nstepmax iterations"
     if not silent:
         print(message)
-    if metadata:
-        result = {"trace": np.array(xyzt), "message": message, "complete": terminate}
-        if returnlayers:
-            result["layers"] = layerlist
-    else:
-        if returnlayers:
-            result = np.array(xyzt), layerlist
-        else:
-            result = np.array(xyzt)
-    return result
+    return {
+        "trace": np.array(xyzt),
+        "message": message,
+        "complete": terminate,
+        "total_travel_time": xyzt[-1][-1],
+        "layers": layerlist,
+    }
 
 
-def timtracelines(
+def timtraceline(
+    ml,
+    xstart,
+    ystart,
+    zstart,
+    hstepmax,
+    vstepfrac=0.2,
+    tmax=1e12,
+    nstepmax=100,
+    win=None,
+    silent=False,
+    returnlayers=False,
+    *,
+    metadata=False,
+):
+    """Deprecated alias for :func:`traceline`.
+
+    .. deprecated::
+        Use :func:`traceline` instead. This function will be removed in a
+        future version. It returns only the ``trace`` array, or
+        ``(trace, layers)`` when ``returnlayers`` is True (not the full dict).
+    """
+    warnings.warn(
+        "timtraceline is deprecated. Use traceline instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    result = traceline(
+        ml,
+        xstart,
+        ystart,
+        zstart,
+        hstepmax,
+        vstepfrac=vstepfrac,
+        tmax=tmax,
+        nstepmax=nstepmax,
+        win=win,
+        silent=silent,
+    )
+    if returnlayers:
+        return result["trace"], result["layers"]
+    return result["trace"]
+
+
+def tracelines(
     ml,
     xstart,
     ystart,
@@ -294,8 +328,6 @@ def timtracelines(
     nstepmax=100,
     silent=".",
     win=None,
-    *,
-    metadata=False,
 ):
     """Function to trace multiple pathlines.
 
@@ -321,16 +353,19 @@ def timtracelines(
         if '.', prints dot upon completion of each traceline
     win : list
         list with [xmin, xmax, ymin, ymax]
-    metadata: boolean
-        if False, return list of xyzt arrays
-        if True, return list of result dictionaries
+
+    Returns
+    -------
+    list of dict
+        One result dict per starting point, in the same form as :func:`traceline`
+        (each dict always includes a ``layers`` entry).
     """
     if win is None:
         win = [-1e30, 1e30, -1e30, 1e30]
     xyztlist = []
     for x, y, z in zip(xstart, ystart, zstart, strict=False):
         xyztlist.append(
-            timtraceline(
+            traceline(
                 ml,
                 x,
                 y,
@@ -341,7 +376,6 @@ def timtracelines(
                 nstepmax=nstepmax,
                 silent=silent,
                 win=win,
-                metadata=metadata,
             )
         )
         if silent == ".":
@@ -349,6 +383,51 @@ def timtracelines(
     if silent == ".":
         print("")
     return xyztlist
+
+
+def timtracelines(
+    ml,
+    xstart,
+    ystart,
+    zstart,
+    hstepmax,
+    vstepfrac=0.2,
+    tmax=1e12,
+    nstepmax=100,
+    silent=".",
+    win=None,
+    *,
+    metadata=False,
+    returnlayers=False,
+):
+    """Deprecated alias for :func:`tracelines`.
+
+    .. deprecated::
+        Use :func:`tracelines` instead. This function will be removed in a
+        future version. It returns a list of ``trace`` arrays, or a list of
+        ``(trace, layers)`` pairs when ``returnlayers`` is True (not result
+        dicts).
+    """
+    warnings.warn(
+        "timtracelines is deprecated. Use tracelines instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    results = tracelines(
+        ml,
+        xstart,
+        ystart,
+        zstart,
+        hstepmax,
+        vstepfrac=vstepfrac,
+        tmax=tmax,
+        nstepmax=nstepmax,
+        silent=silent,
+        win=win,
+    )
+    if returnlayers:
+        return [(r["trace"], r["layers"]) for r in results]
+    return [r["trace"] for r in results]
 
 
 def crossline(xa, ya, xb, yb, z1, z2):

@@ -88,8 +88,10 @@ class PlotBase:
         fmt=None,
         units=None,
         hstar=None,
+        boundaries=True,
         horizontal_axis: Literal["x", "y", "s"] = "s",
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
         **kwargs,
     ):
         r"""Plot cross-section of model.
@@ -115,7 +117,8 @@ class PlotBase:
         fmt : str, optional
             format string for parameter values, e.g. '.2f' for 2 decimals
         units : dict, optional
-            dictionary with units for parameters, e.g. {'k': 'm/d', 'c': 'd'}
+            dictionary with units keyed by timflow parameter names,
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
         horizontal_axis : str
             's' for distance along cross-section on x-axis (default)
             'x' for using x-coordinates on x-axis
@@ -124,8 +127,13 @@ class PlotBase:
             override hstar value for plotting water level in transient
             1D inhomogeneities that use hstar, useful for plotting pretty
             cross-sections when reference level is not equal to 0.
+        boundaries : bool, optional
+            whether to plot aquifer boundaries for cross-section models,
+            default is True
         sep : str
             Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         **kwargs
             passed on to all ax.plot calls
 
@@ -151,7 +159,9 @@ class PlotBase:
                 fmt=fmt,
                 units=units,
                 hstar=hstar,
+                boundaries=boundaries,
                 sep=sep,
+                ha=ha,
             )
 
         # Standard cross-section for multi-layer models
@@ -166,7 +176,7 @@ class PlotBase:
 
         # Plot layers
         self._xection_plot_layers(
-            r0, r, labels, params, fmt, units, lli, aqi, ax, sep=sep, **kwargs
+            r0, r, labels, params, fmt, units, lli, aqi, ax, sep=sep, ha=ha, **kwargs
         )
 
         # Plot aquifer-aquifer boundaries
@@ -270,7 +280,9 @@ class PlotBase:
         fmt,
         units=None,
         hstar=None,
+        boundaries=True,
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
     ):
         """Handle cross-section plotting for SimpleAquifer models."""
         # Default implementation - can be overridden
@@ -312,6 +324,7 @@ class PlotBase:
             fmt=fmt,
             units=units,
             sep=sep,
+            ha=ha,
         )
         ax.set_xlim(x1, x2)
         ax.set_ylabel("elevation")
@@ -324,7 +337,8 @@ class PlotBase:
             if isinstance(e, HstarXsection):
                 e.plot(ax=ax, hstar=hstar)
             else:
-                e.plot(ax=ax)
+                if not e.inhomelement or boundaries:
+                    e.plot(ax=ax)
 
         return ax
 
@@ -339,8 +353,9 @@ class PlotBase:
         fmt,
         units,
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
     ):
-        """Plot inhomogeneities for SimpleAquifer models.
+        r"""Plot inhomogeneities for SimpleAquifer models.
 
         Parameters
         ----------
@@ -357,35 +372,26 @@ class PlotBase:
         fmt : str
             Format string for parameter values
         units : dict or None
-            Dictionary of units for parameters (unused in transient, kept for
-            compatibility)
+            Dictionary of units keyed by timflow parameter names
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}.
+        sep : str, optional
+            Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         """
-        if self._ml.model_type == "steady":
-            for inhom in self._ml.aq.inhomlist:
-                inhom.plot(
-                    ax=ax,
-                    labels=labels,
-                    params=params,
-                    names=names,
-                    x1=x1,
-                    x2=x2,
-                    fmt=fmt,
-                    units=units,
-                    sep=sep,
-                )
-        elif self._ml.model_type == "transient":
-            for inhom in self._ml.aq.inhomdict.values():
-                inhom.plot(
-                    ax=ax,
-                    labels=labels,
-                    params=params,
-                    names=names,
-                    x1=x1,
-                    x2=x2,
-                    fmt=fmt,
-                    units=units,
-                    sep=sep,
-                )
+        for inhom in self._ml.aq.inhomdict.values():
+            inhom.plot(
+                ax=ax,
+                labels=labels,
+                params=params,
+                names=names,
+                x1=x1,
+                x2=x2,
+                fmt=fmt,
+                units=units,
+                sep=sep,
+                ha=ha,
+            )
 
     def _get_xsection_line_params(self, xy, ax, horizontal_axis):
         """Get parameters for cross-section line.
@@ -456,6 +462,7 @@ class PlotBase:
         aqi,
         ax,
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
         **kwargs,
     ):
         r"""Plot individual layers in the cross-section.
@@ -473,7 +480,8 @@ class PlotBase:
         fmt : str
             Format string for parameter values
         units : dict or None
-            Dictionary of units for parameters
+            Dictionary of units keyed by timflow parameter names
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
         lli : int or None
             Current leaky layer index
         aqi : int or None
@@ -482,6 +490,8 @@ class PlotBase:
             Axes to plot on
         sep : str
             Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         **kwargs
             passed on to all ax.plot calls
         """
@@ -504,7 +514,7 @@ class PlotBase:
                     )
                 if params:
                     self._xsection_leaky_layer_params(
-                        ax, r0, r, labels, fmt, units, lli, i, sep=sep
+                        ax, r0, r, labels, fmt, units, lli, i, sep=sep, ha=ha
                     )
                 if labels or params:
                     lli += 1
@@ -522,7 +532,7 @@ class PlotBase:
                     )
                 if params:
                     self._xsection_aquifer_params(
-                        ax, r0, r, labels, fmt, units, aqi, i, sep=sep
+                        ax, r0, r, labels, fmt, units, aqi, i, sep=sep, ha=ha
                     )
                 if labels or params:
                     aqi += 1
@@ -538,6 +548,7 @@ class PlotBase:
         lli,
         layer_idx,
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
     ):
         r"""Add parameter text for leaky layers.
 
@@ -554,13 +565,16 @@ class PlotBase:
         fmt : str
             Format string for parameter values
         units : dict or None
-            Dictionary of units for parameters
+            Dictionary of units keyed by timflow parameter names
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
         lli : int
             Leaky layer index
         layer_idx : int
             Layer index in the model
         sep : str
             Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         """
         if self._ml.model_type == "steady":
             # Steady state: only resistance c
@@ -574,17 +588,20 @@ class PlotBase:
             ssfmt = ".2e"
             cstr = f"$c$ = {self._ml.aq.c[lli]:{fmt}}"
             sstr = f"$S_s$ = {self._ml.aq.Sll[lli]:{ssfmt}}"
-            if sep == "\n":
-                nspaces = max(len(sstr) - len(cstr), 1)
-                paramtxt = cstr + " " * nspaces + sep + sstr
+            if units is not None:
+                c_unitstr = f" {units['c']}" if "c" in units else ""
+                # Prefer Sll unit; fall back to Saq for compatibility.
+                ss_unitstr = f" {units['Sll']}" if "Sll" in units else ""
             else:
-                paramtxt = cstr + sep + sstr
+                c_unitstr = ""
+                ss_unitstr = ""
+            paramtxt = cstr + c_unitstr + sep + sstr + ss_unitstr
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
             np.mean(self._ml.aq.z[layer_idx : layer_idx + 2]),
             paramtxt,
-            ha="center",
+            ha=ha,
             va="center",
         )
 
@@ -599,6 +616,7 @@ class PlotBase:
         aqi,
         layer_idx,
         sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
     ):
         r"""Add parameter text for aquifers.
 
@@ -615,20 +633,25 @@ class PlotBase:
         fmt : str
             Format string for parameter values
         units : dict or None
-            Dictionary of units for parameters
+            Dictionary of units keyed by timflow parameter names
+            e.g.{'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
         aqi : int
             Aquifer index
         layer_idx : int
             Layer index in the model
         sep : str
             Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         """
         # Steady state: only hydraulic conductivity
         if units is not None:
-            unitstr = f" {units['k']}" if "k" in units else ""
+            kh_unitstr = f" {units['kaq']}" if "kaq" in units else ""
+            ss_unitstr = f" {units['Saq']}" if "Saq" in units else ""
         else:
-            unitstr = ""
-        paramtxt = f"$k_h$ = {self._ml.aq.kaq[aqi]:{fmt}}" + unitstr
+            kh_unitstr = ""
+            ss_unitstr = ""
+        paramtxt = f"$k_h$ = {self._ml.aq.kaq[aqi]:{fmt}}" + kh_unitstr
 
         # Model3D adds vertical anisotropy
         if self._ml.name == "Model3D":
@@ -642,13 +665,13 @@ class PlotBase:
                 # Top phreatic aquifer uses S instead of Ss
                 paramtxt += f"{sep}$S$ = {self._ml.aq.Saq[aqi]:{fmt}}"
             else:
-                paramtxt += f"{sep}$S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}"
+                paramtxt += f"{sep}$S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}" + ss_unitstr
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
             np.mean(self._ml.aq.z[layer_idx : layer_idx + 2]),
             paramtxt,
-            ha="center",
+            ha=ha,
             va="center",
         )
 
@@ -670,10 +693,10 @@ class PlotBase:
                 )
 
     def contour(self, **kwargs):
-        """Create contour plot.
+        """Create head contour plot.
 
         This method should be implemented by subclasses to provide
-        model-specific contouring functionality.
+        model-specific contour calls.
 
         Raises
         ------
@@ -682,7 +705,197 @@ class PlotBase:
         """
         raise NotImplementedError("contour() must be implemented in subclass")
 
-    def headalongline(self, **kwargs):
+    @staticmethod
+    def _get_xy_arrays(win, ngr, nudge=0.0):
+        """Helper to create x and y arrays for contouring.
+
+        Parameters
+        ----------
+        win : list or tuple
+            [x1, x2, y1, y2]
+        ngr : scalar, tuple or list
+            if scalar: number of grid points in x and y direction
+            if tuple or list: nx, ny, number of grid points in x and y
+            directions
+        nudge : float
+            small value to nudge grid points away from boundaries, default is 0
+
+        Returns
+        -------
+        xg, yg : 1D arrays
+            x and y coordinates of grid points for contouring
+        """
+        x1, x2, y1, y2 = win
+        if np.isscalar(ngr):
+            nx = ny = ngr
+        else:
+            nx, ny = ngr
+        xg = np.linspace(x1 + nudge, x2 - nudge, nx)
+        yg = np.linspace(y1 + nudge, y2 - nudge, ny)
+        return xg, yg
+
+    def contour_array(
+        self,
+        x,
+        y,
+        arr,
+        layers=0,
+        levels=20,
+        color=None,
+        cmap=None,
+        figsize=None,
+        ax=None,
+        labels=True,
+        decimals=0,
+        legend=True,
+        layout=True,
+        return_contours=False,
+        **kwargs,
+    ):
+        layers = np.atleast_1d(layers)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+            ax.set_aspect("equal", adjustable="box")
+        # color
+        per_level_colors = False
+        if color is None and cmap is None:
+            c = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        elif isinstance(color, str):
+            c = len(layers) * [color]
+        elif isinstance(color, list):
+            c = color
+            if len(c) > 0 and not isinstance(c[0], str):
+                per_level_colors = True  # list of RGBA tuples, one per contour level
+        else:
+            c = None
+
+        # contour
+        cslist = []
+        cshandlelist = []
+        for i in range(len(layers)):
+            _colors = c if per_level_colors else c[i]
+            iarr = arr[i] if arr.ndim == 3 else arr
+            cs = ax.contour(x, y, iarr, levels, colors=_colors, cmap=cmap, **kwargs)
+            cslist.append(cs)
+            handles, _ = cs.legend_elements()
+            cshandlelist.append(handles[0])
+            if labels:
+                fmt = "%1." + str(decimals) + "f"
+                ax.clabel(cs, fmt=fmt)
+        if isinstance(legend, list):
+            ax.legend(cshandlelist, legend, loc=(0, 1), frameon=False, ncol=3)
+        elif legend:
+            legendlist = ["layer " + str(i) for i in layers]
+            ax.legend(cshandlelist, legendlist, loc=(0, 1), frameon=False, ncol=3)
+        if layout:
+            self.topview(win=[x.min(), x.max(), y.min(), y.max()], layers=layers, ax=ax)
+        if return_contours:
+            return ax, cslist
+        return ax
+
+    def vcontour_array(
+        self,
+        x,
+        y,
+        arr,
+        levels=20,
+        labels=True,
+        decimals=0,
+        color=None,
+        cmap=None,
+        vinterp=True,
+        ax=None,
+        figsize=None,
+        layout=True,
+        horizontal_axis: Literal["x", "y", "s"] = "s",
+        return_contours=False,
+        **kwargs,
+    ):
+        """Contour array in vertical cross-section.
+
+        This method derives the vertical coordinates based on the model layers.
+        It assumes that the input array has shape (layers, len(x)). Use vinterp
+        to control whether to interpolate between layer centers or use constant
+        values within each layer.
+
+        Parameters
+        ----------
+        x : 1D array
+            horizontal coordinates of grid points
+        y : 1D array
+            horizontal coordinates of grid points
+        arr : 2D array
+            array to contour, shape (naq, len(x))
+        levels : integer or array (default 20)
+            levels that are contoured
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        color : str or list of strings
+            color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
+        vinterp : boolean
+            when True, interpolate between centers of layers
+            when False, constant value vertically in each layer
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        layout : boolean
+            plot layout if True
+        horizontal_axis : str, optional
+            's' for distance along cross-section on x-axis (default)
+            'x' for using x-coordinates on x-axis
+            'y' for using y-coordinates on x-axis
+        return_contours : bool
+            if True, return contour set, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
+
+        Returns
+        -------
+        cs : contour set
+        """
+        if horizontal_axis == "x":
+            x = x
+        elif horizontal_axis == "y":
+            x = y
+        elif horizontal_axis == "s":
+            x = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
+        else:
+            raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
+        if vinterp:
+            z = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
+            z = np.hstack((self._ml.aq.zaqtop[0], z, self._ml.aq.zaqbot[-1]))
+            arr = np.vstack((arr[0], arr, arr[-1]))
+        else:
+            z = np.empty(2 * self._ml.aq.naq)
+            for i in range(self._ml.aq.naq):
+                z[2 * i] = self._ml.aq.zaqtop[i]
+                z[2 * i + 1] = self._ml.aq.zaqbot[i]
+            arr = np.repeat(arr, 2, 0)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+        if layout:
+            self.xsection(
+                xy=[(x[0], y[0]), (x[-1], y[-1])],
+                labels=False,
+                ax=ax,
+                horizontal_axis=horizontal_axis,
+            )
+        if color is not None and cmap is not None:
+            cmap = None
+        cs = ax.contour(x, z, arr, levels, colors=color, cmap=cmap, **kwargs)
+        if labels:
+            fmt = "%1." + str(decimals) + "f"
+            ax.clabel(cs, fmt=fmt)
+        if return_contours:
+            return ax, cs
+        return ax
+
+    def headalongline(self, *args, **kwargs):
         """Plot head along a line.
 
         This method should be implemented by subclasses to provide
@@ -694,3 +907,94 @@ class PlotBase:
             If not implemented in subclass
         """
         raise NotImplementedError("headalongline() must be implemented in subclass")
+
+    def quiver_xy(self, x, y, U, V, normalize=False, ax=None, figsize=None, **kwargs):
+        """Plot quiver of flow vectors.
+
+        This method should be implemented by subclasses to provide
+        model-specific quiver plotting functionality.
+
+        Parameters
+        ----------
+        x : 2D array
+            x coordinates of grid points
+        y : 2D array
+            y coordinates of grid points
+        z : float
+            z coordinate of grid points
+        normalize : bool
+            whether to normalize flow vectors for plotting
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with quiver plot
+        """
+        if normalize:
+            speed = np.sqrt(U**2 + V**2)
+            U = U / speed
+            V = V / speed
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+            ax.set_aspect("equal", adjustable="box")
+        ax.quiver(x, y, U, V, **kwargs)
+        return ax
+
+    def quiver_z(
+        self,
+        x,
+        y,
+        z,
+        U,
+        V,
+        normalize=False,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
+        """Plot quiver of flow vectors in 3D.
+
+        This method should be implemented by subclasses to provide
+        model-specific quiver plotting functionality.
+
+        Parameters
+        ----------
+        x : 1D array
+            x coordinates of grid points
+        y : 1D array
+            y coordinates of grid points
+        z : 1D array
+            z coordinates of grid points
+        U : 2D array
+            x component of flow vectors
+        V : 2D array
+            y component of flow vectors
+        normalize : bool
+            whether to normalize flow vectors for plotting
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with quiver plot
+        """
+        s = x if len(y) == 1 else y
+        if normalize:
+            speed = np.sqrt(U**2 + V**2)
+            U = U / speed
+            V = V / speed
+        if ax is None:
+            _, ax = plt.subplots(1, 1, figsize=figsize)
+        ax.quiver(s, z, U, V, **kwargs)
+        return ax

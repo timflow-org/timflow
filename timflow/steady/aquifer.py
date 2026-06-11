@@ -89,6 +89,9 @@ class AquiferData:
 
     def initialize(self):
         self.elementlist = []  # Elementlist of aquifer
+        # Recompute T for when kaq is changed
+        self.T = self.kaq * self.Haq
+        self.Tcol = self.T.reshape(self.naq, 1)
         d0 = 1.0 / (self.c * self.T)
         d0[:-1] += 1.0 / (self.c[1:] * self.T[:-1])
         dp1 = -1.0 / (self.c[1:] * self.T[1:])
@@ -156,7 +159,7 @@ class AquiferData:
             add_cols = []
         summary = pd.DataFrame(
             index=range(self.nlayers),
-            columns=["layer", "layer_type", "H", "k_h", "c"] + add_cols,
+            columns=["layer", "layer_type", "H", "k_h"] + add_cols + ["c"],
         )
         summary.index.name = "#"
         layertype = {"a": "aquifer", "l": "leaky layer"}
@@ -170,8 +173,8 @@ class AquiferData:
                 summary.loc[0, "c"] = np.nan  # reset confined resistance to nan
                 summary.loc[maskaq, "kzoverkh"] = self.kzoverkh
             else:
-                summary.iloc[~maskaq, 2] = self.Hll[1:]
-                summary.iloc[~maskaq, 4] = self.c[1:]
+                summary.loc[~maskaq, "H"] = self.Hll[1:]
+                summary.loc[~maskaq, "c"] = self.c[1:]
         else:
             summary.loc[maskaq, "H"] = self.Haq
             summary.loc[maskaq, "k_h"] = self.kaq
@@ -180,8 +183,8 @@ class AquiferData:
                 summary.loc[maskaq, "c"] = self.c
                 summary.loc[maskaq, "kzoverkh"] = self.kzoverkh
             else:
-                summary.iloc[~maskaq, 2] = self.Hll
-                summary.iloc[~maskaq, 4] = self.c
+                summary.loc[~maskaq, "H"] = self.Hll
+                summary.loc[~maskaq, "c"] = self.c
         summary.loc[:, "layer"] = self.layernumber
         return summary  # .set_index("layer")
 
@@ -193,25 +196,30 @@ class Aquifer(AquiferData):
     """
 
     def __init__(self, model, kaq, c, z, npor, ltype, model3d=False):
-        super().__init__(model, kaq, c, z, npor, ltype, model3d)
-        self.inhomlist = []
+        super().__init__(model, kaq, c, z, npor, ltype, model3d=model3d)
+        self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhom
 
     def initialize(self):
-        # cause we are going to call initialize for inhoms
-        AquiferData.initialize(self)
-        for inhom in self.inhomlist:
+        super().initialize()
+        # 2 passes to ensure all data is present prior to creating elements
+        for inhom in self.inhomdict.values():
             inhom.initialize()
-        for inhom in self.inhomlist:
+        for inhom in self.inhomdict.values():
             inhom.create_elements()
 
     def add_inhom(self, inhom):
-        self.inhomlist.append(inhom)
-        return len(self.inhomlist) - 1  # returns number in the list
+        inhom_number = len(self.inhomdict)
+        if not hasattr(inhom, "name") or inhom.name is None:
+            inhom.name = f"inhom{inhom_number:02g}"
+        if inhom.name in self.inhomdict:
+            raise ValueError(f"Inhomogeneity name '{inhom.name}' already exists.")
+        self.inhomdict[inhom.name] = inhom
+        return inhom_number
 
     def find_aquifer_data(self, x, y):
         rv = self
-        for inhom in self.inhomlist:
+        for inhom in self.inhomdict.values():
             if inhom.isinside(x, y):
                 if inhom.area < rv.area:
                     rv = inhom
@@ -231,7 +239,7 @@ class SimpleAquifer(Aquifer):
 
     def __init__(self, naq):
         self.naq = naq
-        self.inhomlist = []
+        self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhomogeneity
         self.elementlist = []
 
@@ -239,7 +247,8 @@ class SimpleAquifer(Aquifer):
         return f"Simple Aquifer: {self.naq} aquifer(s)"
 
     def initialize(self):
-        for inhom in self.inhomlist:
+        # 2 passes to ensure all data is present prior to creating elements
+        for inhom in self.inhomdict.values():
             inhom.initialize()
-        for inhom in self.inhomlist:
+        for inhom in self.inhomdict.values():
             inhom.create_elements()

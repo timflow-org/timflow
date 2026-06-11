@@ -66,11 +66,8 @@ class Xsection(AquiferData):
         self.x2 = x2
         self.hstar = hstar
         self.N = N
+        self.name = name
         self.inhom_number = self.model.aq.add_inhom(self)
-        if name is None:
-            self.name = f"inhom{self.inhom_number:02g}"
-        else:
-            self.name = name
         self.addlinesinks = True  # Set to False not to add line-sinks
 
     def __repr__(self):
@@ -146,7 +143,17 @@ class Xsection(AquiferData):
             c = ConstantStar(self.model, self.hstar, aq=aqin)
             c.inhomelement = True
 
-    def plot(self, ax=None, labels=False, params=False, names=False, fmt=None, **kwargs):
+    def plot(
+        self,
+        ax=None,
+        labels=False,
+        params=False,
+        names=False,
+        fmt=None,
+        units: dict = None,
+        ha: str = "center",
+        **kwargs,
+    ):
         """Plot the cross-section.
 
         Parameters
@@ -161,6 +168,12 @@ class Xsection(AquiferData):
             If True, add inhomogeneity names.
         fmt : str
             format string for parameters
+        units : dict, optional
+            Dictionary with units for parameters, only used if params is True.
+            Use timflow parameter names as keys e.g.
+            {"kaq": "m/d", "c": "d"}.
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
         """
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(8, 4))
@@ -210,6 +223,13 @@ class Xsection(AquiferData):
                 transform=ax.get_xaxis_transform(),
             )
 
+        if params and (units is not None):
+            kh_unitstr = f" {units['kaq']}" if "kaq" in units else ""
+            c_unitstr = f" {units['c']}" if "c" in units else ""
+        else:
+            kh_unitstr = ""
+            c_unitstr = ""
+
         for i in range(self.nlayers):
             if self.ltype[i] == "l":
                 ax.fill_between(
@@ -227,12 +247,12 @@ class Xsection(AquiferData):
                         va="center",
                     )
                 if params:
-                    paramtxt = f"$c$ = {self.c[lli]:{fmt}}"
+                    paramtxt = f"$c$ = {self.c[lli]:{fmt}}" + c_unitstr
                     ax.text(
                         r0 + 0.75 * r if labels else r0 + 0.5 * r,
                         np.mean(self.z[i : i + 2]),
                         paramtxt,
-                        ha="center",
+                        ha=ha,
                         va="center",
                     )
                 if labels or params:
@@ -247,12 +267,12 @@ class Xsection(AquiferData):
                     va="center",
                 )
             if params and self.ltype[i] == "a":
-                paramtxt = f"$k_h$ = {self.kaq[aqi]:{fmt}}"
+                paramtxt = f"$k_h$ = {self.kaq[aqi]:{fmt}}" + kh_unitstr
                 ax.text(
                     r0 + 0.75 * r if labels else r0 + 0.5 * r,
                     np.mean(self.z[i : i + 2]),
                     paramtxt,
-                    ha="center",
+                    ha=ha,
                     va="center",
                 )
             if (labels or params) and self.ltype[i] == "a":

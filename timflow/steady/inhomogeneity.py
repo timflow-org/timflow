@@ -42,7 +42,9 @@ __all__ = [
 class PolygonInhom(AquiferData):
     tiny = 1e-8
 
-    def __init__(self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg):
+    def __init__(
+        self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg, name=None
+    ):
         # All input variables except model should be numpy arrays
         # That should be checked outside this function):
         AquiferData.__init__(self, model, kaq, c, z, npor, ltype)
@@ -50,6 +52,7 @@ class PolygonInhom(AquiferData):
         self.ndeg = ndeg
         self.hstar = hstar
         self.N = N
+        self.name = name
         self.inhom_number = self.model.aq.add_inhom(self)
         self.z1, self.z2 = compute_z1z2(xy)
         self.Nsides = len(self.z1)
@@ -186,6 +189,8 @@ class PolygonInhomMaq(PolygonInhom):
     ndeg : int
         number of points used between two segments to numerically
         integrate normal discharge
+    name : string, optional
+        name of inhomogeneity
     """
 
     tiny = 1e-8
@@ -203,6 +208,7 @@ class PolygonInhomMaq(PolygonInhom):
         N=None,
         order=3,
         ndeg=3,
+        name=None,
     ):
         if c is None:
             c = []
@@ -220,7 +226,19 @@ class PolygonInhomMaq(PolygonInhom):
             ltype,
         ) = param_maq(kaq, z, c, npor, topboundary)
         PolygonInhom.__init__(
-            self, model, xy, kaq, c, z, npor, ltype, hstar, N, order, ndeg
+            self,
+            model,
+            xy,
+            kaq,
+            c,
+            z,
+            npor,
+            ltype,
+            hstar,
+            N,
+            order,
+            ndeg,
+            name=name,
         )
 
 
@@ -424,7 +442,7 @@ class BuildingPit(AquiferData):
             "BuildingPit: layers "
             + str(list(self.layers))
             + ", "
-            + str(list(self.x, self.y))
+            + str(list(zip(self.x.tolist(), self.y.tolist(), strict=False)))
         )
 
     def isinside(self, x, y):
@@ -687,7 +705,9 @@ class BuildingPit3D(BuildingPit):
             layers = [0]
         if z is None:
             z = [1, 0]
-        (kaq, c, npor, ltype) = param_3d(kaq, z, kzoverkh, npor, topboundary, topres)
+        kaq, kzoverkh, c, npor, ltype = param_3d(
+            kaq, z, kzoverkh, npor, topboundary, topres
+        )
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
         super().__init__(
@@ -703,6 +723,7 @@ class BuildingPit3D(BuildingPit):
             ndeg=ndeg,
             layers=layers,
         )
+        self.kzoverkh = kzoverkh  # add kzoverkh to inhomogeneity object
 
 
 class LeakyBuildingPit(BuildingPit):
@@ -812,7 +833,7 @@ class LeakyBuildingPit(BuildingPit):
             "LeakyBuildingPit: layers "
             + str(list(self.layers))
             + ", "
-            + str(list(self.x, self.y))
+            + str(list(zip(self.x.tolist(), self.y.tolist(), strict=False)))
         )
 
     def create_elements(self):
@@ -1060,7 +1081,9 @@ class LeakyBuildingPit3D(LeakyBuildingPit):
             layers = [0]
         if z is None:
             z = [1, 0]
-        (kaq, c, npor, ltype) = param_3d(kaq, z, kzoverkh, npor, topboundary, topres)
+        kaq, kzoverkh, c, npor, ltype = param_3d(
+            kaq, z, kzoverkh, npor, topboundary, topres
+        )
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
         super().__init__(
@@ -1077,6 +1100,7 @@ class LeakyBuildingPit3D(LeakyBuildingPit):
             layers=layers,
             res=res,
         )
+        self.kzoverkh = kzoverkh  # add kzoverkh to inhomogeneity object
 
 
 class AreaSinkInhom(Element):

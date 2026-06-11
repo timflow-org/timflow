@@ -9,4 +9,5 @@ dot nl.
 
 # ruff : noqa: F401
 from timflow import steady, transient
+from timflow.calibrate import Calibrate
 from timflow.version import __version__, show_versions

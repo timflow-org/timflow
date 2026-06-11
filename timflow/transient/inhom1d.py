@@ -156,39 +156,9 @@ class Xsection(AquiferData):
         """
         return (x >= self.x1) and (x < self.x2)
 
-    def initialize(self):
-        super().initialize()
-        self.create_elements()
-
     def create_elements(self):
         """Create linesinks to meet the continuity conditions the at the boundaries."""
-        if (self.x1 == -np.inf) and (self.x2 == np.inf):
-            # no reason to add elements
-            pass
-        # HeadDiff on right side, FluxDiff on left side
-        elif self.x1 == -np.inf:
-            xin = self.x2 - self.tiny
-            # xoutright = self.x2 + self.tiny
-            aqin = self.model.aq.find_aquifer_data(xin, 0)
-            # aqoutright = self.model.aq.find_aquifer_data(xoutright, 0)
-            if self.addlinesinks:
-                HeadDiffLineSink1D(
-                    self.model,
-                    self.x2,
-                    layers=range(self.naq),
-                    aq=aqin,
-                    label=None,
-                )
-        elif self.x2 == np.inf:
-            xin = self.x1 + self.tiny
-            # xoutleft = self.x1 - self.tiny
-            aqin = self.model.aq.find_aquifer_data(xin, 0)
-            # aqoutleft = self.model.aq.find_aquifer_data(xoutleft, 0)
-            if self.addlinesinks:
-                FluxDiffLineSink1D(
-                    self.model, self.x1, range(self.naq), aq=aqin, label=None
-                )
-        else:
+        if np.isfinite(self.x1) and np.isfinite(self.x2):
             xin = 0.5 * (self.x1 + self.x2)
             # xoutleft = self.x1 - self.tiny
             # xoutright = self.x2 + self.tiny
@@ -202,9 +172,32 @@ class Xsection(AquiferData):
                 FluxDiffLineSink1D(
                     self.model, self.x1, range(self.naq), label=None, aq=aqin
                 )
+        # HeadDiff on right side, FluxDiff on left side
+        elif np.isneginf(self.x1) and not np.isposinf(self.x2):
+            xin = self.x2 - self.tiny
+            # xoutright = self.x2 + self.tiny
+            aqin = self.model.aq.find_aquifer_data(xin, 0)
+            # aqoutright = self.model.aq.find_aquifer_data(xoutright, 0)
+            if self.addlinesinks:
+                HeadDiffLineSink1D(
+                    self.model,
+                    self.x2,
+                    layers=range(self.naq),
+                    aq=aqin,
+                    label=None,
+                )
+        elif np.isposinf(self.x2) and not np.isneginf(self.x1):
+            xin = self.x1 + self.tiny
+            # xoutleft = self.x1 - self.tiny
+            aqin = self.model.aq.find_aquifer_data(xin, 0)
+            # aqoutleft = self.model.aq.find_aquifer_data(xoutleft, 0)
+            if self.addlinesinks:
+                FluxDiffLineSink1D(
+                    self.model, self.x1, range(self.naq), aq=aqin, label=None
+                )
         if self.tsandN is not None:
-            assert self.topboundary[:3] == "con" or self.topboundary[:3] == "phr", (
-                Exception("Infiltration can only be applied to a confined aquifer.")
+            assert self.topboundary == "con" or self.topboundary == "phr", Exception(
+                "Infiltration can only be applied to a confined aquifer."
             )
             AreaSinkXsection(self.model, self.x1, self.x2, tsandN=self.tsandN)
         if self.tsandhstar is not None:
@@ -221,6 +214,8 @@ class Xsection(AquiferData):
         names=False,
         fmt=None,
         sep: Literal[", ", "\n"] = ", ",
+        units: dict = None,
+        ha: str = "center",
         **kwargs,
     ):
         r"""Plot the cross-section.
@@ -239,6 +234,13 @@ class Xsection(AquiferData):
             format string for parameter values, e.g. '.2f' for 2 decimals.
         sep : str
             Separator between parameters, either ", " or "\n"
+        units : dict, optional
+            Dictionary with units for parameters, only used if params is True.
+            Use timflow parameter names as keys e.g.
+            {"kaq": "m/d", "c": "d", "Saq": "m$^{-1}$", "Sll": "m$^{-1}$"}.
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
+
         """
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(8, 4))
@@ -266,13 +268,15 @@ class Xsection(AquiferData):
 
         if fmt is None:
             fmt = ""
-        ssfmt = ".2e"
+            ssfmt = ".2e"
+        else:
+            ssfmt = f"{fmt[:-1]}e"
 
         r = x2 - x1
         r0 = x1
 
         if labels or params:
-            lli = 1 if self.topboundary == "con" else 0
+            lli = 1 if self.topboundary in ["con", "phr"] else 0
             aqi = 0
         else:
             lli = None
@@ -288,6 +292,15 @@ class Xsection(AquiferData):
                 fontsize=10,
                 transform=ax.get_xaxis_transform(),
             )
+
+        if params and (units is not None):
+            kh_unitstr = f" {units['kaq']}" if "kaq" in units else ""
+            ss_unitstr = f" {units['Saq']}" if "Saq" in units else ""
+            c_unitstr = f" {units['c']}" if "c" in units else ""
+        else:
+            kh_unitstr = ""
+            ss_unitstr = ""
+            c_unitstr = ""
 
         for i in range(self.nlayers):
             if self.ltype[i] == "l":
@@ -308,16 +321,17 @@ class Xsection(AquiferData):
                 if params:
                     cstr = f"$c$ = {self.c[lli]:{fmt}}"
                     sstr = f"$S_s$ = {self.Sll[lli]:{ssfmt}}"
+                    cstr_with_unit = cstr + c_unitstr
+                    sstr_with_unit = sstr + ss_unitstr
                     if sep == "\n":
-                        nspaces = max(len(sstr) - len(cstr), 1)
-                        paramtxt = cstr + " " * nspaces + sep + sstr
+                        paramtxt = cstr_with_unit + sep + sstr_with_unit
                     else:
-                        paramtxt = cstr + sep + sstr
+                        paramtxt = cstr_with_unit + sep + sstr_with_unit
                     ax.text(
                         r0 + 0.75 * r if labels else r0 + 0.5 * r,
                         np.mean(self.z[i : i + 2]),
                         paramtxt,
-                        ha="center",
+                        ha=ha,
                         va="center",
                     )
                 if labels or params:
@@ -338,15 +352,14 @@ class Xsection(AquiferData):
                 else:
                     sstr = f"$S_s$ = {self.Saq[aqi]:{ssfmt}}"
                 if sep == "\n":
-                    nspaces = max(len(sstr) - len(khstr), 1)
-                    paramtxt = khstr + "  " * nspaces + "\n" + sstr
+                    paramtxt = khstr + kh_unitstr + "\n" + sstr + ss_unitstr
                 else:
-                    paramtxt = khstr + sep + sstr
+                    paramtxt = khstr + kh_unitstr + sep + sstr + ss_unitstr
                 ax.text(
                     r0 + 0.75 * r if labels else r0 + 0.5 * r,
                     np.mean(self.z[i : i + 2]),
                     paramtxt,
-                    ha="center",
+                    ha=ha,
                     va="center",
                 )
             if (labels or params) and self.ltype[i] == "a":
