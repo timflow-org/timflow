@@ -54,7 +54,7 @@ class Model:
         'l' leaky layer
     """
 
-    def __init__(self, kaq, c, z, npor, ltype, model3d=False):
+    def __init__(self, kaq, z, c, npor, ltype, model3d=False):
         # All input variables are numpy arrays
         # That should be checked outside this function
         self.elementlist = []
