@@ -57,6 +57,11 @@ class AquiferData:
         # tag indicating whether an aquifer is Laplace (confined on top)
         if self.ltype[0] == "a":
             self.ilap = 1
+            if self.c[0] != 1e100:
+                assert len(self.c) == self.naq - 1, (
+                    "If topboundary='conf', len(c) should be naq-1"
+                )
+                self.c = np.hstack((1e100, self.c))  # add confined resistance to c
         else:
             self.ilap = 0
         #
