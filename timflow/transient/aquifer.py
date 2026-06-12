@@ -60,6 +60,12 @@ class AquiferData:
         if self.ltype[0] == "a":
             # first leaky layer below first aquifer layer
             self.layernumber[self.ltype == "l"] += 1
+            if self.c[0] != 1e100:  # this check works because max value is set to 1e100
+                assert len(self.c) == (self.naq - 1), (
+                    "If topboundary='conf', len(c) should be naq-1"
+                )
+                # add confined resistance for first layer
+                self.c = np.hstack((1e100, self.c))
         self.topboundary = topboundary[:3]
         self.phreatictop = phreatictop
         self.kzoverkh = kzoverkh
