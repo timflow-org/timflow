@@ -553,7 +553,7 @@ class PlotSteady(PlotBase):
             return ax, traces
         return ax
 
-    def plotcapzone(
+    def plot_capture_zone(
         self,
         well,
         nt=10,
@@ -606,8 +606,7 @@ class PlotSteady(PlotBase):
         return_traces : boolean (default False)
             return the traces instead of plotting
         **kwargs
-            For backward compatibility only: deprecated ``metadata`` keyword
-            (see :meth:`tracelines`).
+            kwargs are passed on to LineCollections for plotting.
 
         Returns
         -------
@@ -617,7 +616,6 @@ class PlotSteady(PlotBase):
             only if return_traces is True; outer list is per well, inner list
             matches :meth:`tracelines` with ``return_traces=True``
         """
-        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.plotcapzone")
         if win is None:
             win = [-1e30, 1e30, -1e30, 1e30]
         # make well a list
@@ -651,6 +649,99 @@ class PlotSteady(PlotBase):
         if return_traces:
             return ax, traces
         return ax
+
+    def plotcapzone(
+        self,
+        well,
+        nt=10,
+        zstart=None,
+        hstepmax=20,
+        vstepfrac=0.2,
+        tmax=365,
+        nstepmax=100,
+        silent=".",
+        color=None,
+        orientation="hor",
+        win=None,
+        ax=None,
+        figsize=None,
+        *,
+        return_traces=False,
+        **kwargs,
+    ):
+        """Plot a capture zone.
+
+        .. deprecated::
+            Use :meth:`plot_capture_zone` instead. This method will be removed in a
+            future version.
+
+        Parameters
+        ----------
+        well : timflow.steady.Well, list of wells or list of str
+            well element from which capture zone is started. Accepts a well object,
+            a list of wells, or a list of well names.
+        nt : int
+            number of path lines
+        zstart : scalar
+            starting elevation of the path lines. Halfway aquifer thickness if None
+        hstepmax : scalar
+            maximum step in horizontal space
+        vstepfrac : float
+            maximum fraction of aquifer layer thickness during one step
+        tmax : scalar
+            maximum time
+        nstepmax : scalar(int)
+            maximum number of steps
+        silent : boolean or string
+            True (no messages), False (all messages), or '.'
+            (print dot for each path line)
+        color : color
+        orientation : string
+            'hor' for horizontal, 'ver' for vertical, or 'both' for both
+        win : array_like (length 4)
+            [xmin, xmax, ymin, ymax]
+        axes : matplotlib.Axes, tuple of 2 matplotlib.Axes, or None
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of integers, optional, default: None
+            width, height in inches.
+        return_traces : boolean (default False)
+            return the traces instead of plotting
+        **kwargs
+            For backward compatibility only: deprecated ``metadata`` keyword
+            (see :meth:`tracelines`).
+
+        Returns
+        -------
+        ax : matplotlib.Axes or list of Axes
+            axes with plot
+        traces : list of list of dict
+            only if return_traces is True; outer list is per well, inner list
+            matches :meth:`tracelines` with ``return_traces=True``
+        """
+        warnings.warn(
+            "ml.plots.plotcapzone is deprecated. Use ml.plots.plot_capture_zone "
+            "instead. plotcapzone will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        _pop_deprecated_metadata_kwarg(kwargs, fname="ml.plots.plotcapzone")
+        return self.plot_capture_zone(
+            well,
+            nt=nt,
+            zstart=zstart,
+            hstepmax=hstepmax,
+            vstepfrac=vstepfrac,
+            tmax=tmax,
+            nstepmax=nstepmax,
+            silent=silent,
+            color=color,
+            orientation=orientation,
+            win=win,
+            ax=ax,
+            figsize=figsize,
+            return_traces=return_traces,
+            **kwargs,
+        )
 
     def vcontoursf1D(self, *args, **kwargs):
         warnings.warn(

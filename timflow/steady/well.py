@@ -193,6 +193,55 @@ class WellBase(Element):
                 message += " ({lab})".format(lab=self.label)
         return changed, terminate, [xyztnew], message
 
+    def capturezone(
+        self,
+        nt=10,
+        zstart=None,
+        hstepmax=10,
+        vstepfrac=0.2,
+        tmax=None,
+        nstepmax=100,
+        silent=".",
+    ):
+        """Compute a capture zone.
+
+        Parameters
+        ----------
+        nt : int
+            number of path lines
+        zstart : scalar or None
+            starting elevation of the path lines, middle of aquifer if None
+        hstepmax : scalar
+            maximum step in horizontal space
+        vstepfrac : float
+            maximum fraction of aquifer layer thickness during one step
+        tmax : scalar
+            maximum time
+        nstepmax : scalar(int)
+            maximum number of steps
+        silent : boolean or string
+            True (no messages), False (all messages), or '.'
+            (print dot for each path line)
+
+        Returns
+        -------
+        list of dict
+            Full per-pathline result dicts from
+            :func:`~timflow.steady.trace.traceline`.
+        """
+        xstart, ystart, zstart = self.capzonestart(nt, zstart)
+        return tracelines(
+            self.model,
+            xstart,
+            ystart,
+            zstart,
+            -np.abs(hstepmax),
+            vstepfrac=vstepfrac,
+            tmax=tmax,
+            nstepmax=nstepmax,
+            silent=silent,
+        )
+
     def capzone(
         self,
         nt=10,
@@ -206,6 +255,10 @@ class WellBase(Element):
         metadata=False,
     ):
         """Compute a capture zone.
+
+        .. deprecated::
+            Use :meth:`capturezone` instead. This method will be removed in a
+            future version.
 
         Parameters
         ----------
@@ -236,13 +289,16 @@ class WellBase(Element):
             trace array. With ``metadata=True``, each item is a result dict from
             :func:`~timflow.steady.trace.traceline`.
         """
-        xstart, ystart, zstart = self.capzonestart(nt, zstart)
-        results = tracelines(
-            self.model,
-            xstart,
-            ystart,
-            zstart,
-            -np.abs(hstepmax),
+        warnings.warn(
+            "Well.capzone is deprecated. Use Well.capturezone instead. "
+            "capzone will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        results = self.capturezone(
+            nt=nt,
+            zstart=zstart,
+            hstepmax=hstepmax,
             vstepfrac=vstepfrac,
             tmax=tmax,
             nstepmax=nstepmax,
@@ -267,10 +323,10 @@ class WellBase(Element):
             ax.plot(self.xw, self.yw, "k.")
 
     def plotcapzone(self, *args, **kwargs):
-        """Capture-zone plotting was moved to the model's ``plots.plotcapzone`` method."""
+        """Capture-zone plotting was moved to the model's ``plots.plot_capture_zone`` method."""
         warnings.warn(
-            "Well.plotcapzone has been removed. Use Model.plots.plotcapzone instead, "
-            "e.g. ml.plots.plotcapzone(w, ...) with the same plotting options.",
+            "Well.plotcapzone has been removed. Use Model.plots.plot_capture_zone instead, "
+            "e.g. ml.plots.plot_capture_zone(w, ...) with the same plotting options.",
             DeprecationWarning,
             stacklevel=2,
         )
