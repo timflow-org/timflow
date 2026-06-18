@@ -651,7 +651,8 @@ class PlotSteady(PlotBase):
             if reached_nstepmax > 0:
                 warnings.warn(
                     (
-                        f"nstepmax reached before reaching tmax in {reached_nstepmax} pathlines"
+                        f"nstepmax reached before reaching tmax in "
+                        f"{reached_nstepmax} pathlines "
                         f" of {w}"
                     ),
                     UserWarning,
