@@ -323,9 +323,8 @@ class WellBase(Element):
             ax.plot(self.xw, self.yw, "k.")
 
     def plotcapzone(self, *args, **kwargs):
-        """Capture-zone plotting was moved to the model's ``plots.plot_capture_zone`` method."""
         warnings.warn(
-            "Well.plotcapzone has been removed. Use Model.plots.plot_capture_zone instead, "
+            "plotcapzone has been removed. Use Model.plots.plot_capture_zone instead, "
             "e.g. ml.plots.plot_capture_zone(w, ...) with the same plotting options.",
             DeprecationWarning,
             stacklevel=2,
