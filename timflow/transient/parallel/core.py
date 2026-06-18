@@ -26,7 +26,31 @@ def potinf_linesink(
     term2: np.ndarray,
     out4d: np.ndarray,
 ) -> None:
-    """Evaluates analytic line element contributions straight into thread memory."""
+    """Evaluate analytic line element contributions into thread memory.
+
+    Parameters
+    ----------
+    x : float
+        X-coordinate of evaluation point.
+    y : float
+        Y-coordinate of evaluation point.
+    nint : int
+        Number of time intervals.
+    naq : int
+        Number of aquifer layers.
+    lab2 : np.ndarray
+        Array of eigenvalues of the aquifer layers.
+    meta : np.ndarray
+        Structured array containing line sink element metadata.
+    term2 : np.ndarray
+        Term 2 values for the element.
+    out4d : np.ndarray
+        Output array to store the computed potential contributions.
+
+    Returns
+    -------
+    None
+    """
     nls = meta.shape[0]
     for i in range(nls):
         m = meta[i]
@@ -54,7 +78,33 @@ def potinf_well(
     term2: np.ndarray,
     out4d: np.ndarray,
 ) -> None:
-    """Evaluates analytic well element contributions straight into thread memory."""
+    """Evaluate analytic well element contributions into thread memory.
+
+    Parameters
+    ----------
+    x : float
+        X-coordinate of evaluation point.
+    y : float
+        Y-coordinate of evaluation point.
+    nint : int
+        Number of time intervals.
+    npint : int
+        Number of Laplace parameters per interval.
+    naq : int
+        Number of aquifer layers.
+    lab2 : np.ndarray
+        Array of eigenvalues of the aquifer layers.
+    meta : np.ndarray
+        Structured array containing well element metadata.
+    term2 : np.ndarray
+        Term 2 values for the element.
+    out4d : np.ndarray
+        Output array to store the computed potential contributions.
+
+    Returns
+    -------
+    None
+    """
     nwells = meta.shape[0]
     for i in range(nwells):
         m = meta[i]
@@ -72,7 +122,7 @@ def potinf_well(
         for a in range(naq):
             for j in range(nint):
                 if r / abs(lab2[a, j, 0]) < rzero:
-                    for k in range(lab2.shape[2]):
+                    for k in range(npint):
                         out4d[p0:p1, a, j, k] = term2[p0:p1, a, j, k] * besselk0(
                             dx, dy, lab2[a, j, k]
                         )
@@ -95,7 +145,37 @@ def pot_linesink(
     params: np.ndarray,
     pot_view: np.ndarray,
 ) -> None:
-    """Evaluates analytic line elements and accumulates directly into thread memory."""
+    """Evaluate and accumulate analytic line elements into thread memory.
+
+    Parameters
+    ----------
+    x : float
+        X-coordinate of evaluation point.
+    y : float
+        Y-coordinate of evaluation point.
+    nint : int
+        Number of time intervals.
+    npint : int
+        Number of Laplace parameters per interval.
+    naq : int
+        Number of aquifer layers.
+    ngvbc : int
+        Number of boundary conditions or groups.
+    lab2 : np.ndarray
+        Array of eigenvalues of the aquifer layers.
+    meta : np.ndarray
+        Structured array containing line sink element metadata.
+    term2 : np.ndarray
+        Term 2 values for the element.
+    params : np.ndarray
+        Array of element parameters.
+    pot_view : np.ndarray
+        Array view to accumulate the computed potentials.
+
+    Returns
+    -------
+    None
+    """
     nls = meta.shape[0]
     for i in range(nls):
         m = meta[i]
@@ -129,7 +209,37 @@ def pot_well(
     params: np.ndarray,
     pot_view: np.ndarray,
 ) -> None:
-    """Evaluates analytic well elements and accumulates directly into thread memory."""
+    """Evaluate and accumulate analytic well elements into thread memory.
+
+    Parameters
+    ----------
+    x : float
+        X-coordinate of evaluation point.
+    y : float
+        Y-coordinate of evaluation point.
+    nint : int
+        Number of time intervals.
+    npint : int
+        Number of Laplace parameters per interval.
+    naq : int
+        Number of aquifer layers.
+    ngvbc : int
+        Number of boundary conditions or groups.
+    lab2 : np.ndarray
+        Array of eigenvalues of the aquifer layers.
+    meta : np.ndarray
+        Structured array containing well element metadata.
+    term2 : np.ndarray
+        Term 2 values for the element.
+    params : np.ndarray
+        Array of element parameters.
+    pot_view : np.ndarray
+        Array view to accumulate the computed potentials.
+
+    Returns
+    -------
+    None
+    """
     nwells = meta.shape[0]
     for i in range(nwells):
         m = meta[i]
@@ -168,7 +278,7 @@ def get_element_data(ml):
     Returns
     -------
     dict
-        A dictionary with ElementType keys and lists of element data tuples as values.
+        Dictionary mapping ElementType keys to lists of element data tuples.
     """
     edict = {i: [] for i in ElementType}
     for e in ml.elementlist:
@@ -184,20 +294,23 @@ def get_element_data(ml):
 
 @nb.njit(nogil=True, cache=True)
 def elements_to_numba_arrays(etuples, element_dtype, mtuple, aqtuple):
-    """Convert a list of element data tuples to a structured numpy array.
+    """Convert element data tuples to a structured numpy array.
 
     Parameters
     ----------
-    etuples : list
+    etuples : list of tuple
         List of element data tuples.
     element_dtype : np.dtype
-        The numpy dtype schema for the structured array.
+        The structured array schema.
+    mtuple : ModelTuple
+        Model configuration parameters.
+    aqtuple : AquiferTuple
+        Aquifer parameters.
 
     Returns
     -------
-    meta : np.rec.array
-        Structured numpy array containing all element data and indexers for
-        contiguous stacked arrays.
+    meta : np.ndarray
+        Structured numpy array containing element metadata.
     term2 : np.ndarray
         4D array of term2 values for each element.
     params : np.ndarray
@@ -238,7 +351,32 @@ def elements_to_numba_arrays(etuples, element_dtype, mtuple, aqtuple):
 
 
 def prepare_element_data(ml, mtuple, aqtuple):
+    """Prepare and partition elements into line and well arrays.
 
+    Parameters
+    ----------
+    ml : Model3D or ModelMaq
+        The model object containing elements.
+    mtuple : ModelTuple
+        Model configuration parameters.
+    aqtuple : AquiferTuple
+        Aquifer parameters.
+
+    Returns
+    -------
+    line_meta : np.ndarray
+        Structured metadata array for line elements.
+    line_term2 : np.ndarray
+        4D term2 values for line elements.
+    line_params : np.ndarray
+        3D parameter values for line elements.
+    well_meta : np.ndarray
+        Structured metadata array for well elements.
+    well_term2 : np.ndarray
+        4D term2 values for well elements.
+    well_params : np.ndarray
+        3D parameter values for well elements.
+    """
     edict = get_element_data(ml)
 
     # 1. Gather and build line arrays
@@ -270,6 +408,38 @@ def _headgrid_numba(
     well_term2: np.ndarray,
     well_params: np.ndarray,
 ):
+    """Compute transient heads on a grid using parallelized numba.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        X-coordinates of evaluation points.
+    y : np.ndarray
+        Y-coordinates of evaluation points.
+    t : np.ndarray
+        Times at which to evaluate heads.
+    mtuple : ModelTuple
+        Model configuration parameters.
+    aqtuple : AquiferTuple
+        Aquifer parameters.
+    line_meta : np.ndarray
+        Structured metadata array for line elements.
+    line_term2 : np.ndarray
+        4D term2 values for line elements.
+    line_params : np.ndarray
+        3D parameter values for line elements.
+    well_meta : np.ndarray
+        Structured metadata array for well elements.
+    well_term2 : np.ndarray
+        4D term2 values for well elements.
+    well_params : np.ndarray
+        3D parameter values for well elements.
+
+    Returns
+    -------
+    out : np.ndarray
+        Computed transient heads array with shape (naq, ntimes, npts).
+    """
     # get model and aquifer data
     nint, npint, npval, ngvbc = (mtuple.nint, mtuple.npint, mtuple.npval, mtuple.ngvbc)
     naq = aqtuple.naq
@@ -363,7 +533,24 @@ def headgrid(
     y: np.ndarray,
     t: np.ndarray,
 ):
-    """ """
+    """Compute transient heads for specified coordinates and times.
+
+    Parameters
+    ----------
+    ml : Model3D or ModelMaq
+        The model object.
+    x : np.ndarray or float
+        X-coordinates of evaluation points.
+    y : np.ndarray or float
+        Y-coordinates of evaluation points.
+    t : np.ndarray or float
+        Times at which to evaluate heads.
+
+    Returns
+    -------
+    np.ndarray
+        Computed transient heads array with shape (naq, ntimes, npts).
+    """
     mtuple = ml.to_numba_tuple()
     aqtuple = ml.aq.to_numba_tuple()
 
