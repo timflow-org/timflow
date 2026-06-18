@@ -622,32 +622,44 @@ class PlotSteady(PlotBase):
         if isinstance(well, (str, WellBase)):
             well = [well]
         # loop over wells
-        traces = []
+        traces_list = []
         for w in well:
             if isinstance(w, str):
                 w = self._ml.elementdict[w]
             xstart, ystart, zstart = w.capzonestart(nt, zstart)
-            traces.append(
-                self.tracelines(
-                    xstart,
-                    ystart,
-                    zstart,
-                    hstepmax=-abs(hstepmax),
-                    vstepfrac=vstepfrac,
-                    tmax=tmax,
-                    nstepmax=nstepmax,
-                    silent=silent,
-                    color=color,
-                    orientation=orientation,
-                    win=win,
-                    ax=ax,
-                    figsize=figsize,
-                    return_traces=return_traces,
-                    **kwargs,
-                )
+            ax, traces = self.tracelines(
+                xstart,
+                ystart,
+                zstart,
+                hstepmax=-abs(hstepmax),
+                vstepfrac=vstepfrac,
+                tmax=tmax,
+                nstepmax=nstepmax,
+                silent=silent,
+                color=color,
+                orientation=orientation,
+                win=win,
+                ax=ax,
+                figsize=figsize,
+                return_traces=True,
+                **kwargs,
             )
+            reached_nstepmax = 0
+            for tr in traces:
+                if tr["message"] == "reached nstepmax iterations":
+                    reached_nstepmax += 1
+            if reached_nstepmax > 0:
+                warnings.warn(
+                    (
+                        f"nstepmax reached before reaching tmax in {reached_nstepmax} pathlines"
+                        f" of {w}"
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
+            traces_list.append(traces)
         if return_traces:
-            return ax, traces
+            return ax, traces_list
         return ax
 
     def plotcapzone(

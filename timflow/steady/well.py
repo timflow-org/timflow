@@ -230,7 +230,7 @@ class WellBase(Element):
             :func:`~timflow.steady.trace.traceline`.
         """
         xstart, ystart, zstart = self.capzonestart(nt, zstart)
-        return tracelines(
+        traces = tracelines(
             self.model,
             xstart,
             ystart,
@@ -241,6 +241,17 @@ class WellBase(Element):
             nstepmax=nstepmax,
             silent=silent,
         )
+        reached_nstepmax = 0
+        for tr in traces:
+            if tr["message"] == "reached nstepmax iterations":
+                reached_nstepmax += 1
+        if reached_nstepmax > 0:
+            warnings.warn(
+                f"nstepmax reached before reaching tmax in {reached_nstepmax} pathlines",
+                UserWarning,
+                stacklevel=2,
+            )
+        return traces
 
     def capzone(
         self,
