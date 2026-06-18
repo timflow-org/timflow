@@ -3,7 +3,7 @@ import numba as nb
 import numpy as np
 
 from timflow.bessel.besselnumba import besselk0, bessellsv2
-from timflow.transient.element import BCType, ElementType
+from timflow.transient.element import ElementType
 from timflow.transient.invlapnumba import invlapcomp
 from timflow.transient.parallel.dtypes import (
     AquiferTuple,
@@ -279,7 +279,6 @@ def _headgrid_numba(
     # create output array and compute delta time
     out = np.empty((naq, len(t), npts), dtype=np.float64)
     time = np.atleast_1d(t) - mtuple.tstart
-
 
     # allocate computation arrays (with dimension per thread)
     num_threads = nb.config.NUMBA_NUM_THREADS
