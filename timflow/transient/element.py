@@ -11,10 +11,44 @@ Example::
 
 import inspect  # Used for storing the input
 from abc import ABC, abstractmethod
+from enum import IntEnum
 
 import numpy as np
 
 from timflow.transient.invlapnumba import invlapcomp
+
+
+class BCType(IntEnum):
+    """Map boundary condition types to integers for use in numba."""
+
+    ZERO = 0
+    GIVEN = 1
+    VARIABLE = 2
+
+    @classmethod
+    def from_str(cls, char: str | bytes) -> "BCType":
+        """Maps boundary condition string flags to their corresponding integer."""
+        # Convert bytes to string if needed (handles b'g', b'v', etc.)
+        if isinstance(char, bytes):
+            char = char.decode("utf-8")
+
+        mapping = {
+            "z": cls.ZERO,
+            "g": cls.GIVEN,
+            "v": cls.VARIABLE,
+        }
+        return mapping[char.lower()]
+
+
+class ElementType(IntEnum):
+    """Map element types to integers for use in numba."""
+
+    LINESINK = 1
+    LINESINKSTRING = 2
+    LINEDOUBLET = 3
+    LINEDOUBLETSTRING = 4
+    WELL = 5
+    WELLSTRING = 6
 
 
 class Element(ABC):

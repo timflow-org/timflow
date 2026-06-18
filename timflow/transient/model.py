@@ -23,6 +23,7 @@ from timflow.transient.invlapnumba import (
     invlap,
     invlapcomp,
 )
+from timflow.transient.parallel.dtypes import ModelTuple
 from timflow.transient.plots import PlotTransient
 from timflow.version import check_tqdm_parallel
 
@@ -921,6 +922,22 @@ class Model:
         for name, iaq in self.aq.inhomdict.items():
             aqs[name] = iaq.summary()
         return pd.concat(aqs, axis=0)
+
+    def to_numba_tuple(self):
+        """Write model data to a numba tuple for use in parallel computations."""
+        return ModelTuple(
+            nint=self.nint,
+            npint=self.npint,
+            npval=self.npval,
+            ngvbc=self.ngvbc,
+            M=self.M,
+            tstart=self.tstart,
+            p=self.p,
+            tintervals=self.tintervals,
+            enumber=self.enumber,
+            etstart=self.etstart,
+            ebc=self.ebc,
+        )
 
 
 class ModelMaq(Model):

@@ -16,9 +16,10 @@ import numpy as np
 # from scipy.special import iv  # Needed for K1 in Well class, and in CircInhom
 from scipy.special import kv
 
-from timflow.transient.element import Element
+from timflow.transient.element import BCType, Element, ElementType
 from timflow.transient.equation import HeadEquation, WellBoreStorageEquation
 from timflow.transient.invlapnumba import invlapcomp
+from timflow.transient.parallel.dtypes import ElementTuple, well_element_dtype
 
 
 class WellBase(Element):
@@ -211,6 +212,27 @@ class WellBase(Element):
             else:
                 message = "reached element of type well: " + str(self)
         return changed, terminate, xyztnew, message
+
+    def to_numba_tuple(self):
+        """Write element data to a numba tuple for use in parallel computations."""
+        struc_array = np.empty(1, dtype=well_element_dtype)
+        struc_array["etype"] = ElementType.WELL
+        struc_array["bctype"] = BCType.from_str(self.type)
+        struc_array["aq_id"] = 0
+        struc_array["nparam"] = self.nparam
+        struc_array["xw"] = self.xw
+        struc_array["yw"] = self.yw
+        struc_array["rw"] = self.rw
+        struc_array["rzero"] = self.rzero
+        struc_array["p0"] = 0
+        struc_array["p1"] = self.nparam
+        return ElementTuple(
+            meta=struc_array,
+            layers=self.layers,
+            layer_ptr=np.array([0], dtype=np.int32),
+            term2=self.term2,
+            parameters=self.parameters,
+        )
 
 
 class DischargeWell(WellBase):

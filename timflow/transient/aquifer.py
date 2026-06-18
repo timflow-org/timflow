@@ -11,6 +11,8 @@ Example::
 import numpy as np
 import pandas as pd
 
+from timflow.transient.parallel.dtypes import AquiferTuple
+
 
 class AquiferData:
     def __init__(
@@ -358,6 +360,16 @@ class Aquifer(AquiferData):
             raise ValueError(f"Inhomogeneity name '{inhom.name}' already exists.")
         self.inhomdict[inhom.name] = inhom
         return inhom_number
+
+    def to_numba_tuple(self):
+        """Write aquifer data to a numba tuple for use in parallel computations."""
+        return AquiferTuple(
+            naq=self.naq,
+            lab2=self.lab2,
+            lababs=self.lababs,
+            eigvec=self.eigvec,
+            Tcol=self.Tcol,
+        )
 
 
 class SimpleAquifer(Aquifer):
