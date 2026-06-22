@@ -496,6 +496,8 @@ class PlotBase:
             passed on to all ax.plot calls
         """
         for i in range(self._ml.aq.nlayers):
+            if i > 0 and self._ml.aq.ltype[i] == self._ml.aq.ltype[i - 1]:
+                lli += 1
             # Plot leaky layers
             if self._ml.aq.ltype[i] == "l":
                 ax.axhspan(
@@ -516,8 +518,8 @@ class PlotBase:
                     self._xsection_leaky_layer_params(
                         ax, r0, r, labels, fmt, units, lli, i, sep=sep, ha=ha
                     )
-                if labels or params:
-                    lli += 1
+
+                lli += 1
 
             # Plot aquifers
             if self._ml.aq.ltype[i] == "a":
@@ -534,8 +536,8 @@ class PlotBase:
                     self._xsection_aquifer_params(
                         ax, r0, r, labels, fmt, units, aqi, i, sep=sep, ha=ha
                     )
-                if labels or params:
-                    aqi += 1
+
+                aqi += 1
 
     def _xsection_leaky_layer_params(
         self,
