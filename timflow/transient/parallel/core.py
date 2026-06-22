@@ -12,10 +12,12 @@ from timflow.transient.parallel.dtypes import (
     well_element_dtype,
 )
 
+FASTMATH = False
+
 # %%
 
 
-@nb.njit(nogil=True, cache=True, fastmath=True)
+@nb.njit(nogil=True, cache=True, fastmath=FASTMATH)
 def potinf_linesink(
     x: float,
     y: float,
@@ -66,7 +68,7 @@ def potinf_linesink(
                 )
 
 
-@nb.njit(nogil=True, cache=True, fastmath=True)
+@nb.njit(nogil=True, cache=True, fastmath=FASTMATH)
 def potinf_well(
     x: float,
     y: float,
@@ -131,7 +133,7 @@ def potinf_well(
                     out4d[p0:p1, a, j, :] = 0.0 + 0.0j
 
 
-@nb.njit(nogil=True, cache=True, fastmath=True)
+@nb.njit(nogil=True, cache=True, fastmath=FASTMATH)
 def pot_linesink(
     x: float,
     y: float,
@@ -195,7 +197,7 @@ def pot_linesink(
                             pot_view[g, a, v] += params_slice[v] * t_val
 
 
-@nb.njit(nogil=True, cache=True, fastmath=True)
+@nb.njit(nogil=True, cache=True, fastmath=FASTMATH)
 def pot_well(
     x: float,
     y: float,
