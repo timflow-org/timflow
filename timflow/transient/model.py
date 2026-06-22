@@ -11,6 +11,7 @@ Example::
 """
 
 import inspect  # Used for storing the input
+import os
 from warnings import warn
 
 import numpy as np
@@ -508,6 +509,7 @@ class Model:
                 desc="velocity grid",
                 disable=not show_progress,
                 tqdm_class=tqdm,
+                max_workers=os.cpu_count(),
             )
             for k, i, j, result in results:
                 v[:, k, i, j] = result
@@ -667,6 +669,7 @@ class Model:
                 desc="headgrid",
                 disable=not show_progress,
                 tqdm_class=tqdm,
+                max_workers=os.cpu_count(),
             )
 
             for i, j, result in results:
@@ -799,6 +802,7 @@ class Model:
                 desc="disvecgrid",
                 disable=not show_progress,
                 tqdm_class=tqdm,
+                max_workers=os.cpu_count(),
             )
             for i, j, result in results:
                 qx[:, :, j, i], qy[:, :, j, i] = result
