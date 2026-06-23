@@ -187,13 +187,14 @@ def pot_linesink(
         for a in range(naq):
             for j in range(nint):
                 bessellsv2(x, y, z1, z2, lab2[a, j, :], order, rzero, out=bessel_vals)
+                bessel_vals /= L
                 for g in range(ngvbc):
                     for ip in range(p0, p1):
                         order_idx = ip - p0
                         params_slice = params[g, ip, :]
                         for k in range(npint):
                             v = j * npint + k
-                            t_val = term2[ip, a, j, k] * bessel_vals[order_idx, k] / L
+                            t_val = term2[ip, a, j, k] * bessel_vals[order_idx, k]
                             pot_view[g, a, v] += params_slice[v] * t_val
 
 
