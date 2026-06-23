@@ -841,7 +841,8 @@ def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20, out=None):
     else:
         omega = out
     omega[:] = Fp(x, y, z1, z2, biga, order, d1, d2, ahat, bhat, nt)
-    return -L / (4 * np.pi) * omega
+    omega *= -L / (4 * np.pi)
+    return omega
 
 
 @numba.njit(nogil=True, cache=True)
