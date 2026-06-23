@@ -183,17 +183,17 @@ def pot_linesink(
         m = meta[i]
         p0, p1 = m["p0"], m["p1"]
         z1, z2, L, order, rzero = m["z1"], m["z2"], m["L"], m["order"], m["rzero"]
-
+        bessel_vals = np.empty((order + 1, npint), dtype=np.complex128)
         for a in range(naq):
             for j in range(nint):
-                bessel_vals = bessellsv2(x, y, z1, z2, lab2[a, j, :], order, rzero) / L
+                bessellsv2(x, y, z1, z2, lab2[a, j, :], order, rzero, out=bessel_vals)
                 for g in range(ngvbc):
                     for ip in range(p0, p1):
                         order_idx = ip - p0
                         params_slice = params[g, ip, :]
                         for k in range(npint):
                             v = j * npint + k
-                            t_val = term2[ip, a, j, k] * bessel_vals[order_idx, k]
+                            t_val = term2[ip, a, j, k] * bessel_vals[order_idx, k] / L
                             pot_view[g, a, v] += params_slice[v] * t_val
 
 
@@ -260,7 +260,6 @@ def pot_well(
             for j in range(nint):
                 if r / abs(lab2[a, j, 0]) < rzero:
                     for k in range(npint):
-                        # The fix for the Issue A broadcast bug is included here
                         b_val = besselk0(dx, dy, lab2[a, j, k])
                         v = j * npint + k
                         for ip in range(p0, p1):
