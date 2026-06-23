@@ -935,7 +935,7 @@ def bessellsv2(x, y, z1, z2, lab, order, R, out=None):
     nlab = len(lab)
     nterms = order + 1
     if out is None:
-        omega = np.zeros((order + 1, nlab), dtype=np.complex128)
+        omega = np.zeros((nterms, nlab), dtype=np.complex128)
     else:
         omega = out
     # Check if endpoints need to be adjusted using the largest lambda (the first one)
