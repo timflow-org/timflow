@@ -7,7 +7,6 @@ Example::
     River1D(ml, xls=0, hls=1, layers=0)
 """
 
-import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
