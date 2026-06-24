@@ -14,11 +14,15 @@ skip = [
     "besselnumba_timing.ipynb",
 ]
 
+skipdirs = ["04pumpingtests"]
+
 
 def get_notebooks():
     nblist = []
     for root in nbroots:
         for nb in root.rglob("*.ipynb"):
+            if any(skipdir in nb.parts for skipdir in skipdirs):
+                continue
             if nb.name in skip:
                 continue
             if "_build" in nb.parts:

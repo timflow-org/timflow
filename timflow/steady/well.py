@@ -353,7 +353,7 @@ class Well(WellBase):
     is computed as.
 
     .. math::
-        Q_i = 2\pi r_w(h_i - h_w)/c
+        Q_i = 2 \pi r_w H (h_i - h_w) / c
 
     where :math:`c` is the resistance of the well screen and :math:`h_w` is
     the head inside the well. The total discharge is distributed over the
@@ -404,7 +404,7 @@ class Well(WellBase):
         xc=None,
         yc=None,
     ):
-        self.storeinput(inspect.currentframe())
+        """Initialize a steady well with a specified discharge."""
         WellBase.__init__(
             self,
             model,
@@ -500,7 +500,7 @@ class HeadWell(WellBase, HeadEquation):
         label=None,
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
+        """Initialize a steady well with a specified head."""
         WellBase.__init__(
             self,
             model,
@@ -581,7 +581,7 @@ class TargetHeadWell(WellBase):
         label=None,
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
+        """Initialize a steady well with a target head at a control point."""
         super().__init__(
             model,
             xw,
@@ -962,6 +962,7 @@ class WellString(WellStringBase):
         layers=0,
         label=None,
     ):
+        """Initialize a steady string of wells with a specified discharge."""
         super().__init__(model, xy, layers=layers, name="WellString", label=label)
         self.Qw = float(Qw)
         self.rw = rw
@@ -1047,6 +1048,7 @@ class HeadWellString(WellStringBase):
         layers=0,
         label=None,
     ):
+        """Initialize a steady string of wells with a specified head."""
         super().__init__(model, xy, layers=layers, name="HeadWellString", label=label)
 
         self.hw = float(hw)
@@ -1124,6 +1126,7 @@ class TargetHeadWellString(WellStringBase):
         lcp=0,
         label=None,
     ):
+        """Initialize a steady string of wells with a target head."""
         super().__init__(
             model, xy, layers=layers, name="TargetHeadWellString", label=label
         )

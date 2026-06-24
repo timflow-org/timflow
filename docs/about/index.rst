@@ -11,8 +11,8 @@ Steady flow
 .. bibliography:: publications.bib
     :list: bullet
 
-    bakker_semi-analytic_2013
-    bakker_analytic_2013
+    bakker2003
+    bakker_analytic_2006
 
 Transient flow
 --------------
