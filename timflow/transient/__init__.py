@@ -7,6 +7,7 @@ Mark Bakker, Delft University of Technology mark dot bakker at tudelft dot nl.
 """
 
 # ruff : noqa: F401
+from timflow.transient import parallel
 from timflow.transient.circareasink import CircAreaSink
 from timflow.transient.fit import Calibrate
 from timflow.transient.inhom1d import Xsection3D, XsectionMaq

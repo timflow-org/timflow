@@ -7,6 +7,8 @@ Example::
     Uflow(ml, slope=1e-4, angle=0.0)
 """
 
+import inspect  # Used for storing the input
+
 import numpy as np
 
 from timflow.steady.element import Element
@@ -40,6 +42,7 @@ class Uflow(Element):
             "timflow error: Uflow can only be added to "
             "model with background confined aquifer"
         )
+        self.storeinput(inspect.currentframe())
         Element.__init__(
             self, model, nparam=2, nunknowns=0, layers=0, name="Uflow", label=label
         )

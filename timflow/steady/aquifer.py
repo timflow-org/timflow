@@ -9,6 +9,8 @@ Example::
 
 """
 
+import inspect  # Used for storing the input
+
 import numpy as np
 import pandas as pd
 
@@ -129,6 +131,9 @@ class AquiferData:
 
     def isinside(self, x, y):
         raise Exception("Must overload AquiferData.isinside()")
+
+    def storeinput(self, frame):
+        self.inputargs, _, _, self.inputvalues = inspect.getargvalues(frame)
 
     def findlayer(self, z):
         """Returns layer-number, layer-type and model-layer-number."""

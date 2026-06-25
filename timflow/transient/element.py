@@ -9,11 +9,46 @@ Example::
             pass
 """
 
+import inspect  # Used for storing the input
 from abc import ABC, abstractmethod
+from enum import IntEnum
 
 import numpy as np
 
 from timflow.transient.invlapnumba import invlapcomp
+
+
+class BCType(IntEnum):
+    """Map boundary condition types to integers for use in numba."""
+
+    ZERO = 0
+    GIVEN = 1
+    VARIABLE = 2
+
+    @classmethod
+    def from_str(cls, char: str | bytes) -> "BCType":
+        """Maps boundary condition string flags to their corresponding integer."""
+        # Convert bytes to string if needed (handles b'g', b'v', etc.)
+        if isinstance(char, bytes):
+            char = char.decode("utf-8")
+
+        mapping = {
+            "z": cls.ZERO,
+            "g": cls.GIVEN,
+            "v": cls.VARIABLE,
+        }
+        return mapping[char.lower()]
+
+
+class ElementType(IntEnum):
+    """Map element types to integers for use in numba."""
+
+    LINESINK = 1
+    LINESINKSTRING = 2
+    LINEDOUBLET = 3
+    LINEDOUBLETSTRING = 4
+    WELL = 5
+    WELLSTRING = 6
 
 
 class Element(ABC):
@@ -322,6 +357,26 @@ class Element(ABC):
     def headinside(self, t):
         print("This function not implemented for this element")
         return
+
+    def storeinput(self, frame):
+        self.inputargs, _, _, self.inputvalues = inspect.getargvalues(frame)
+
+    def write(self):
+        rv = self.name + "(" + self.model.modelname + ",\n"
+        for key in self.inputargs[2:]:  # The first two are ignored
+            if isinstance(self.inputvalues[key], np.ndarray):
+                rv += (
+                    key
+                    + " = "
+                    + np.array2string(self.inputvalues[key], separator=",")
+                    + ",\n"
+                )
+            elif isinstance(self.inputvalues[key], str):
+                rv += key + " = '" + self.inputvalues[key] + "',\n"
+            else:
+                rv += key + " = " + str(self.inputvalues[key]) + ",\n"
+        rv += ")\n"
+        return rv
 
     def run_after_solve(self):  # noqa: B027
         """Function to run after a solution is completed.

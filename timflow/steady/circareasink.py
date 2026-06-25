@@ -7,6 +7,8 @@ Example::
     CircAreaSink(ml, xc=0, yc=0, R=50, N=0.001, layer=0)
 """
 
+import inspect  # Used for storing the input
+
 import numpy as np
 from scipy.special import i0, i1, k0, k1
 
@@ -41,6 +43,7 @@ class CircAreaSink(Element):
     def __init__(
         self, model, xc=0, yc=0, R=1, N=0.001, layer=0, name="CircAreasink", label=None
     ):
+        self.storeinput(inspect.currentframe())
         Element.__init__(
             self, model, nparam=1, nunknowns=0, layers=layer, name=name, label=label
         )

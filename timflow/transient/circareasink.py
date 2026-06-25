@@ -8,6 +8,8 @@ Example::
     CircAreaSink(ml, xc=0, yc=0, R=50, tsandN=[(0, 0.001)], layers=0)
 """
 
+import inspect  # Used for storing the input
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import iv, kv
@@ -38,6 +40,7 @@ class CircAreaSink(Element):
     def __init__(
         self, model, xc=0, yc=0, R=0.1, tsandN=[(0, 1)], name="CircAreaSink", label=None
     ):
+        self.storeinput(inspect.currentframe())
         Element.__init__(
             self,
             model,

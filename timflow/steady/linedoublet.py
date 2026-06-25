@@ -7,6 +7,7 @@ Example::
     ImpLineDoublet(ml, x1=-10, y1=0, x2=10, y2=0, layers=0)
 """
 
+import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
@@ -227,6 +228,7 @@ class ImpermeableWall(LineDoubletHoBase, DisvecEquation):
         label=None,
         addtomodel=True,
     ):
+        self.storeinput(inspect.currentframe())
         LineDoubletHoBase.__init__(
             self,
             model,
@@ -300,6 +302,7 @@ class LeakyWall(LineDoubletHoBase, LeakyWallEquation):
         label=None,
         addtomodel=True,
     ):
+        self.storeinput(inspect.currentframe())
         LineDoubletHoBase.__init__(
             self,
             model,
@@ -451,6 +454,7 @@ class ImpermeableWallString(LineDoubletStringBase, DisvecEquation):
     def __init__(self, model, xy=None, layers=0, order=0, label=None):
         if xy is None:
             xy = [(-1, 0), (1, 0)]
+        self.storeinput(inspect.currentframe())
         LineDoubletStringBase.__init__(
             self,
             model,
@@ -503,6 +507,7 @@ class LeakyWallString(LineDoubletStringBase, LeakyWallEquation):
     def __init__(self, model, xy=None, res=np.inf, layers=0, order=0, label=None):
         if xy is None:
             xy = [(-1, 0), (1, 0)]
+        self.storeinput(inspect.currentframe())
         LineDoubletStringBase.__init__(
             self,
             model,

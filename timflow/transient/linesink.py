@@ -8,19 +8,21 @@ Example::
     River(ml, x1=-10, y1=0, x2=10, y2=0, tsandbc=[(0, 5)], layers=0)
 """
 
+import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from timflow.bessel import besselnumba
-from timflow.transient.element import Element
+from timflow.transient.element import BCType, Element, ElementType
 from timflow.transient.equation import (
     HeadEquation,
     HeadEquationNores,
     MscreenDitchEquation,
     MscreenEquation,
 )
+from timflow.transient.parallel.dtypes import ElementTuple, line_element_dtype
 
 
 class LineSinkBase(Element):
@@ -200,6 +202,28 @@ class LineSinkBase(Element):
         if layer is None or np.isin(self.layers, layer).any():
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
+    def to_numba_tuple(self):
+        """Write element data to a numba tuple for use in parallel computations."""
+        struc_array = np.empty(1, dtype=line_element_dtype)
+        struc_array["etype"] = ElementType.LINESINK
+        struc_array["bctype"] = BCType.from_str(self.type)
+        struc_array["aq_id"] = 0
+        struc_array["nparam"] = self.nparam
+        struc_array["z1"] = self.z1
+        struc_array["z2"] = self.z2
+        struc_array["L"] = self.L
+        struc_array["order"] = self.order
+        struc_array["rzero"] = self.rzero
+        struc_array["p0"] = 0
+        struc_array["p1"] = self.nparam
+        return ElementTuple(
+            meta=struc_array,
+            layers=self.layers,
+            layer_ptr=np.array([0, len(self.layers)], dtype=np.int64),
+            term2=self.term2,
+            parameters=self.parameters,
+        )
+
 
 class LineSink(LineSinkBase):
     """LineSink with non-zero and potentially variable discharge through time.
@@ -243,6 +267,7 @@ class LineSink(LineSinkBase):
 #'''HeadLineSink that remains zero and constant through time'''
 # def __init__(self, model, x1=-1, y1=0, x2=1, y2=0, res=0.0, wh='H', \
 #             layers=0, label=None, addtomodel=True):
+#    self.storeinput(inspect.currentframe())
 #    LineSinkBase.__init__(self, model, x1=x1, y1=y1, x2=x2, y2=y2, \
 #                          tsandbc=[(0, 0)], res=res, wh=wh, layers=layers,\
 #                          type='z', name='ZeroHeadLineSink', label=label, \
@@ -502,6 +527,49 @@ class LineSinkStringBase(Element):
             rv[i, :, :] = self.lslist[i].discharge(t, derivative=derivative)
         return rv
 
+    def to_numba_tuple(self):
+        """Write element data to a numba tuple for use in parallel computations."""
+        struc_array = np.empty(self.nls, dtype=line_element_dtype)
+        _, naq, nint, npint = self.lslist[0].term2.shape
+        term2 = np.empty(
+            (self.nparam, naq, nint, npint),
+            dtype=np.complex128,
+        )
+        parameters = np.empty(
+            (self.model.ngvbc, self.nparam, self.model.npval),
+            dtype=np.complex128,
+        )
+        layers = []
+        layer_ptr = np.empty(self.nls + 1, dtype=np.int64)
+        layer_ptr[0] = 0
+        p = 0
+        for i, ils in enumerate(self.lslist):
+            n = ils.nparam
+            struc_array[i]["etype"] = ElementType.LINESINK
+            struc_array[i]["bctype"] = BCType.from_str(ils.type)
+            struc_array[i]["aq_id"] = 0
+            struc_array[i]["nparam"] = ils.nparam
+            struc_array[i]["z1"] = ils.z1
+            struc_array[i]["z2"] = ils.z2
+            struc_array[i]["L"] = ils.L
+            struc_array[i]["order"] = 0
+            struc_array[i]["rzero"] = ils.rzero
+            struc_array[i]["p0"] = p
+            struc_array[i]["p1"] = p + n
+            term2[p : p + n, :, :, :] = ils.term2
+            parameters[:, p : p + n, :] = ils.parameters
+            layers.extend(ils.layers.tolist())
+            layer_ptr[i + 1] = len(layers)
+            p += n
+
+        return ElementTuple(
+            meta=struc_array,
+            layers=np.asarray(layers, dtype=np.int64),
+            layer_ptr=layer_ptr,
+            term2=term2,
+            parameters=parameters,
+        )
+
 
 class RiverString(LineSinkStringBase, HeadEquation):
     r"""String of head-specified line-sinks with optional width and resistance.
@@ -631,6 +699,7 @@ class MscreenLineSink(LineSinkBase, MscreenEquation):
     ):
         """Initialize a transient multi-screen line-sink."""
         # assert len(layers) > 1, "number of layers must be at least 2"
+        self.storeinput(inspect.currentframe())
         super().__init__(
             model,
             x1=x1,
@@ -814,6 +883,7 @@ class DitchString2(LineSinkStringBase, MscreenDitchEquation):
         Astorage=None,
         label=None,
     ):
+        self.storeinput(inspect.currentframe())
         super().__init__(
             model,
             tsandbc=tsandQ,

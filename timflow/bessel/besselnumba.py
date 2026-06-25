@@ -824,7 +824,7 @@ def Fp(x, y, z1, z2, biga, order, d1, d2, a, b, nt):
 
 
 @numba.njit(nogil=True, cache=True)
-def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
+def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20, out=None):
     """Docs.
 
     To come here
@@ -836,13 +836,17 @@ def bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, nt=20):
     exprange = np.exp(-complex(0, 2) * ang * nrange)
     ahat = a * exprange
     bhat = (b - a * complex(0, 2) * ang) * exprange
-
-    omega = Fp(x, y, z1, z2, biga, order, d1, d2, ahat, bhat, nt)
-    return -L / (4 * np.pi) * omega
+    if out is None:
+        omega = np.zeros(order + 1, dtype=np.complex128)
+    else:
+        omega = out
+    omega[:] = Fp(x, y, z1, z2, biga, order, d1, d2, ahat, bhat, nt)
+    omega *= -L / (4 * np.pi)
+    return omega
 
 
 @numba.njit(nogil=True, cache=True)
-def bessells_gauss_ho(x, y, z1, z2, lab, order):
+def bessells_gauss_ho(x, y, z1, z2, lab, order, out=None):
     """bessells_gauss_ho.
 
     implicit none
@@ -864,8 +868,10 @@ def bessells_gauss_ho(x, y, z1, z2, lab, order):
     for n in range(8):
         x0 = bigz.real - xg[n]
         k0[n] = besselk0(x0, bigz.imag, biglab)
-
-    omega = np.zeros(order + 1, dtype=np.complex128)
+    if out is None:
+        omega = np.zeros(order + 1, dtype=np.complex128)
+    else:
+        omega = out
     for p in range(order + 1):
         omega[p] = complex(0, 0)
         for n in range(8):
@@ -876,7 +882,7 @@ def bessells_gauss_ho(x, y, z1, z2, lab, order):
 
 
 @numba.njit(nogil=True, cache=True)
-def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
+def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2, out=None, work=None):
     """Returns integral from d1 to d2 along real axis.
 
     While strength is still Delta^order from -1 to +1.
@@ -890,12 +896,20 @@ def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
     real(kind=8) :: xp, yp, dc, fac
     complex(kind=8) :: z1p,z2p,bigz1,bigz2
     """
-    omega = np.zeros(order + 1, dtype=np.complex128)
+    if out is None:
+        omega = np.zeros(order + 1, dtype=np.complex128)
+    else:
+        omega = out
+        omega[:] = 0.0
+    if work is None:
+        omegac = np.zeros(order + 1, dtype=np.complex128)
+    else:
+        omegac = work
     bigz1 = complex(d1, 0)
     bigz2 = complex(d2, 0)
     z1p = 0.5 * (z2 - z1) * bigz1 + 0.5 * (z1 + z2)
     z2p = 0.5 * (z2 - z1) * bigz2 + 0.5 * (z1 + z2)
-    omegac = bessells_gauss_ho(x, y, z1p, z2p, lab, order)
+    bessells_gauss_ho(x, y, z1p, z2p, lab, order, out=omegac)
     dc = (d1 + d2) / (d2 - d1)
     for n in range(order + 1):
         for m in range(n + 1):
@@ -905,7 +919,7 @@ def bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2):
 
 
 @numba.njit(nogil=True, cache=True)
-def bessellsv2(x, y, z1, z2, lab, order, R):
+def bessellsv2(x, y, z1, z2, lab, order, R, out=None):
     """bessellsv2.
 
     implicit none
@@ -920,16 +934,19 @@ def bessellsv2(x, y, z1, z2, lab, order, R):
     """
     nlab = len(lab)
     nterms = order + 1
-    omega = np.zeros((order + 1, nlab), dtype=np.complex128)
+    if out is None:
+        omega = np.zeros((nterms, nlab), dtype=np.complex128)
+    else:
+        omega = out
     # Check if endpoints need to be adjusted using the largest lambda (the first one)
     d1, d2 = find_d1d2(z1, z2, complex(x, y), R * np.abs(lab[0]))
     for n in range(nlab):
-        omega[: nterms + 1, n] = bessells(x, y, z1, z2, lab[n], order, d1, d2)
+        bessells(x, y, z1, z2, lab[n], order, d1, d2, out=omega[: nterms + 1, n])
     return omega
 
 
 @numba.njit(nogil=True, cache=True)
-def bessells(x, y, z1, z2, lab, order, d1in, d2in):
+def bessells(x, y, z1, z2, lab, order, d1in, d2in, out=None):
     """Bessells.
 
     implicit none
@@ -943,20 +960,27 @@ def bessells(x, y, z1, z2, lab, order, d1in, d2in):
     real(kind=8) :: Lnear, L, d1, d2, delta
     complex(kind=8) :: z, delz, za, zb
     """
-    omega = np.zeros(order + 1, dtype=np.complex128)
+    if out is None:
+        omega = np.zeros(order + 1, dtype=np.complex128)
+    else:
+        omega = out
+        omega[:] = 0.0
     Lnear = 3
     z = complex(x, y)
     L = np.abs(z2 - z1)
     if L < Lnear * np.abs(lab):  # No need to break integral up
         if np.abs(z - 0.5 * (z1 + z2)) < 0.5 * Lnear * L:  # Do integration
-            omega = bessells_int_ho(x, y, z1, z2, lab, order, d1in, d2in)
+            bessells_int_ho(x, y, z1, z2, lab, order, d1in, d2in, out=omega)
         else:
-            omega = bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1in, d2in)
+            bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1in, d2in, out=omega)
     else:  # Break integral up in parts
         Nls = int(np.ceil(L / (Lnear * np.abs(lab))))
         delta = 2 / Nls
         delz = (z2 - z1) / Nls
         L = np.abs(delz)
+        # temporary buffers for integration
+        tmp = np.empty(order + 1, dtype=np.complex128)
+        tmp2 = np.empty(order + 1, dtype=np.complex128)
         for n in range(1, Nls + 1):
             d1 = -1 + (n - 1) * delta
             d2 = -1 + n * delta
@@ -967,9 +991,12 @@ def bessells(x, y, z1, z2, lab, order, d1in, d2in):
             za = z1 + (n - 1) * delz
             zb = z1 + n * delz
             if np.abs(z - 0.5 * (za + zb)) < 0.5 * Lnear * L:  # Do integration
-                omega = omega + bessells_int_ho(x, y, z1, z2, lab, order, d1, d2)
+                bessells_int_ho(x, y, z1, z2, lab, order, d1, d2, out=tmp)
             else:
-                omega = omega + bessells_gauss_ho_d1d2(x, y, z1, z2, lab, order, d1, d2)
+                bessells_gauss_ho_d1d2(
+                    x, y, z1, z2, lab, order, d1, d2, out=tmp, work=tmp2
+                )
+            omega += tmp
     return omega
 
 

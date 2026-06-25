@@ -8,6 +8,7 @@ Example::
 
 """
 
+import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
@@ -126,6 +127,7 @@ class ImpermeableWall1D(LineDoublet1D, DisvecEquation):
     """Create 1D impermeable wall."""
 
     def __init__(self, model, xld=0, layers=0, label=None):
+        self.storeinput(inspect.currentframe())
         LineDoublet1D.__init__(
             self,
             model,
@@ -171,6 +173,7 @@ class LeakyWall1D(LineDoublet1D, LeakyWallEquation):
     tiny = 1e-6
 
     def __init__(self, model, xld=0, res=np.inf, layers=0, label=None):
+        self.storeinput(inspect.currentframe())
         LineDoublet1D.__init__(
             self,
             model,

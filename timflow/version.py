@@ -45,8 +45,8 @@ def check_tqdm_parallel(parallel):
     -------
     parallel : bool
         Whether parallel processing was requested and can be used.
-    process_map : function or None
-        The process_map function from tqdm if parallel processing is available, else None.
+    thread_map : function or None
+        The thread_map function from tqdm if parallel processing is available, else None.
     tqdm : class or None
         The tqdm class from tqdm if parallel processing is available, else None.
     """
@@ -54,7 +54,7 @@ def check_tqdm_parallel(parallel):
         return parallel, None, None
     try:
         from tqdm import tqdm
-        from tqdm.contrib.concurrent import process_map
+        from tqdm.contrib.concurrent import thread_map
     except ImportError:
         warnings.warn(
             "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
@@ -63,6 +63,6 @@ def check_tqdm_parallel(parallel):
             stacklevel=2,
         )
         parallel = False
-        process_map = None
+        thread_map = None
         tqdm = None
-    return parallel, process_map, tqdm
+    return parallel, thread_map, tqdm

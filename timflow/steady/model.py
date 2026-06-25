@@ -10,6 +10,7 @@ Example::
     ml.solve()
 """
 
+import inspect  # Used for storing the input
 import multiprocessing as mp
 import warnings
 
@@ -24,22 +25,6 @@ from timflow.steady.plots import PlotSteady
 from timflow.version import check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
-
-
-def _compute_head_mp(args):
-    """Helper function for parallel computation of head_array."""
-    model, xi, yi, layers, i = args
-    return i, model.head(xi, yi, layers=layers)
-
-
-def _compute_velocity_mp(args):
-    """Helper function for parallel computation of velocity_array."""
-    model, xi, yi, zi, i = args
-    try:
-        vv = model.velocomp(xi, yi, zi)
-    except (ZeroDivisionError, ValueError):
-        vv = np.full((3,), np.nan)
-    return i, vv
 
 
 class Model:
@@ -75,6 +60,7 @@ class Model:
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
         self.aq = Aquifer(self, kaq, c, z, npor, ltype, model3d=model3d)
+        self.modelname = "ml"  # Used for writing out input
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
 
@@ -97,6 +83,9 @@ class Model:
         if e.label is not None:
             self.elementdict.pop(e.label)
         self.elementlist.remove(e)
+
+    def storeinput(self, frame):
+        self.inputargs, _, _, self.inputvalues = inspect.getargvalues(frame)
 
     def potential(self, x, y, aq=None):
         if aq is None:
@@ -270,64 +259,6 @@ class Model:
         else:
             return rv[layers]
 
-    def head_array(self, x, y, layers=None, show_progress=False, parallel=False):
-        """Head for array of points.
-
-        Parameters
-        ----------
-        x : 1D array or list
-            x values of points
-        y : 1D array or list
-            y values of points
-        layers : integer, list or array, optional
-            layers for which grid is returned
-        show_progress : bool
-            show computation progress, by printing dots per row or with tqdm progressbar
-            when parallel is True. Default is False.
-        parallel : bool or int, optional
-            if `True`, computes head_array in parallel using multiprocessing,
-            by default `False`. If an integer is provided, it is interpreted as the
-            number of processes to use.
-
-        Returns
-        -------
-        h : array
-            heads array with size (nlayers, npoints)
-        """
-        parallel, process_map, tqdm = check_tqdm_parallel(parallel)
-        x = np.atleast_1d(x)
-        y = np.atleast_1d(y)
-        npts = len(x)
-        assert npts == len(y), "x and y must have the same length"
-        if layers is None:
-            nlayers = self.aq.find_aquifer_data(x[0], y[0]).naq
-        else:
-            nlayers = len(np.atleast_1d(layers))
-        h = np.empty((nlayers, npts))
-        if not parallel:
-            for i in (
-                tqdm(range(npts), disable=not show_progress) if tqdm else range(npts)
-            ):
-                h[:, i] = self.head(x[i], y[i], layers)
-        else:
-            nproc = mp.cpu_count() if parallel is True else int(parallel)
-            chunksize = max(1, npts // (4 * nproc)) if nproc > 0 else 1
-            tasks = [(self, x[i], y[i], layers, i) for i in range(npts)]
-            results = process_map(
-                _compute_head_mp,
-                tasks,
-                total=npts,
-                desc="head array",
-                disable=not show_progress,
-                tqdm_class=tqdm,
-                max_workers=nproc,
-                chunksize=chunksize,
-            )
-
-            for i, result in results:
-                h[:, i] = result
-        return h
-
     def headgrid(
         self, xg, yg, layers=None, printrow=False, show_progress=False, parallel=False
     ):
@@ -344,10 +275,9 @@ class Model:
         show_progress : bool
             show computation progress, by printing dots per row or with tqdm progressbar
             when parallel is True. Default is False.
-        parallel : bool or int, optional
-            if `True`, computes headgrid in parallel using multiprocessing,
-            by default `False`. If an integer is provided, it is interpreted as the
-            number of processes to use.
+        parallel : bool, optional
+            if `True`, computes headgrid in parallel using multi threading,
+            by default `False`
         printrow : bool, optional
 
             .. deprecated:: 0.2.0
@@ -359,7 +289,6 @@ class Model:
 
         See Also
         --------
-        :func:`~timflow.steady.Model.head_array`
         :func:`~timflow.steady.Model.headgrid2`
         """
         if printrow:
@@ -369,15 +298,43 @@ class Model:
                 stacklevel=2,
             )
             show_progress = printrow
-        x, y = np.meshgrid(xg, yg)
-        h = self.head_array(
-            x.ravel(),
-            y.ravel(),
-            layers=layers,
-            show_progress=show_progress,
-            parallel=parallel,
-        )
-        return h.reshape((h.shape[0], len(yg), len(xg)))
+
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        xg = np.atleast_1d(xg)
+        yg = np.atleast_1d(yg)
+        nx, ny = len(xg), len(yg)
+        if layers is None:
+            Nlayers = self.aq.find_aquifer_data(xg[0], yg[0]).naq
+        else:
+            Nlayers = len(np.atleast_1d(layers))
+        h = np.empty((Nlayers, ny, nx))
+        if not parallel:
+            for j in range(ny):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(nx):
+                    h[:, j, i] = self.head(xg[i], yg[j], layers)
+            if show_progress:
+                print("", flush=True)
+        else:
+
+            def compute(ij):
+                i, j = ij
+                return i, j, self.head(xg[i], yg[j], layers)
+
+            results = thread_map(
+                compute,
+                [(i, j) for j in range(ny) for i in range(nx)],
+                total=nx * ny,
+                desc="headgrid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for i, j, result in results:
+                h[:, j, i] = result
+
+        return h
 
     def headgrid2(
         self,
@@ -405,10 +362,6 @@ class Model:
         show_progress : bool
             show computation progress, by printing dots per row or with tqdm progressbar
             when parallel is True. Default is False.
-        parallel : bool or int, optional
-            if `True`, computes headgrid in parallel using multiprocessing,
-            by default `False`. If an integer is provided, it is interpreted as the
-            number of processes to use.
         printrow : boolean, optional
 
             .. deprecated:: 0.2.0
@@ -420,7 +373,6 @@ class Model:
 
         See Also
         --------
-        :func:`~timflow.steady.Model.head_array`
         :func:`~timflow.steady.Model.headgrid`
         """
         xg, yg = np.linspace(x1, x2, nx), np.linspace(y1, y2, ny)
@@ -484,7 +436,7 @@ class Model:
             show computation progress, by printing dots per row or with tqdm progressbar
             when parallel is True. Default is True.
         parallel : bool, optional
-            if `True`, computes discharge vector grid in parallel using multiprocessing,
+            if `True`, computes discharge vector grid in parallel using multi threading,
             by default `False`
 
         Returns
@@ -618,68 +570,8 @@ class Model:
         """
         return self.velocomp(x, y, z)
 
-    def velocity_array(self, x, y, z, show_progress=True, parallel=False):
-        """Compute velocity grid.
-
-        Parameters
-        ----------
-        x : 1d-array
-            x values
-        y : 1d-array
-            y values
-        z : 1d-array
-            z values
-        show_progress : bool
-            show computation progress with tqdm progressbar if tqdm is installed.
-            Default is True.
-        parallel : bool or int, optional
-            if `True`, computes velocity grid in parallel using multi processing,
-            by default `False`. If an integer is provided, it is interpreted
-            as the number of processes to use.
-
-        Returns
-        -------
-        velocity : array
-            velocity vector (vx, vy, vz) at each point in grid,
-            size (3, len(x))
-        """
-        parallel, process_map, tqdm = check_tqdm_parallel(parallel)
-        x = np.atleast_1d(x)
-        y = np.atleast_1d(y)
-        z = np.atleast_1d(z)
-        npts = len(x)
-        assert npts == len(y) == len(z), "x, y and z must have the same length"
-        v = np.empty((3, npts))
-        if not parallel:
-            for i in (
-                tqdm(range(npts), disable=not show_progress) if tqdm else range(npts)
-            ):
-                try:
-                    vv = self.velocomp(x[i], y[i], z[i])
-                except (ZeroDivisionError, ValueError):
-                    vv = np.full((3,), np.nan)
-                v[:, i] = vv
-        else:
-            nproc = mp.cpu_count() if parallel is True else int(parallel)
-            chunksize = max(1, npts // (4 * nproc)) if nproc > 0 else 1
-            tasks = [(self, x[i], y[i], z[i], i) for i in range(npts)]
-            results = process_map(
-                _compute_velocity_mp,
-                tasks,
-                total=npts,
-                desc="velocity array",
-                disable=not show_progress,
-                tqdm_class=tqdm,
-                max_workers=nproc,
-                chunksize=chunksize,
-            )
-            for i, result in results:
-                v[:, i] = result
-
-        return v
-
     def velocity_grid(self, xg, yg, zg, show_progress=True, parallel=False):
-        """Compute velocities for an array of points.
+        """Compute velocity grid.
 
         Parameters
         ----------
@@ -689,31 +581,57 @@ class Model:
             y values of grid
         zg : 1d-array
             z values of grid
-        show_progress : bool, optional
-            if `True`, shows progress bar when computing velocity grid, by default `True`
-        parallel : bool or int, optional
-            if `True`, computes velocity grid in parallel using multiprocessing,
-            by default `False`. If an integer is provided, it specifies the number of
-            processes to use.
+        parallel : bool, optional
+            if `True`, computes velocity grid in parallel using multi threading,
+            by default `False`
 
         Returns
         -------
         velocity : array
-            velocity vector (vx, vy, vz) at each point in grid,
-            size (3, len(zg), len(yg), len(xg))
+            velocity vector (vz, vy, vx) at each point in grid,
+            size (3, len(z), len(y), len(x))
         """
+        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
+
+        def compute(kij):
+            k, i, j = kij
+            try:
+                vv = self.velocomp(xg[j], yg[i], zg[k])
+            except ZeroDivisionError:
+                vv = np.full((3,), np.nan)
+            return k, i, j, vv
+
         xg = np.atleast_1d(xg)
         yg = np.atleast_1d(yg)
         zg = np.atleast_1d(zg)
-        x, y, z = np.meshgrid(xg, yg, zg)
-        v = self.velocity_array(
-            x.ravel(),
-            y.ravel(),
-            z.ravel(),
-            show_progress=show_progress,
-            parallel=parallel,
-        )
-        return v.reshape((3, len(yg), len(xg), len(zg))).transpose((0, 3, 1, 2))
+        nz, ny, nx = len(zg), len(yg), len(xg)
+        v = np.empty((3, nz, ny, nx))
+        if not parallel:
+            for k in range(nz):
+                if show_progress:
+                    print(".", end="", flush=True)
+                for i in range(ny):
+                    for j in range(nx):
+                        try:
+                            vv = self.velocomp(xg[j], yg[i], zg[k])
+                        except ZeroDivisionError:
+                            vv = np.full((3,), np.nan)
+                        v[:, k, i, j] = vv
+            if show_progress:
+                print("", flush=True)
+        else:
+            results = thread_map(
+                compute,
+                [(k, i, j) for k in range(nz) for i in range(ny) for j in range(nx)],
+                total=nz * nx * ny,
+                desc="velocity grid",
+                disable=not show_progress,
+                tqdm_class=tqdm,
+            )
+            for k, i, j, result in results:
+                v[:, k, i, j] = result
+
+        return v
 
     def velocomp(self, x, y, z, aq=None, layer_ltype=None):
         if aq is None:
@@ -874,6 +792,32 @@ class Model:
             return sol
         return
 
+    def write(self):
+        rv = self.modelname + " = " + self.name + "(\n"
+        for key in self.inputargs[1:]:  # The first argument (self) is ignored
+            if isinstance(self.inputvalues[key], np.ndarray):
+                rv += (
+                    key
+                    + " = "
+                    + np.array2string(self.inputvalues[key], separator=",")
+                    + ",\n"
+                )
+            elif isinstance(self.inputvalues[key], str):
+                rv += key + " = '" + self.inputvalues[key] + "',\n"
+            else:
+                rv += key + " = " + str(self.inputvalues[key]) + ",\n"
+        rv += ")\n"
+        return rv
+
+    def writemodel(self, fname):
+        self.initialize()  # So that the model can be written without solving first
+        f = open(fname, "w")
+        f.write("from timflow.steady import *\n")
+        f.write(self.write())
+        for e in self.elementlist:
+            f.write(e.write())
+        f.close()
+
     def aquifer_summary(self):
         """Return DataFrame with summary of aquifer(s) parameters in model.
 
@@ -981,6 +925,7 @@ class ModelMaq(Model):
             c = []
         if z is None:
             z = [1, 0]
+        self.storeinput(inspect.currentframe())
         kaq, c, npor, ltype = param_maq(kaq, z, c, npor, topboundary)
         super().__init__(kaq=kaq, z=z, c=c, npor=npor, ltype=ltype)
         self.name = "ModelMaq"
@@ -1059,6 +1004,7 @@ class Model3D(Model):
         """
         if z is None:
             z = [1, 0]
+        self.storeinput(inspect.currentframe())
         kaq, kzoverkh, c, npor, ltype = param_3d(
             kaq, z, kzoverkh, npor, topboundary, topres
         )
@@ -1095,6 +1041,7 @@ class ModelXsection(Model):
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
         self.aq = SimpleAquifer(naq)
+        self.modelname = "ml"  # Used for writing out input
 
         self.plots = PlotSteady(self)
         self.name = "ModelXsection"
