@@ -9,8 +9,6 @@ Example::
 
 """
 
-import inspect  # Used for storing the input
-
 import numpy as np
 import pandas as pd
 
@@ -57,6 +55,11 @@ class AquiferData:
         # tag indicating whether an aquifer is Laplace (confined on top)
         if self.ltype[0] == "a":
             self.ilap = 1
+            if self.c[0] != 1e100:
+                assert len(self.c) == self.naq - 1, (
+                    "If topboundary='conf', len(c) should be naq-1"
+                )
+                self.c = np.hstack((1e100, self.c))  # add confined resistance to c
         else:
             self.ilap = 0
         #
@@ -126,9 +129,6 @@ class AquiferData:
 
     def isinside(self, x, y):
         raise Exception("Must overload AquiferData.isinside()")
-
-    def storeinput(self, frame):
-        self.inputargs, _, _, self.inputvalues = inspect.getargvalues(frame)
 
     def findlayer(self, z):
         """Returns layer-number, layer-type and model-layer-number."""
@@ -215,6 +215,7 @@ class Aquifer(AquiferData):
         if inhom.name in self.inhomdict:
             raise ValueError(f"Inhomogeneity name '{inhom.name}' already exists.")
         self.inhomdict[inhom.name] = inhom
+        self.model.initialized = False  # mark model as uninitialized
         return inhom_number
 
     def find_aquifer_data(self, x, y):
@@ -237,7 +238,8 @@ class SimpleAquifer(Aquifer):
         Number of aquifers.
     """
 
-    def __init__(self, naq):
+    def __init__(self, ml, naq):
+        self.model = ml
         self.naq = naq
         self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhomogeneity

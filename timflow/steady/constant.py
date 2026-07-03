@@ -8,8 +8,6 @@ Example::
     Constant(ml, xr=0, yr=0, hr=10.0, layer=0)
 """
 
-import inspect  # Used for storing the input
-
 import numpy as np
 
 from timflow.steady.element import Element
@@ -96,7 +94,6 @@ class Constant(ConstantBase, PotentialEquation):
     """
 
     def __init__(self, model, xr=0, yr=0, hr=0.0, layer=0, label=None):
-        self.storeinput(inspect.currentframe())
         ConstantBase.__init__(
             self, model, xr=xr, yr=yr, hr=hr, layer=layer, name="Constant", label=label
         )

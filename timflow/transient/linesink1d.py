@@ -206,6 +206,7 @@ class DischargeLineSink1D(LineSink1DBase):
     def __init__(
         self, model, xls=0, tsandq=[(0, 1)], res=0, wh="H", layers=0, label=None
     ):
+        """Initialize a transient 1D line-sink with specified discharge per length."""
         super().__init__(
             model,
             xls,
@@ -258,6 +259,7 @@ class LineSink1D(LineSink1DBase, MscreenEquation):
         layers=0,
         label=None,
     ):
+        """Initialize a transient 1D line-sink with a specified discharge."""
         super().__init__(
             model,
             xls,
@@ -294,8 +296,9 @@ class River1D(LineSink1DBase, HeadEquation):
         Model to which the element is added
     xls : float
         x-coordinate of the linesink
-    tsandh : list of tuples
-        list of tuples of the form (time, head) for head conditions
+    tsandh : str or list of tuples
+        list of tuples of the form (time, head) for head conditions or "fixed" for
+        a fixed head of zero.
     res : float
         resistance of the linesink
     wh : string or float
@@ -317,6 +320,7 @@ class River1D(LineSink1DBase, HeadEquation):
         layers=0,
         label=None,
     ):
+        """Initialize a transient 1D line-sink with a specified head."""
         if isinstance(tsandh, str) and tsandh == "fixed":
             tsandh = [(0, 0)]
             etype = "z"

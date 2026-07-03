@@ -7,7 +7,6 @@ Example::
     LeakyLineDoublet(ml, x1=-10, y1=0, x2=10, y2=0, layers=0)
 """
 
-import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
@@ -243,7 +242,6 @@ class LeakyWall(LineDoubletHoBase, LeakyWallEquation):
         label=None,
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
         super().__init__(
             model,
             x1=x1,
@@ -299,7 +297,6 @@ class LeakyWallString(Element, LeakyWallEquation):
     def __init__(
         self, model, xy=[(-1, 0), (1, 0)], res="imp", order=0, layers=0, label=None
     ):
-        self.storeinput(inspect.currentframe())
         Element.__init__(
             self,
             model,

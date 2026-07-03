@@ -13,7 +13,6 @@ Example::
     )
 """
 
-import inspect  # Used for storing the input
 from warnings import warn
 
 import numpy as np
@@ -218,7 +217,6 @@ class PolygonInhomMaq(PolygonInhom):
             assert topboundary[:4] == "conf", (
                 "Error: infiltration can only be added if topboundary='conf'"
             )
-        self.storeinput(inspect.currentframe())
         (
             kaq,
             c,
@@ -315,7 +313,6 @@ class PolygonInhom3D(PolygonInhom):
             assert topboundary[:4] == "conf", (
                 "Error: infiltration can only be added if topboundary='conf'"
             )
-        self.storeinput(inspect.currentframe())
         kaq, kzoverkh, c, npor, ltype = param_3d(
             kaq, z, kzoverkh, npor, topboundary, topres
         )

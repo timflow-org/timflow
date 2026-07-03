@@ -7,7 +7,6 @@ Example::
     River(ml, x1=-10, y1=0, x2=10, y2=0, hls=5, layers=0)
 """
 
-import inspect  # Used for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
@@ -286,7 +285,6 @@ class HeadLineSinkZero(LineSinkBase, HeadEquation):
         label=None,
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
         LineSinkBase.__init__(
             self,
             model,
@@ -565,7 +563,7 @@ class River(LineSinkHoBase, HeadEquation):
         name="River",
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
+        """Initialize a steady head-specified line-sink."""
         LineSinkHoBase.__init__(
             self,
             model,
@@ -670,7 +668,7 @@ class Ditch(River):
         label=None,
         addtomodel=True,
     ):
-        self.storeinput(inspect.currentframe())
+        """Initialize a steady discharge-specified line-sink."""
         River.__init__(
             self,
             model,
@@ -760,7 +758,7 @@ class LineSinkStringBase2(Element):
         self.nlayers = len(self.layers[0])
 
     def __repr__(self):
-        return self.name + " with nodes " + str(self.xy)
+        return self.name + " with " + len(self.xy) + " segments"
 
     def initialize(self):
         for ls in self.lslist:
@@ -928,9 +926,9 @@ class RiverString(LineSinkStringBase2):
         label=None,
         name="RiverString",
     ):
+        """Initialize a steady string of head-specified line-sinks."""
         if xy is None:
             xy = [(-1, 0), (1, 0)]
-        self.storeinput(inspect.currentframe())
         LineSinkStringBase2.__init__(
             self,
             model,
@@ -1080,9 +1078,9 @@ class DitchString(RiverString):
         dely=0,
         label=None,
     ):
+        """Initialize a steady string of discharge-specified line-sinks."""
         if xy is None:
             xy = [(-1, 0), (1, 0)]
-        self.storeinput(inspect.currentframe())
         RiverString.__init__(
             self,
             model,
@@ -1234,6 +1232,7 @@ class CollectorWell(DitchString):
         order=0,
         label=None,
     ):
+        """Initialize a steady collector well made of line-sink arms."""
         super().__init__(
             model,
             xy,
@@ -1307,6 +1306,7 @@ class RadialCollectorWell(CollectorWell):
         layers=0,
         label=None,
     ):
+        """Initialize a radial steady collector well."""
         if np.isscalar(angle):
             angle = np.deg2rad(angle) + np.linspace(0, 2 * np.pi, narms + 1)[:-1]
         else:

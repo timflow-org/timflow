@@ -2,7 +2,7 @@ import warnings
 from importlib import import_module, metadata
 from platform import python_version
 
-__version__ = "0.3.0"
+__version__ = "0.5.0.dev0"
 
 
 def show_versions(optional=True) -> None:
@@ -21,13 +21,14 @@ def show_versions(optional=True) -> None:
         f"Scipy version      : {metadata.version('scipy')}\n"
         f"Pandas version     : {metadata.version('pandas')}\n"
         f"Matplotlib version : {metadata.version('matplotlib')}"
+        # f"tqdm version       : {metadata.version('tqdm')}"
     )
     if optional:
         msg += "\nLmFit version      : "
         try:
             import_module("lmfit")
             msg += f"{metadata.version('lmfit')}"
-        except ImportError:
+        except ModuleNotFoundError:
             msg += "Not Installed"
 
     print(msg)
@@ -45,8 +46,8 @@ def check_tqdm_parallel(parallel):
     -------
     parallel : bool
         Whether parallel processing was requested and can be used.
-    thread_map : function or None
-        The thread_map function from tqdm if parallel processing is available, else None.
+    process_map : function or None
+        The process_map function from tqdm if parallel processing is available, else None.
     tqdm : class or None
         The tqdm class from tqdm if parallel processing is available, else None.
     """
@@ -54,7 +55,7 @@ def check_tqdm_parallel(parallel):
         return parallel, None, None
     try:
         from tqdm import tqdm
-        from tqdm.contrib.concurrent import thread_map
+        from tqdm.contrib.concurrent import process_map
     except ImportError:
         warnings.warn(
             "Parallel requires 'tqdm'. Install 'timflow[parallel]' or 'tqdm' to"
@@ -63,6 +64,6 @@ def check_tqdm_parallel(parallel):
             stacklevel=2,
         )
         parallel = False
-        thread_map = None
+        process_map = None
         tqdm = None
-    return parallel, thread_map, tqdm
+    return parallel, process_map, tqdm

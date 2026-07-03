@@ -81,14 +81,15 @@ class PlotBase:
     def xsection(
         self,
         xy: Optional[list[tuple[float]]] = None,
-        labels=True,
-        params=False,
-        names=False,
+        labels: bool = True,
+        params: bool = False,
+        names: bool = False,
         ax=None,
-        fmt=None,
-        units=None,
-        hstar=None,
-        boundaries=True,
+        fmt: str | None = None,
+        units: dict | None = None,
+        layer_names: tuple | dict = ("aquifer", "leaky layer"),
+        hstar: float | None = None,
+        boundaries: bool = True,
         horizontal_axis: Literal["x", "y", "s"] = "s",
         sep: Literal[", ", "\n"] = ", ",
         ha: str = "center",
@@ -119,6 +120,11 @@ class PlotBase:
         units : dict, optional
             dictionary with units keyed by timflow parameter names,
             e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
+        layer_names : 2-tuple or dict
+            words to use for aquifers and leaky layers, default is
+            ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'}
         horizontal_axis : str
             's' for distance along cross-section on x-axis (default)
             'x' for using x-coordinates on x-axis
@@ -142,6 +148,12 @@ class PlotBase:
         ax : matplotlib.Axes
             axes with plot
         """
+        # check if model is initialized
+        # if not self._ml.initialized:
+        #     raise ValueError(
+        #         "Model is not initialized. Call `ml.initialize()` or `ml.solve()`"
+        #         " before plotting."
+        #     )
         if ax is None:
             _, ax = plt.subplots(1, 1, figsize=(8, 4))
 
@@ -158,6 +170,7 @@ class PlotBase:
                 ax=ax,
                 fmt=fmt,
                 units=units,
+                layer_names=layer_names,
                 hstar=hstar,
                 boundaries=boundaries,
                 sep=sep,
@@ -176,7 +189,19 @@ class PlotBase:
 
         # Plot layers
         self._xection_plot_layers(
-            r0, r, labels, params, fmt, units, lli, aqi, ax, sep=sep, ha=ha, **kwargs
+            r0,
+            r,
+            labels,
+            params,
+            fmt,
+            units,
+            layer_names,
+            lli,
+            aqi,
+            ax,
+            sep=sep,
+            ha=ha,
+            **kwargs,
         )
 
         # Plot aquifer-aquifer boundaries
@@ -279,6 +304,7 @@ class PlotBase:
         ax,
         fmt,
         units=None,
+        layer_names=("aquifer", "leaky layer"),
         hstar=None,
         boundaries=True,
         sep: Literal[", ", "\n"] = ", ",
@@ -310,8 +336,12 @@ class PlotBase:
             (x1, _), (x2, _) = xy
         else:
             dx = x_max - x_min
-            x1 = x_min - 0.25 * dx
-            x2 = x_max + 0.25 * dx
+            if np.isinf(dx) or dx == 0.0:
+                x1 = -np.inf
+                x2 = np.inf
+            else:
+                x1 = x_min - 0.25 * dx
+                x2 = x_max + 0.25 * dx
 
         # Plot inhoms (implementation differs between steady/transient)
         self._xsection_plot_inhoms(
@@ -323,10 +353,12 @@ class PlotBase:
             x2=x2,
             fmt=fmt,
             units=units,
+            layer_names=layer_names,
             sep=sep,
             ha=ha,
         )
-        ax.set_xlim(x1, x2)
+        if not np.isinf(x1) and not np.isinf(x2):
+            ax.set_xlim(x1, x2)
         ax.set_ylabel("elevation")
         ax.set_xlabel("x")
 
@@ -352,6 +384,7 @@ class PlotBase:
         x2,
         fmt,
         units,
+        layer_names,
         sep: Literal[", ", "\n"] = ", ",
         ha: str = "center",
     ):
@@ -374,11 +407,20 @@ class PlotBase:
         units : dict or None
             Dictionary of units keyed by timflow parameter names
             e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}.
+        layer_names : 2-tuple or dict
+            words to use for aquifers and leaky layers, default is
+            ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'
         sep : str, optional
             Separator between parameters, either ", " or "\n"
         ha : str, optional
             Horizontal alignment for parameter labels. Defaults to "center".
         """
+        if len(self._ml.aq.inhomdict) == 0:
+            raise ValueError(
+                "No inhomogeneities found in ModelXsection, nothing to plot."
+            )
         for inhom in self._ml.aq.inhomdict.values():
             inhom.plot(
                 ax=ax,
@@ -389,6 +431,7 @@ class PlotBase:
                 x2=x2,
                 fmt=fmt,
                 units=units,
+                layer_names=layer_names,
                 sep=sep,
                 ha=ha,
             )
@@ -458,6 +501,7 @@ class PlotBase:
         params,
         fmt,
         units,
+        layer_names,
         lli,
         aqi,
         ax,
@@ -479,6 +523,11 @@ class PlotBase:
             Whether to add parameter values
         fmt : str
             Format string for parameter values
+        layer_names : 2-tuple or dict
+            words to use for aquifer and leaky layer, default is
+            ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'}
         units : dict or None
             Dictionary of units keyed by timflow parameter names
             e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
@@ -496,6 +545,8 @@ class PlotBase:
             passed on to all ax.plot calls
         """
         for i in range(self._ml.aq.nlayers):
+            if i > 0 and self._ml.aq.ltype[i] == self._ml.aq.ltype[i - 1]:
+                lli += 1
             # Plot leaky layers
             if self._ml.aq.ltype[i] == "l":
                 ax.axhspan(
@@ -505,10 +556,17 @@ class PlotBase:
                     **kwargs,
                 )
                 if labels:
+                    if isinstance(layer_names, tuple):
+                        llname = f"{layer_names[1]} {lli}"
+                    elif isinstance(layer_names, dict):
+                        llname = f"leaky layer {lli}"
+                        llname = layer_names.get(llname, llname)
+                    else:
+                        llname = f"leaky layer {lli}"
                     ax.text(
                         r0 + 0.5 * r if not params else r0 + 0.25 * r,
                         np.mean(self._ml.aq.z[i : i + 2]),
-                        f"leaky layer {lli}",
+                        llname,
                         ha="center",
                         va="center",
                     )
@@ -516,16 +574,23 @@ class PlotBase:
                     self._xsection_leaky_layer_params(
                         ax, r0, r, labels, fmt, units, lli, i, sep=sep, ha=ha
                     )
-                if labels or params:
-                    lli += 1
+
+                lli += 1
 
             # Plot aquifers
             if self._ml.aq.ltype[i] == "a":
                 if labels:
+                    if isinstance(layer_names, tuple):
+                        aqname = f"{layer_names[0]} {aqi}"
+                    elif isinstance(layer_names, dict):
+                        aqname = f"aquifer {aqi}"
+                        aqname = layer_names.get(aqname, aqname)
+                    else:
+                        aqname = f"aquifer {aqi}"
                     ax.text(
                         r0 + 0.5 * r if not params else r0 + 0.25 * r,
                         np.mean(self._ml.aq.z[i : i + 2]),
-                        f"aquifer {aqi}",
+                        aqname,
                         ha="center",
                         va="center",
                         **kwargs,
@@ -534,8 +599,8 @@ class PlotBase:
                     self._xsection_aquifer_params(
                         ax, r0, r, labels, fmt, units, aqi, i, sep=sep, ha=ha
                     )
-                if labels or params:
-                    aqi += 1
+
+                aqi += 1
 
     def _xsection_leaky_layer_params(
         self,
@@ -773,7 +838,10 @@ class PlotBase:
         cslist = []
         cshandlelist = []
         for i in range(len(layers)):
-            _colors = c if per_level_colors else c[i]
+            if color is None and cmap is not None:
+                _colors = None
+            else:
+                _colors = c if per_level_colors else c[i]
             iarr = arr[i] if arr.ndim == 3 else arr
             cs = ax.contour(x, y, iarr, levels, colors=_colors, cmap=cmap, **kwargs)
             cslist.append(cs)

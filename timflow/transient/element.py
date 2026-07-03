@@ -9,7 +9,6 @@ Example::
             pass
 """
 
-import inspect  # Used for storing the input
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -323,26 +322,6 @@ class Element(ABC):
     def headinside(self, t):
         print("This function not implemented for this element")
         return
-
-    def storeinput(self, frame):
-        self.inputargs, _, _, self.inputvalues = inspect.getargvalues(frame)
-
-    def write(self):
-        rv = self.name + "(" + self.model.modelname + ",\n"
-        for key in self.inputargs[2:]:  # The first two are ignored
-            if isinstance(self.inputvalues[key], np.ndarray):
-                rv += (
-                    key
-                    + " = "
-                    + np.array2string(self.inputvalues[key], separator=",")
-                    + ",\n"
-                )
-            elif isinstance(self.inputvalues[key], str):
-                rv += key + " = '" + self.inputvalues[key] + "',\n"
-            else:
-                rv += key + " = " + str(self.inputvalues[key]) + ",\n"
-        rv += ")\n"
-        return rv
 
     def run_after_solve(self):  # noqa: B027
         """Function to run after a solution is completed.

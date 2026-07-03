@@ -60,6 +60,12 @@ class AquiferData:
         if self.ltype[0] == "a":
             # first leaky layer below first aquifer layer
             self.layernumber[self.ltype == "l"] += 1
+            if self.c[0] != 1e100:  # this check works because max value is set to 1e100
+                assert len(self.c) == (self.naq - 1), (
+                    "If topboundary='conf', len(c) should be naq-1"
+                )
+                # add confined resistance for first layer
+                self.c = np.hstack((1e100, self.c))
         self.topboundary = topboundary[:3]
         self.phreatictop = phreatictop
         self.kzoverkh = kzoverkh
@@ -357,11 +363,13 @@ class Aquifer(AquiferData):
         if inhom.name in self.inhomdict:
             raise ValueError(f"Inhomogeneity name '{inhom.name}' already exists.")
         self.inhomdict[inhom.name] = inhom
+        self.model.initialized = False
         return inhom_number
 
 
 class SimpleAquifer(Aquifer):
-    def __init__(self, naq):
+    def __init__(self, model, naq):
+        self.model = model
         self.naq = naq
         self.inhomdict = {}
         self.area = 1e300  # Needed to find smallest inhomogeneity

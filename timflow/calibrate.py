@@ -409,8 +409,10 @@ class Calibrate:
             Whether to optimize in log10 space (recommended for parameters like
             hydraulic conductivity that can span orders of magnitude).
         inhoms : str or list, optional
-            Inhomogeneity name(s) to target. ``None`` targets the background
-            aquifer.
+            Inhomogeneity name(s) to target. When set to ``None`` targets the
+            background aquifer. Accepts both inhomogeneity names or variables pointing
+            to inhomogeneity objects. Accepts `model.aq` or "background" as input when
+            parameters have to be linked to the background aquifer.
         model : {'both', 'transient', 'steady'}
             Which model(s) this parameter applies to.
 
@@ -975,7 +977,7 @@ class Calibrate:
             res = self.residuals_lmfit(self.result.params)
             print(self.result.message)
             print(self.parameters)
-            print(f"RMSE: {np.sqrt(np.mean(res**2)):.3e}")
+            print(f"\nRMSE: {np.sqrt(np.mean(res**2)):.3e}")
 
     @staticmethod
     def _start_value(p: "Parameter", use_initial: bool) -> float:
@@ -1322,15 +1324,39 @@ class Calibrate:
         }
         return [ml for ml in mapping[model_key] if ml is not None]
 
-    def _resolve_inhoms(self, model: Any, inhoms: str | list[str] | None) -> list:
-        """Return list of aquifer objects for given inhoms spec."""
+    def _resolve_inhoms(self, model: Any, inhoms: str | list | None) -> list:
+        """Return list of aquifer objects for given inhoms spec.
+
+        Validates and resolves inhomogeneity (inhom) identifiers.
+
+        - If `inhoms` is `None`, returns the background aquifer `[model.aq]`.
+        - Strings are checked against `model.aq.inhomdict` keys.
+        - Inhom objects are validated against `model.aq.inhomdict` values.
+        - The string "background" or the object `model.aq` can be used to refer
+          to the background aquifer.
+        - Invalid identifiers are ignored.
+        """
         if inhoms is None:
             return [model.aq]
+
         if isinstance(inhoms, str):
             inhoms = [inhoms]
         elif not isinstance(inhoms, list):
             inhoms = list(inhoms)
-        return [model.aq.inhomdict[i] if isinstance(i, str) else i for i in inhoms]
+
+        resolved = []
+        for i in inhoms:
+            if isinstance(i, str):
+                if i == "background":
+                    resolved.append(model.aq)
+                elif i in model.aq.inhomdict:
+                    resolved.append(model.aq.inhomdict[i])
+            else:  # inhom object
+                if i is model.aq:
+                    resolved.append(i)
+                elif i in model.aq.inhomdict.values():
+                    resolved.append(i)
+        return resolved
 
     @staticmethod
     def _log_scale_bounds(pmin: float, pmax: float, sign: float) -> tuple[float, float]:

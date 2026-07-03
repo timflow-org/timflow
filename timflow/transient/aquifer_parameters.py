@@ -136,6 +136,9 @@ def param_3d(
     if len(poraq) == 1:
         poraq = poraq * np.ones(naq)
     Haq = z[:-1] - z[1:]
+    assert np.all(Haq >= 0), "Error: Not all layers thicknesses are non-negative " + str(
+        Haq
+    )
     c = 0.5 * Haq[:-1] / (kzoverkh[:-1] * kaq[:-1]) + 0.5 * Haq[1:] / (
         kzoverkh[1:] * kaq[1:]
     )

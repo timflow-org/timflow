@@ -10,7 +10,6 @@ Example::
 
 """
 
-import inspect  # user for storing the input
 import warnings
 
 import matplotlib.pyplot as plt
@@ -146,11 +145,12 @@ class Xsection(AquiferData):
     def plot(
         self,
         ax=None,
-        labels=False,
-        params=False,
-        names=False,
-        fmt=None,
-        units: dict = None,
+        labels: bool = False,
+        params: bool = False,
+        names: bool = False,
+        fmt: str | None = None,
+        units: dict | None = None,
+        layer_names: tuple | dict = ("aquifer", "leaky layer"),
         ha: str = "center",
         **kwargs,
     ):
@@ -172,6 +172,10 @@ class Xsection(AquiferData):
             Dictionary with units for parameters, only used if params is True.
             Use timflow parameter names as keys e.g.
             {"kaq": "m/d", "c": "d"}.
+        layer_names : tuple or dict, optional
+            names for aquifers and leaky layers, default is ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'
         ha : str, optional
             Horizontal alignment for parameter labels. Defaults to "center".
         """
@@ -182,18 +186,29 @@ class Xsection(AquiferData):
             x1 = kwargs.pop("x1")
             if np.isfinite(self.x1):
                 x1 = max(x1, self.x1)
+            else:
+                x1 = self.x2 - 100.0
         elif np.isfinite(self.x1):
             x1 = self.x1
         else:
             x1 = self.x2 - 100.0
+
         if "x2" in kwargs:
             x2 = kwargs.pop("x2")
             if np.isfinite(self.x2):
                 x2 = min(x2, self.x2)
+            else:
+                x2 = self.x1 + 100.0
         elif np.isfinite(self.x2):
             x2 = self.x2
         else:
             x2 = self.x1 + 100.0
+
+        # final trap for infinite domains
+        if np.isinf(x1):
+            x1 = -100.0
+        if np.isinf(x2):
+            x2 = 100.0
 
         if self.x1 > x2 or self.x2 < x1:
             # do nothing, inhom is outside the window
@@ -239,10 +254,17 @@ class Xsection(AquiferData):
                     color=[0.8, 0.8, 0.8],
                 )
                 if labels:
+                    if isinstance(layer_names, tuple):
+                        llname = f"{layer_names[1]} {lli}"
+                    elif isinstance(layer_names, dict):
+                        llname = f"leaky layer {lli}"
+                        llname = layer_names.get(llname, llname)
+                    else:
+                        llname = f"leaky layer {lli}"
                     ax.text(
                         r0 + 0.5 * r if not params else r0 + 0.25 * r,
                         np.mean(self.z[i : i + 2]),
-                        f"leaky layer {lli}",
+                        llname,
                         ha="center",
                         va="center",
                     )
@@ -259,10 +281,17 @@ class Xsection(AquiferData):
                     lli += 1
 
             if labels and self.ltype[i] == "a":
+                if isinstance(layer_names, tuple):
+                    aqname = f"{layer_names[0]} {aqi}"
+                elif isinstance(layer_names, dict):
+                    aqname = f"aquifer {aqi}"
+                    aqname = layer_names.get(aqname, aqname)
+                else:
+                    aqname = f"aquifer {aqi}"
                 ax.text(
                     r0 + 0.5 * r if not params else r0 + 0.25 * r,
                     np.mean(self.z[i : i + 2]),
-                    f"aquifer {aqi}",
+                    aqname,
                     ha="center",
                     va="center",
                 )
@@ -354,7 +383,6 @@ class XsectionMaq(Xsection):
             c = []
         if z is None:
             z = [1, 0]
-        self.storeinput(inspect.currentframe())
         (
             kaq,
             c,
@@ -433,7 +461,6 @@ class Xsection3D(Xsection):
     ):
         if z is None:
             z = [1, 0]
-        self.storeinput(inspect.currentframe())
         (
             kaq,
             kzoverkh,
