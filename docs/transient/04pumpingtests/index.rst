@@ -40,6 +40,7 @@ problems such as pumping tests and slug tests. More to come soon.
     :caption: unconfined aquifers
 
     unconfined1_moench 
+    unconfined2_vennebulten
 
 Confined Pumping Tests
 ----------------------
@@ -68,3 +69,4 @@ Unconfined Pumping Tests
 ------------------------
 
 1. :doc:`Moench <unconfined1_moench>` - Unconfined pumping test with a partially penetrating well and observation wells at multiple depths.
+1. :doc:`Vennebulten <unconfined2_vennebulten>` - Unconfined pumping test with a partially penetrating well and observation wells at multiple depths.

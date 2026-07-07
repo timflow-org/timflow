@@ -2,7 +2,7 @@ import warnings
 from importlib import import_module, metadata
 from platform import python_version
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 
 def show_versions(optional=True) -> None:
@@ -21,13 +21,14 @@ def show_versions(optional=True) -> None:
         f"Scipy version      : {metadata.version('scipy')}\n"
         f"Pandas version     : {metadata.version('pandas')}\n"
         f"Matplotlib version : {metadata.version('matplotlib')}"
+        # f"tqdm version       : {metadata.version('tqdm')}"
     )
     if optional:
         msg += "\nLmFit version      : "
         try:
             import_module("lmfit")
             msg += f"{metadata.version('lmfit')}"
-        except ImportError:
+        except ModuleNotFoundError:
             msg += "Not Installed"
 
     print(msg)

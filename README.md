@@ -22,7 +22,7 @@ existing part of the code. `timflow` is coded in Python and uses `numba` to spee
 evaluation of the line elements and inverse Laplace transforms.
 The `transient` submodule is based on the Laplace-transform analytic element
 method. The solution is computed analytically in the Laplace domain and converted back
-to the time domain numerically usig the algorithm of De Hoog, Stokes, and Knight.
+to the time domain numerically using the algorithm of De Hoog, Stokes, and Knight.
 
 ## Installation
 
@@ -49,10 +49,10 @@ Some of the papers that you may want to cite when using `timflow` are:
 
 * Steady-state flow:
   * Bakker, M., and O.D.L. Strack. 2003. Analytic Elements for Multiaquifer Flow.
-  Journal of Hydrology, 271(1-4), 119-129. [https://doi.org/10.1016/S0022-1694(02)00319-0](https://doi.org/10.1016/S0022-1694(02)00319-0)
+  Journal of Hydrology, 271(1-4), 119-129. [https://doi.org/10.1016/S0022-1694(02)00319-0](https://doi.org/10.1016/S0022-1694(02)00319-0) or [here](https://github.com/timflow-org/timflow/blob/main/2003_bakker_strack_jofh.pdf).
 * Transient flow:
   * M. Bakker. 2013. Semi-analytic modeling of transient multi-layer flow with TTim.
-  Hydrogeology Journal, 21: 935-943. [https://doi.org/10.1007/s10040-013-0975-2](https://doi.org/10.1007/s10040-013-0975-2)
+  Hydrogeology Journal, 21: 935-943. [https://doi.org/10.1007/s10040-013-0975-2](https://doi.org/10.1007/s10040-013-0975-2) or [here](https://github.com/timflow-org/timflow/blob/main/papers/2013_bakker_ttim_hgj.pdf).
   * M .Bakker. 2013. Analytic modeling of transient multi-layer flow. In: Advances in
   Hydrogeology, edited by P Mishra and K Kuhlman, Springer, Heidelberg, 95-114. Available [here](https://github.com/timflow-org/timflow/blob/main/papers/2013_bakker_ttim_theory.pdf).
 
