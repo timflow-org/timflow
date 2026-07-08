@@ -206,6 +206,7 @@ class HeadSeries:
     time_shift: float | tuple[float, float, float] | None = (
         None  #  time shift and optional bounds
     )
+    reference_time: float | None = None
     # placeholder for constant and time_shift parameters
     _constant: np.ndarray = field(default_factory=lambda: np.zeros(1), init=False)
     _time_shift: np.ndarray = field(default_factory=lambda: np.zeros(1), init=False)
@@ -288,6 +289,7 @@ class HeadSeriesInWell:
     time_shift: float | tuple[float, float, float] | None = (
         None  #  time shift and optional bounds
     )
+    reference_time: float | None = None
     # placeholder for constant and time_shift parameters
     _constant: np.ndarray = field(default_factory=lambda: np.zeros(1), init=False)
     _time_shift: np.ndarray = field(default_factory=lambda: np.zeros(1), init=False)
@@ -315,7 +317,9 @@ class Calibrate:
 
             res = (sim  - obs) * w
 
-        This can be useful for noisy aquifer test data, for example.
+        This can be useful for noisy aquifer test data, for example. Note that the
+        reference time can also be set per head time series. The series-specific
+        reference time will override the global reference time if both are set.
 
     Notes
     -----
@@ -629,6 +633,7 @@ class Calibrate:
         normalized: bool = False,
         constant: float | tuple[float, float, float] | None = None,
         time_shift: float | tuple[float, float, float] | None = None,
+        reference_time: float | None = None,
     ) -> None:
         """Add a transient head observation time series.
 
@@ -659,6 +664,17 @@ class Calibrate:
             Add a calibrated time shift to this series. Supply a float for
             the initial value (unbounded), or a ``(initial, pmin, pmax)``
             tuple to set bounds. ``None`` (default) disables this parameter.
+        reference_time : float, optional
+            Specify reference time to compute head changes relative to the head at that
+            time. The residuals are then computed with the following formula::
+
+                res = ((sim - sim(t_ref)) - (obs - obs(t_ref))) * w
+
+            The default is None, which uses the following formula for the residuals::
+
+                res = (sim  - obs) * w
+
+            Overrides global setting if both are set.
 
         Examples
         --------
@@ -684,6 +700,7 @@ class Calibrate:
             normalized=normalized,
             constant=constant,
             time_shift=time_shift,
+            reference_time=reference_time,
         )
         self.observations_dict[name] = obs
         if constant is not None:
@@ -705,6 +722,7 @@ class Calibrate:
         h: np.ndarray,
         constant: float | tuple[float, float, float] | None = None,
         time_shift: float | tuple[float, float, float] | None = None,
+        reference_time: float | None = None,
     ) -> None:
         """Add a transient head observation time series inside a well.
 
@@ -726,6 +744,17 @@ class Calibrate:
             Add a calibrated time shift to this series. Supply a float for
             the initial value (unbounded), or a ``(initial, pmin, pmax)``
             tuple to set bounds. ``None`` (default) disables this parameter.
+        reference_time : float, optional
+            Specify reference time to compute head changes relative to the head at that
+            time. The residuals are then computed with the following formula::
+
+                res = ((sim - sim(t_ref)) - (obs - obs(t_ref))) * w
+
+            The default is None, which uses the following formula for the residuals::
+
+                res = (sim  - obs) * w
+
+            Overrides global setting if both are set.
 
         Examples
         --------
@@ -742,6 +771,7 @@ class Calibrate:
             h=h,
             constant=constant,
             time_shift=time_shift,
+            reference_time=reference_time,
         )
         self.observations_in_well_dict[name] = obs
         if constant is not None:
@@ -826,9 +856,14 @@ class Calibrate:
                 )
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
-                if self.reference_time is not None:
+                if obs.reference_time is not None or self.reference_time is not None:
+                    reftime = (
+                        obs.reference_time
+                        if obs.reference_time is not None
+                        else self.reference_time
+                    )
                     # get closest observation to reference time
-                    tref_idx = np.abs(obs.t - self.reference_time).argmin()
+                    tref_idx = np.abs(obs.t - reftime).argmin()
                     closest_ref_time = obs.t[tref_idx]
                     htref = self.transient_model.head(
                         obs.x, obs.y, closest_ref_time, layers=obs.layer
@@ -849,9 +884,14 @@ class Calibrate:
                 h = obs.element.headinside(t)[0]
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
-                if self.reference_time is not None:
+                if obs.reference_time is not None or self.reference_time is not None:
+                    reftime = (
+                        obs.reference_time
+                        if obs.reference_time is not None
+                        else self.reference_time
+                    )
                     # get closest observation to reference time
-                    tref_idx = np.abs(obs.t - self.reference_time).argmin()
+                    tref_idx = np.abs(obs.t - reftime).argmin()
                     closest_ref_time = obs.t[tref_idx]
                     htref = obs.element.headinside(closest_ref_time)[0]
                     res = ((obs.h - obs.h[tref_idx]) - (h - htref) - c) * w
@@ -1470,7 +1510,8 @@ class Calibrate:
             the observed data. Default: black dots.
         model_kwargs : dict, optional
             Keyword arguments passed to :func:`matplotlib.axes.Axes.plot` for
-            the modeled response. Default: blue solid line.
+            the model simulation. Default model line color uses the default color
+            cycle. Override with {"color": "your_color"}.
         sharey : bool, optional
             If ``True``, all subplots share the same y-axis limits.
             Default is ``False``.
@@ -1502,7 +1543,7 @@ class Calibrate:
         obs_kw: dict = {"color": "k", "marker": ".", "linestyle": "none"}
         obs_kw.update(obs_kwargs or {})
 
-        model_kw: dict = {"color": "tab:blue", "label": "model"}
+        model_kw: dict = {"label": "model"}
         model_kw.update(model_kwargs or {})
 
         _tr_has_steady = getattr(self.transient_model, "steady", None) is not None
@@ -1533,13 +1574,21 @@ class Calibrate:
             obs_suffix = f" ({', '.join(obs_label_parts)})" if obs_label_parts else ""
             obs_label = f"{name}{obs_suffix}"
 
+            # Determine reference time and index, if any
+            tref_idx = None
+            if obs.reference_time is not None or self.reference_time is not None:
+                reftime = (
+                    obs.reference_time
+                    if obs.reference_time is not None
+                    else self.reference_time
+                )
+                tref_idx = np.abs(obs.t - reftime).argmin()
+
             # Compute observed heads with corrections applied
-            if self.reference_time is not None:
-                tref_idx = np.abs(obs.t - self.reference_time).argmin()
-                h_obs_plot = obs.h - obs.h[tref_idx]
-            else:
-                c = float(obs._constant[0]) if obs.constant is not None else 0.0
-                h_obs_plot = obs.h - c
+            c = float(obs._constant[0]) if obs.constant is not None else 0.0
+            h_obs_plot = obs.h - c
+            if tref_idx is not None:
+                h_obs_plot = h_obs_plot - h_obs_plot[tref_idx]
 
             # Compute modeled heads
             if name in dict(transient_items):
@@ -1558,7 +1607,7 @@ class Calibrate:
             else:
                 h_mod = obs.element.headinside(obs.t - dt)[0]
 
-            if self.reference_time is not None:
+            if tref_idx is not None:
                 h_mod = h_mod - h_mod[tref_idx]
 
             # Apply tmin/tmax window
@@ -1572,7 +1621,8 @@ class Calibrate:
             nse_str = f"NSE={nse:.2f}" if np.isfinite(nse) else "NSE=n/a"
             model_label = f"{model_kw.get('label', 'model')} ({nse_str})"
 
-            model_kw["color"] = f"C{i}"  # cycle through colors for each subplot
+            # cycle through colors for each subplot
+            model_kw["color"] = model_kw.get("color", f"C{i}")
             ax.plot(t_plot[mask], h_obs_plot[mask], label=obs_label, **obs_kw)
             ax.plot(t_plot[mask], h_mod[mask], **{**model_kw, "label": model_label})
             ax.set_ylabel("head")
