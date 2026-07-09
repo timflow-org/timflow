@@ -340,8 +340,9 @@ class Calibrate:
         # reset stderr, as timflow doesn't estimate that
         for par in self.fitresult.params.values():
             par.stderr = None
-        print("", flush=True)
-        print(self.fitresult.message)
+        #print("", flush=True)
+        if not self.fitresult.success:
+            print(self.fitresult.message)
         if self.fitresult.success:
             for name in self.parameters.index:
                 self.parameters.loc[name, "optimal"] = self.fitresult.params.valuesdict()[
