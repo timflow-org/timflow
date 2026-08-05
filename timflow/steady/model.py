@@ -20,6 +20,7 @@ from scipy.integrate import quad_vec
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
+from timflow.steady.export import ExportBase
 from timflow.steady.plots import PlotSteady
 from timflow.version import check_tqdm_parallel
 
@@ -42,7 +43,7 @@ def _compute_velocity_mp(args):
     return i, vv
 
 
-class Model:
+class Model(ExportBase):
     """Create a model consisting of an arbitrary sequence of aquifers and leaky layers.
 
     Notes
@@ -81,6 +82,32 @@ class Model:
         self.plots = PlotSteady(self)
 
         self.initialized = False
+
+    def extra_from_dict(self, data) -> None:
+        """Add the additional attributes to the (sub)class.
+
+        May be overloaded in the subclasses.
+
+        :param data: Dict with additional parameters.
+        """
+        if "elementlist" in data:
+            for e in data.elementlist:
+                print(e)
+                self.add_element(e)
+
+    def extra_to_dict(self):
+        """Add the addition attributes to the dict.
+
+        May be overloaded in the subclass.
+
+        :return: Dict with addition parameters.
+        """
+        extra_data = {}
+        if self.elementlist != []:
+            extra_data.update(
+                {"elementlist": [e.to_dict() for e in self.elementlist]}
+            )
+        return extra_data
 
     def initialize(self):
         # remove inhomogeneity elements (they are added again)
@@ -1097,6 +1124,7 @@ class ModelXsection(Model):
     """
 
     def __init__(self, naq=1):
+        self.naq = naq
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
         self.aq = SimpleAquifer(self, naq)

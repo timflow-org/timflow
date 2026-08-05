@@ -11,10 +11,12 @@ Example::
 
 import numpy as np
 
+from timflow.steady.export import ExportBase
+
 __all__ = ["Element"]
 
 
-class Element:
+class Element(ExportBase):
     """Base class for all timflow.steady elements.
 
     Elements represent physical features in the aquifer system such as wells,
