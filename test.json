@@ -37,5 +37,126 @@
             "hstar": 4,
             "label": null
         }
-    ]
+    ],
+    "aq": {
+        "_type": "SimpleAquifer",
+        "ml": null,
+        "naq": 2
+    },
+    "inhomdict": {
+        "inhom00": {
+            "_type": "XsectionMaq",
+            "x1": -Infinity,
+            "x2": -50,
+            "kaq": {
+                "ndarray": [
+                    1.0,
+                    2.0
+                ]
+            },
+            "z": {
+                "ndarray": [
+                    4,
+                    3,
+                    2,
+                    1,
+                    0
+                ]
+            },
+            "c": {
+                "ndarray": [
+                    1000.0,
+                    1000.0
+                ]
+            },
+            "npor": {
+                "ndarray": [
+                    0.3,
+                    0.3,
+                    0.3,
+                    0.3
+                ]
+            },
+            "topboundary": "semi",
+            "hstar": 5,
+            "N": null,
+            "name": "inhom00"
+        },
+        "inhom01": {
+            "_type": "XsectionMaq",
+            "x1": -50,
+            "x2": 50,
+            "kaq": {
+                "ndarray": [
+                    1.0,
+                    2.0
+                ]
+            },
+            "z": {
+                "ndarray": [
+                    4,
+                    3,
+                    2,
+                    1,
+                    0
+                ]
+            },
+            "c": {
+                "ndarray": [
+                    1000.0,
+                    1000.0
+                ]
+            },
+            "npor": {
+                "ndarray": [
+                    0.3,
+                    0.3,
+                    0.3,
+                    0.3
+                ]
+            },
+            "topboundary": "semi",
+            "hstar": 4.5,
+            "N": null,
+            "name": "inhom01"
+        },
+        "inhom02": {
+            "_type": "XsectionMaq",
+            "x1": 50,
+            "x2": Infinity,
+            "kaq": {
+                "ndarray": [
+                    1.0,
+                    2.0
+                ]
+            },
+            "z": {
+                "ndarray": [
+                    4,
+                    3,
+                    2,
+                    1,
+                    0
+                ]
+            },
+            "c": {
+                "ndarray": [
+                    1000.0,
+                    1000.0
+                ]
+            },
+            "npor": {
+                "ndarray": [
+                    0.3,
+                    0.3,
+                    0.3,
+                    0.3
+                ]
+            },
+            "topboundary": "semi",
+            "hstar": 4,
+            "N": null,
+            "name": "inhom02"
+        }
+    }
 }

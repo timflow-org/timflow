@@ -90,10 +90,13 @@ class Model(ExportBase):
 
         :param data: Dict with additional parameters.
         """
+        if "inhomdict" in data:
+            if self.aq is not None:
+                for name, inhom in data["inhomdict"].items():
+                    self.aq.inhomdict.update({name: self.from_dict(inhom)})
         if "elementlist" in data:
-            for e in data.elementlist:
-                print(e)
-                self.add_element(e)
+            for e in data["elementlist"]:
+                self.elementlist.append(self.from_dict(e))
 
     def extra_to_dict(self):
         """Add the addition attributes to the dict.
@@ -104,9 +107,12 @@ class Model(ExportBase):
         """
         extra_data = {}
         if self.elementlist != []:
-            extra_data.update(
-                {"elementlist": [e.to_dict() for e in self.elementlist]}
-            )
+            extra_data.update({"elementlist": [e.to_dict() for e in self.elementlist]})
+        if self.aq is not None:
+            if self.aq.inhomdict != {}:
+                extra_data.update(
+                    {"inhomdict": {k: v.to_dict() for k, v in self.aq.inhomdict.items()}}
+                )
         return extra_data
 
     def initialize(self):
@@ -1009,6 +1015,7 @@ class ModelMaq(Model):
     """
 
     def __init__(self, kaq=1, z=None, c=None, npor=0.3, topboundary="conf", hstar=None):
+        self.topboundary = topboundary
         if c is None:
             c = []
         if z is None:

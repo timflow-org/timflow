@@ -37,5 +37,4 @@ tfs.XsectionMaq(
     hstar=4,
 )
 ml.solve()
-print(ml.elementlist)
 ml.to_json("./test.json")
