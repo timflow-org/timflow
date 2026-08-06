@@ -83,21 +83,6 @@ class Model(ExportBase):
 
         self.initialized = False
 
-    def extra_from_dict(self, data) -> None:
-        """Add the additional attributes to the (sub)class.
-
-        May be overloaded in the subclasses.
-
-        :param data: Dict with additional parameters.
-        """
-        if "inhomdict" in data:
-            if self.aq is not None:
-                for name, inhom in data["inhomdict"].items():
-                    self.aq.inhomdict.update({name: self.from_dict(inhom)})
-        if "elementlist" in data:
-            for e in data["elementlist"]:
-                self.elementlist.append(self.from_dict(e))
-
     def extra_to_dict(self):
         """Add the addition attributes to the dict.
 

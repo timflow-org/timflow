@@ -64,7 +64,8 @@ class ExportBase:
         with open(filepath, "r") as f:
             data = json.load(f)
         obj = cls.from_dict(data)
-        obj.extra_from_dict(data)
+        for _,v in data["inhomdict"].items():
+            cls.from_dict(v)
         return obj
 
     @classmethod
@@ -83,23 +84,12 @@ class ExportBase:
         for name in sig.parameters:
             if name == ("model" or "ml"):
                 constructor_args[name] = cls._model
-            if name == ("aq", "aqin", "aqout"):
-                constructor_args[name] = cls._model.aq
             if name != "self" and name in data:
                 constructor_args[name] = cls._deserialize(data.pop(name))
         obj = subclass(**constructor_args)
         if cls._model is None:
             cls._model = obj
         return obj
-
-    def extra_from_dict(self, data) -> None:
-        """Add the additional attributes to the (sub)class.
-
-        May be overloaded in the subclasses.
-
-        :param data: Dict with additional parameters.
-        """
-        pass
 
     @classmethod
     def _serialize(cls, value):

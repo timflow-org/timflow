@@ -38,11 +38,6 @@
             "label": null
         }
     ],
-    "aq": {
-        "_type": "SimpleAquifer",
-        "ml": null,
-        "naq": 2
-    },
     "inhomdict": {
         "inhom00": {
             "_type": "XsectionMaq",
