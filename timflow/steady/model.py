@@ -84,20 +84,20 @@ class Model(ExportBase):
         self.initialized = False
 
     def extra_to_dict(self):
-        """Add the addition attributes to the dict.
+        """Add the additional attributes to the dict.
 
-        May be overloaded in the subclass.
+        Adds the inhomogenities to the export dict.
 
         :return: Dict with addition parameters.
         """
         extra_data = {}
-        if self.elementlist != []:
-            extra_data.update({"elementlist": [e.to_dict() for e in self.elementlist]})
         if self.aq is not None:
             if self.aq.inhomdict != {}:
                 extra_data.update(
                     {"inhomdict": {k: v.to_dict() for k, v in self.aq.inhomdict.items()}}
                 )
+        # if self.elementlist != []:
+        #     extra_data.update({"elementlist": [e.to_dict() for e in self.elementlist]})
         return extra_data
 
     def initialize(self):

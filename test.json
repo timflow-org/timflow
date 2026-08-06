@@ -1,43 +1,6 @@
 {
     "_type": "ModelXsection",
     "naq": 2,
-    "elementlist": [
-        {
-            "_type": "HeadDiffLineSink1D",
-            "xls": -50.0,
-            "label": null
-        },
-        {
-            "_type": "ConstantStar",
-            "hstar": 5,
-            "label": null
-        },
-        {
-            "_type": "HeadDiffLineSink1D",
-            "xls": 50.0,
-            "label": null
-        },
-        {
-            "_type": "FluxDiffLineSink1D",
-            "xls": -50.0,
-            "label": null
-        },
-        {
-            "_type": "ConstantStar",
-            "hstar": 4.5,
-            "label": null
-        },
-        {
-            "_type": "FluxDiffLineSink1D",
-            "xls": 50.0,
-            "label": null
-        },
-        {
-            "_type": "ConstantStar",
-            "hstar": 4,
-            "label": null
-        }
-    ],
     "inhomdict": {
         "inhom00": {
             "_type": "XsectionMaq",

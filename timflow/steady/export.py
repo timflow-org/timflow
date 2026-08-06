@@ -5,7 +5,6 @@ from typing import Any
 from numpy import array, ndarray
 
 
-# TODO Print logs for insight to where we get during run.
 class ExportBase:
     #  Registry for all subclasses.
     _registry = {}
@@ -64,8 +63,15 @@ class ExportBase:
         with open(filepath, "r") as f:
             data = json.load(f)
         obj = cls.from_dict(data)
-        for _,v in data["inhomdict"].items():
-            cls.from_dict(v)
+        if "inhomdict" in data:
+            for _,v in data["inhomdict"].items():
+                cls.from_dict(v)
+        if "elementlist" in data:
+            for e in data["elementlist"]:
+                try:
+                    cls.from_dict(e)
+                except AttributeError:
+                    pass
         return obj
 
     @classmethod
@@ -77,7 +83,6 @@ class ExportBase:
         """
         type_name = data.pop("_type")
         subclass = cls._registry[type_name]
-        print(subclass)
         sig = inspect.signature(subclass.__init__)
         constructor_args = {}
         
