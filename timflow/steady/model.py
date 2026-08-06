@@ -96,8 +96,18 @@ class Model(ExportBase):
                 extra_data.update(
                     {"inhomdict": {k: v.to_dict() for k, v in self.aq.inhomdict.items()}}
                 )
-        # if self.elementlist != []:
-        #     extra_data.update({"elementlist": [e.to_dict() for e in self.elementlist]})
+        if self.elementlist != []:
+            no_export_list = ["HeadDiffLineSink1D", "FluxDiffLineSink1D", "ConstantStar"]
+
+            extra_data.update(
+                {
+                    "elementlist": [
+                        e.to_dict()
+                        for e in self.elementlist
+                        if e.__class__.__name__ not in no_export_list
+                    ]
+                }
+            )
         return extra_data
 
     def initialize(self):

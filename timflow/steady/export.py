@@ -64,14 +64,12 @@ class ExportBase:
             data = json.load(f)
         obj = cls.from_dict(data)
         if "inhomdict" in data:
-            for _,v in data["inhomdict"].items():
+            for v in data["inhomdict"].values():
                 cls.from_dict(v)
         if "elementlist" in data:
             for e in data["elementlist"]:
-                try:
-                    cls.from_dict(e)
-                except AttributeError:
-                    pass
+                obj.aq.add_element(cls.from_dict(e))
+
         return obj
 
     @classmethod
@@ -85,7 +83,7 @@ class ExportBase:
         subclass = cls._registry[type_name]
         sig = inspect.signature(subclass.__init__)
         constructor_args = {}
-        
+
         for name in sig.parameters:
             if name == ("model" or "ml"):
                 constructor_args[name] = cls._model
