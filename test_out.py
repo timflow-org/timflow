@@ -39,5 +39,5 @@ tfs.XsectionMaq(
 )
 
 ml.solve()
-
+print(ml._obj_list)
 ml.to_json("./test.json")

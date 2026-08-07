@@ -3,13 +3,24 @@ import json
 from typing import Any
 
 from numpy import array, ndarray
+from typing_extensions import Self
 
 
 class ExportBase:
-    #  Registry for all subclasses.
+    # Registry for all subclasses.
     _registry = {}
     # Storage for model object
     _model = None
+    # Registry for all created objects
+    _obj_list = []
+
+    def __new__(cls, *args, **kwargs) -> Self:
+        instance = super().__new__(cls)
+        frame = inspect.currentframe()
+        caller = frame.f_back
+        if caller.f_code.co_name == "<module>":
+            cls._obj_list.append(instance)
+        return instance
 
     def __init_subclass__(cls) -> None:
         """Add the subclass to the registry on creation."""
@@ -21,7 +32,11 @@ class ExportBase:
 
         :param filepath: Filepath to the to be created JSON-file.
         """
-        data = self.to_dict()
+        data = {}
+        i = 0
+        for obj in self._obj_list:
+            data.update({f"object{i}": obj.to_dict()})
+            i += 1
         with open(filepath, "w") as f:
             f.write(json.dumps(data, indent=4))
 
@@ -60,16 +75,16 @@ class ExportBase:
 
         :param filepath: Filepath to the to be created JSON-file.
         """
+        obj = None
         with open(filepath, "r") as f:
             data = json.load(f)
-        obj = cls.from_dict(data)
-        if "inhomdict" in data:
-            for v in data["inhomdict"].values():
+        for k, v in data.items():
+            if k == "object0":
+                obj = cls.from_dict(v)
+            else:
                 cls.from_dict(v)
-        if "elementlist" in data:
-            for e in data["elementlist"]:
-                obj.aq.add_element(cls.from_dict(e))
-
+        if obj is None:
+            raise ImportError
         return obj
 
     @classmethod

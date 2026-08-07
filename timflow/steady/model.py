@@ -83,33 +83,6 @@ class Model(ExportBase):
 
         self.initialized = False
 
-    def extra_to_dict(self):
-        """Add the additional attributes to the dict.
-
-        Adds the inhomogenities to the export dict.
-
-        :return: Dict with addition parameters.
-        """
-        extra_data = {}
-        if self.aq is not None:
-            if self.aq.inhomdict != {}:
-                extra_data.update(
-                    {"inhomdict": {k: v.to_dict() for k, v in self.aq.inhomdict.items()}}
-                )
-        if self.elementlist != []:
-            no_export_list = ["HeadDiffLineSink1D", "FluxDiffLineSink1D", "ConstantStar"]
-
-            extra_data.update(
-                {
-                    "elementlist": [
-                        e.to_dict()
-                        for e in self.elementlist
-                        if e.__class__.__name__ not in no_export_list
-                    ]
-                }
-            )
-        return extra_data
-
     def initialize(self):
         # remove inhomogeneity elements (they are added again)
         self.elementlist = [e for e in self.elementlist if not e.inhomelement]
