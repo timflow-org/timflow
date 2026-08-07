@@ -13,25 +13,25 @@ class BaseIO:
     # Registry for all created objects with their kwargs
     _obj_list = []
 
+    def __init_subclass__(cls) -> None:
+        """Add the subclass to the registry on inheritance."""
+        cls._registry[cls.__name__] = cls
+
     def __new__(cls, *args, **kwargs) -> Self:
         """Register created objects in script.
-        
+
         When a object is created in the script, register this object with the
         constructor kwargs. If the object is made inside of another class or function
         don't register it.
 
         :return: Created object.
-        """        
+        """
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
         if caller.f_code.co_name == "<module>":
             cls._obj_list.append((instance, kwargs))
         return instance
-
-    def __init_subclass__(cls) -> None:
-        """Add the subclass to the registry on inheritance."""
-        cls._registry[cls.__name__] = cls
 
     def to_json(self, filepath) -> None:
         """
@@ -71,6 +71,23 @@ class BaseIO:
         return data
 
     @classmethod
+    def _serialize(cls, value):
+        """Convert python objects to exportable types.
+
+        :param value: Object for export.
+        :return: Object in exportable form.
+        """
+        if isinstance(value, cls):
+            return value.to_dict()
+        if isinstance(value, list):
+            return [cls._serialize(v) for v in value]
+        if isinstance(value, dict):
+            return {k: cls._serialize(v) for k, v in value.items()}
+        if isinstance(value, ndarray):
+            return {"ndarray": value.tolist()}
+        return value
+
+    @classmethod
     def from_json(cls, filepath):
         """
         Read the constructor arguments and potential addition attributes from a JSON-file.
@@ -83,10 +100,10 @@ class BaseIO:
         for k, v in data.items():
             if k == "object0":  # Model object is always first created.
                 obj = cls.from_dict(v)
-            else:
-                cls.from_dict(v)
-        if obj is None:
-            raise ImportError
+            if obj is None:  # No model in json
+                raise ImportError
+            cls.from_dict(v)
+
         return obj
 
     @classmethod
@@ -110,23 +127,6 @@ class BaseIO:
         if cls._model is None:
             cls._model = obj
         return obj
-
-    @classmethod
-    def _serialize(cls, value):
-        """Convert python objects to exportable types.
-
-        :param value: Object for export.
-        :return: Object in exportable form.
-        """
-        if isinstance(value, cls):
-            return value.to_dict()
-        if isinstance(value, list):
-            return [cls._serialize(v) for v in value]
-        if isinstance(value, dict):
-            return {k: cls._serialize(v) for k, v in value.items()}
-        if isinstance(value, ndarray):
-            return {"ndarray": value.tolist()}
-        return value
 
     @classmethod
     def _deserialize(cls, value):
