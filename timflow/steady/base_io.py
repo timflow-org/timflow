@@ -1,6 +1,5 @@
 import inspect
 import json
-from typing import Any
 
 from numpy import array, ndarray
 from typing_extensions import Self
@@ -11,10 +10,18 @@ class BaseIO:
     _registry = {}
     # Storage for model object
     _model = None
-    # Registry for all created objects
+    # Registry for all created objects with their kwargs
     _obj_list = []
 
     def __new__(cls, *args, **kwargs) -> Self:
+        """Register created objects in script.
+        
+        When a object is created in the script, register this object with the
+        constructor kwargs. If the object is made inside of another class or function
+        don't register it.
+
+        :return: Created object.
+        """        
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
@@ -23,14 +30,14 @@ class BaseIO:
         return instance
 
     def __init_subclass__(cls) -> None:
-        """Add the subclass to the registry on creation."""
+        """Add the subclass to the registry on inheritance."""
         cls._registry[cls.__name__] = cls
 
     def to_json(self, filepath) -> None:
         """
-        Write the contructor arguments and potential additional attributes to a JSON-file.
+        Write the constructor arguments to a JSON-file.
 
-        :param filepath: Filepath to the to be created JSON-file.
+        :param filepath: Filepath for the to be created JSON-file.
         """
         data = {}
         i = 0
@@ -43,7 +50,7 @@ class BaseIO:
 
     def to_dict(self, **kwargs):
         """
-        Collect the contructor arguments into a dict.
+        Collect the constructor arguments into a dict.
 
         :return: Dict with the arguments.
         """
@@ -66,7 +73,7 @@ class BaseIO:
     @classmethod
     def from_json(cls, filepath):
         """
-        Read the contructor arguments and potential addition attributes from a JSON-file.
+        Read the constructor arguments and potential addition attributes from a JSON-file.
 
         :param filepath: Filepath to the to be created JSON-file.
         """
@@ -74,7 +81,7 @@ class BaseIO:
         with open(filepath, "r") as f:
             data = json.load(f)
         for k, v in data.items():
-            if k == "object0":
+            if k == "object0":  # Model object is always first created.
                 obj = cls.from_dict(v)
             else:
                 cls.from_dict(v)
