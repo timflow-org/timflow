@@ -6,7 +6,7 @@ from numpy import array, ndarray
 from typing_extensions import Self
 
 
-class ExportBase:
+class BaseIO:
     # Registry for all subclasses.
     _registry = {}
     # Storage for model object
@@ -19,7 +19,7 @@ class ExportBase:
         frame = inspect.currentframe()
         caller = frame.f_back
         if caller.f_code.co_name == "<module>":
-            cls._obj_list.append(instance)
+            cls._obj_list.append((instance, kwargs))
         return instance
 
     def __init_subclass__(cls) -> None:
@@ -34,17 +34,18 @@ class ExportBase:
         """
         data = {}
         i = 0
-        for obj in self._obj_list:
-            data.update({f"object{i}": obj.to_dict()})
+        for item in self._obj_list:
+            obj, kwargs = item
+            data.update({f"object{i}": obj.to_dict(**kwargs)})
             i += 1
         with open(filepath, "w") as f:
             f.write(json.dumps(data, indent=4))
 
-    def to_dict(self):
+    def to_dict(self, **kwargs):
         """
-        Collect the contructor arguments and potential additional attributes into a dict.
+        Collect the contructor arguments into a dict.
 
-        :return: _description_
+        :return: Dict with the arguments.
         """
         sig = inspect.signature(self.__init__)
         data = {"_type": self.__class__.__name__}
@@ -54,19 +55,13 @@ class ExportBase:
             if name in ["aq", "aqin", "aqout"]:
                 continue
             if name != "self":
-                value = getattr(self, name, None)
+                # For kwargs as inputs
+                value = kwargs.get(name, None)
+                # If not used as input -> collect from attributes
+                if value is None:
+                    value = getattr(self, name, None)
                 data[name] = self._serialize(value)
-        data.update(self.extra_to_dict())
         return data
-
-    def extra_to_dict(self) -> dict[Any, Any]:
-        """Add the addition attributes to the dict.
-
-        May be overloaded in the subclass.
-
-        :return: Dict with addition parameters.
-        """
-        return {}
 
     @classmethod
     def from_json(cls, filepath):

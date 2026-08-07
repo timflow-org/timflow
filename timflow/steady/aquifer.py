@@ -13,12 +13,12 @@ import numpy as np
 import pandas as pd
 
 from timflow.steady.constant import ConstantStar
-from timflow.steady.export import ExportBase
+from timflow.steady.base_io import BaseIO
 
 __all__ = ["Aquifer", "SimpleAquifer"]
 
 
-class AquiferData(ExportBase):
+class AquiferData(BaseIO):
     def __init__(self, model, kaq, c, z, npor, ltype, model3d=False):
         """Initialize aquifer data.
 

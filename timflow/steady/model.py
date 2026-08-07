@@ -20,7 +20,7 @@ from scipy.integrate import quad_vec
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
-from timflow.steady.export import ExportBase
+from timflow.steady.base_io import BaseIO
 from timflow.steady.plots import PlotSteady
 from timflow.version import check_tqdm_parallel
 
@@ -43,7 +43,7 @@ def _compute_velocity_mp(args):
     return i, vv
 
 
-class Model(ExportBase):
+class Model(BaseIO):
     """Create a model consisting of an arbitrary sequence of aquifers and leaky layers.
 
     Notes
