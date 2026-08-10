@@ -28,7 +28,7 @@ class BaseIO:
             if "Model" in str(cls.__name__):
                 m = f"model{len(cls._obj_lists)}"
                 cls._models.update({instance: m})
-                cls._obj_lists.update({m:[]})
+                cls._obj_lists.update({m: []})
                 cls._obj_lists[m].append((instance, args, kwargs))
             # Other objects are added to the list of the model they have been
             # added to.
@@ -63,30 +63,17 @@ class BaseIO:
 
         :return: Dict with the arguments.
         """
-        pos_args = list(args)
         sig = inspect.signature(self.__init__)
+        bound = sig.bind(*args, **kwargs)
         # Reference to class for recreation
         data = {"_type": self.__class__.__name__}
-        for name in sig.parameters:
-            if name in ("model", "ml"):  # reference to model object
-                pos_args.pop(0)
-                continue
-            # For positional args as input
-            if pos_args != []:
-                value = pos_args.pop(0)
-            # For kwargs as inputs
-            else:
-                value = kwargs.get(name, None)
-            # Defaults from signature.
-            if (
-                value is None
-                and sig.parameters[name].default is not inspect.Parameter.empty
-            ):
-                value = sig.parameters[name].default
-            # If not used as input -> collect from attributes
-            if value is None:
-                value = getattr(self, name, None)
-            data[name] = self._serialize(value)
+        data.update(
+            {
+                k: self._serialize(v)
+                for k, v in bound.arguments.items()
+                if k not in ("model", "ml")
+            }
+        )
         return data
 
     @classmethod
