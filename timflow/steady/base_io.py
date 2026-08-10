@@ -8,22 +8,38 @@ from typing_extensions import Self
 class BaseIO:
     # Registry for all subclasses.
     _registry = {}
-    # Storage for model object
-    _model = None
-    # Registry for all created objects with their kwargs
-    _obj_list = []
+    # Registry for all created objects with their kwargs for storing.
+    _obj_lists = {}
+    # Registry for model instance for storing.
+    _models = {}
+    # Storage for model object for loading.
+    _setup_model = None
 
     def __init_subclass__(cls) -> None:
         """Add the subclass to the registry on inheritance."""
         cls._registry[cls.__name__] = cls
 
-    # TODO FIXME Add classes per model in separate lists.
     def __new__(cls, *args, **kwargs) -> Self:
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
         if caller.f_code.co_name == "<module>":
-            cls._obj_list.append((instance, args, kwargs))
+            # If a new Model object create a new list before adding it.
+            if "Model" in str(cls.__name__):
+                m = f"model{len(cls._obj_lists)}"
+                cls._models.update({instance: m})
+                cls._obj_lists.update({m:[]})
+                cls._obj_lists[m].append((instance, args, kwargs))
+            # Other objects are added to the list of the model they have been
+            # added to.
+            else:
+                if args != ():
+                    m_inst = args[0]
+                else:
+                    m_inst = kwargs.get("model", None)
+                    if m_inst is None:
+                        m_inst = kwargs.get("ml")
+                cls._obj_lists[cls._models[m_inst]].append((instance, args, kwargs))
         return instance
 
     def to_json(self, filepath) -> None:
@@ -34,7 +50,7 @@ class BaseIO:
         """
         data = {}
         i = 0
-        for item in self._obj_list:
+        for item in self._obj_lists[self._models[self]]:
             obj, args, kwargs = item
             data.update({f"object{i}": obj.to_dict(args, kwargs)})
             i += 1
@@ -97,16 +113,17 @@ class BaseIO:
 
         :param filepath: Filepath to the to be created JSON-file.
         """
-        obj = None
+        # reset the reference to the Model instance for setup.
+        if cls._setup_model is not None:
+            cls._setup_model = None
         with open(filepath, "r") as f:
             data = json.load(f)
         for k, v in data.items():
             if k == "object0":  # Model object is always first created.
                 obj = cls.from_dict(v)
-            if obj is None:  # No model in json
+            if "obj" not in locals():  # No model in json
                 raise ImportError
             cls.from_dict(v)
-
         return obj
 
     @classmethod
@@ -116,19 +133,19 @@ class BaseIO:
         :param data: Dict with parameters
         :return: Instance of this (sub)class.
         """
-        type_name = data.pop("_type")
+        type_name = data["_type"]
         subclass = cls._registry[type_name]
         sig = inspect.signature(subclass.__init__)
         constructor_args = {}
 
         for name in sig.parameters:
-            if name == ("model" or "ml"):
-                constructor_args[name] = cls._model
+            if name in ("model", "ml"):
+                constructor_args[name] = cls._setup_model
             if name != "self" and name in data:
                 constructor_args[name] = cls._deserialize(data.pop(name))
         obj = subclass(**constructor_args)
-        if cls._model is None:
-            cls._model = obj
+        if cls._setup_model is None:
+            cls._setup_model = obj
         return obj
 
     @classmethod
