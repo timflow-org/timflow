@@ -17,20 +17,13 @@ class BaseIO:
         """Add the subclass to the registry on inheritance."""
         cls._registry[cls.__name__] = cls
 
+    # TODO FIXME Add classes per model in separate lists.
     def __new__(cls, *args, **kwargs) -> Self:
-        """Register created objects in script.
-
-        When a object is created in the script, register this object with the
-        constructor kwargs. If the object is made inside of another class or function
-        don't register it.
-
-        :return: Created object.
-        """
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
         if caller.f_code.co_name == "<module>":
-            cls._obj_list.append((instance, kwargs))
+            cls._obj_list.append((instance, args, kwargs))
         return instance
 
     def to_json(self, filepath) -> None:
@@ -42,32 +35,42 @@ class BaseIO:
         data = {}
         i = 0
         for item in self._obj_list:
-            obj, kwargs = item
-            data.update({f"object{i}": obj.to_dict(**kwargs)})
+            obj, args, kwargs = item
+            data.update({f"object{i}": obj.to_dict(args, kwargs)})
             i += 1
         with open(filepath, "w") as f:
             f.write(json.dumps(data, indent=4))
 
-    def to_dict(self, **kwargs):
+    def to_dict(self, args, kwargs):
         """
         Collect the constructor arguments into a dict.
 
         :return: Dict with the arguments.
         """
+        pos_args = list(args)
         sig = inspect.signature(self.__init__)
+        # Reference to class for recreation
         data = {"_type": self.__class__.__name__}
         for name in sig.parameters:
-            if name == ("model" or "ml"):  # reference to parent object
+            if name in ("model", "ml"):  # reference to model object
+                pos_args.pop(0)
                 continue
-            if name in ["aq", "aqin", "aqout"]:
-                continue
-            if name != "self":
-                # For kwargs as inputs
+            # For positional args as input
+            if pos_args != []:
+                value = pos_args.pop(0)
+            # For kwargs as inputs
+            else:
                 value = kwargs.get(name, None)
-                # If not used as input -> collect from attributes
-                if value is None:
-                    value = getattr(self, name, None)
-                data[name] = self._serialize(value)
+            # Defaults from signature.
+            if (
+                value is None
+                and sig.parameters[name].default is not inspect.Parameter.empty
+            ):
+                value = sig.parameters[name].default
+            # If not used as input -> collect from attributes
+            if value is None:
+                value = getattr(self, name, None)
+            data[name] = self._serialize(value)
         return data
 
     @classmethod
