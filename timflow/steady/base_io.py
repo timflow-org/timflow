@@ -7,29 +7,31 @@ from typing_extensions import Self
 
 class BaseIO:
     # Registry for all subclasses.
-    _registry = {}
+    _class_registry = {}
     # Registry for all created objects with their kwargs for storing.
-    _obj_lists = {}
+    _obj_registry = {}
     # Registry for model instance for storing.
-    _models = {}
-    # Storage for model object for loading.
-    _setup_model = None
+    _model_registry = {}
 
     def __init_subclass__(cls) -> None:
         """Add the subclass to the registry on inheritance."""
-        cls._registry[cls.__name__] = cls
+        cls._class_registry[cls.__name__] = cls
 
     def __new__(cls, *args, **kwargs) -> Self:
+        """Add all newly created object to a registry if they are created directly.
+
+        :return: instance of the (sub)class
+        """        
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
         if caller.f_code.co_name == "<module>":
             # If a new Model object create a new list before adding it.
             if "Model" in str(cls.__name__):
-                m = f"model{len(cls._obj_lists)}"
-                cls._models.update({instance: m})
-                cls._obj_lists.update({m: []})
-                cls._obj_lists[m].append((instance, args, kwargs))
+                m = f"model{len(cls._obj_registry)}"
+                cls._model_registry.update({instance: m})
+                cls._obj_registry.update({m: []})
+                cls._obj_registry[m].append((instance, args, kwargs))
             # Other objects are added to the list of the model they have been
             # added to.
             else:
@@ -39,7 +41,7 @@ class BaseIO:
                     m_inst = kwargs.get("model", None)
                     if m_inst is None:
                         m_inst = kwargs.get("ml")
-                cls._obj_lists[cls._models[m_inst]].append((instance, args, kwargs))
+                cls._obj_registry[cls._model_registry[m_inst]].append((instance, args, kwargs))
         return instance
 
     def to_json(self, filepath) -> None:
@@ -50,7 +52,7 @@ class BaseIO:
         """
         data = {}
         i = 0
-        for item in self._obj_lists[self._models[self]]:
+        for item in self._obj_registry[self._model_registry[self]]:
             obj, args, kwargs = item
             data.update({f"object{i}": obj.to_dict(args, kwargs)})
             i += 1
@@ -83,8 +85,6 @@ class BaseIO:
         :param value: Object for export.
         :return: Object in exportable form.
         """
-        if isinstance(value, cls):
-            return value.to_dict()
         if isinstance(value, list):
             return [cls._serialize(v) for v in value]
         if isinstance(value, dict):
@@ -100,14 +100,13 @@ class BaseIO:
 
         :param filepath: Filepath to the to be created JSON-file.
         """
-        # reset the reference to the Model instance for setup.
-        if cls._setup_model is not None:
-            cls._setup_model = None
+        cls._setup_model = None
         with open(filepath, "r") as f:
-            data = json.load(f)
+            data: dict = json.load(f)
         for k, v in data.items():
             if k == "object0":  # Model object is always first created.
                 obj = cls.from_dict(v)
+                continue
             if "obj" not in locals():  # No model in json
                 raise ImportError
             cls.from_dict(v)
@@ -120,8 +119,8 @@ class BaseIO:
         :param data: Dict with parameters
         :return: Instance of this (sub)class.
         """
-        type_name = data["_type"]
-        subclass = cls._registry[type_name]
+        type_name: str = data["_type"]
+        subclass = cls._class_registry[type_name]
         sig = inspect.signature(subclass.__init__)
         constructor_args = {}
 
