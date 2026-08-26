@@ -11,10 +11,13 @@ Example::
 """
 
 import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor
+from itertools import repeat
 from warnings import warn
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from timflow.transient.aquifer import Aquifer, SimpleAquifer
 from timflow.transient.aquifer_parameters import param_3d, param_maq
@@ -24,23 +27,33 @@ from timflow.transient.invlapnumba import (
     invlapcomp,
 )
 from timflow.transient.plots import PlotTransient
-from timflow.version import check_tqdm_parallel
 
 
-def _compute_head_mp(args):
+_WORKER_STATE = {"model": None}
+
+
+def _init_worker(model):
+    """Initialize a single model instance per worker process."""
+    _WORKER_STATE["model"] = model
+
+
+def _compute_head_mp(xi, yi, t, layers):
     """Helper function for parallel computation of head_array."""
-    model, xi, yi, t, layers, i = args
-    return i, model.head(xi, yi, t, layers)
+    return _WORKER_STATE["model"].head(xi, yi, t, layers)
 
 
-def _compute_velocity_mp(args):
+def _compute_velocity_mp(xi, yi, zi, t):
     """Helper function for parallel computation of velocity_array."""
-    model, xi, yi, zi, t, i = args
     try:
-        vv = model.velocomp(xi, yi, zi, t)
+        vv = _WORKER_STATE["model"].velocomp(xi, yi, zi, t)
     except (ZeroDivisionError, ValueError):
         vv = np.full((3,), np.nan)
-    return i, vv
+    return vv
+
+
+def _compute_disvec_mp(xi, yi, t, layers):
+    """Helper function for parallel computation of disvec_array."""
+    return _WORKER_STATE["model"].disvec(xi, yi, t, layers)
 
 
 class Model:
@@ -479,8 +492,8 @@ class Model:
             z values
         t : float
             time at which velocity computed
-        show_progress : bool, optional
-            if `True`, shows progress bar when computing velocity grid, by default `True`
+        show_progress : bool
+            show computation progress, by default `True`.
         parallel : bool or int, optional
             if `True`, computes velocity grid in parallel using multiprocessing,
             by default `False`. If an integer is provided, it specifies the number of
@@ -492,40 +505,40 @@ class Model:
             velocity vector (vx, vy, vz) at each point in grid,
             size (3, len(x))
         """
-        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
-
         x = np.atleast_1d(x)
         y = np.atleast_1d(y)
         z = np.atleast_1d(z)
         npts = len(x)
         v = np.empty((3, npts))
         if not parallel:
-            for i in (
-                tqdm(range(npts), desc="velocity array", disable=not show_progress)
-                if tqdm
-                else range(npts)
-            ):
+            for i in tqdm(range(npts), desc="velocity array", disable=not show_progress):
                 try:
                     vv = self.velocomp(x[i], y[i], z[i], t)
                 except ZeroDivisionError:
                     vv = np.full((3,), np.nan)
                 v[:, i] = vv
         else:
-            nproc = mp.cpu_count() if parallel is True else int(parallel)
-            chunksize = max(1, npts // (4 * nproc)) if nproc > 0 else 1
-            tasks = [(self, x[i], y[i], z[i], t, i) for i in range(npts)]
-            results = thread_map(
-                _compute_velocity_mp,
-                tasks,
-                total=npts,
-                desc="velocity array",
-                disable=not show_progress,
-                tqdm_class=tqdm,
+            nproc = mp.cpu_count() // 2 if parallel is True else int(parallel)
+            nproc = max(1, nproc)
+            responsive_progress = show_progress == "responsive"
+            chunksize = 1 if responsive_progress else max(1, npts // (4 * nproc))
+            with ProcessPoolExecutor(
                 max_workers=nproc,
-                chunksize=chunksize,
-            )
-            for i, result in results:
-                v[:, i] = result
+                initializer=_init_worker,
+                initargs=(self,),
+            ) as executor:
+                results = executor.map(
+                    _compute_velocity_mp,
+                    x,
+                    y,
+                    z,
+                    repeat(t),
+                    chunksize=chunksize,
+                )
+                if show_progress:
+                    results = tqdm(results, total=npts, desc="velocity array")
+                for i, result in enumerate(results):
+                    v[:, i] = result
 
         return v
 
@@ -542,8 +555,8 @@ class Model:
             z values of grid
         t : float
             time for which grid is returned
-        show_progress : bool, optional
-            if `True`, shows progress bar when computing velocity grid, by default `True`
+        show_progress : bool
+            show computation progress, by default `True`.
         parallel : bool or int, optional
             if `True`, computes velocity grid in parallel using multiprocessing,
             by default `False`. If an integer is provided, it specifies the number of
@@ -647,7 +660,7 @@ class Model:
             qx[:, :, i], qy[:, :, i] = self.disvec(xg[i], yg[i], t, layers)
         return qx, qy
 
-    def head_array(self, x, y, t, layers=None, show_progress=False, parallel=False):
+    def head_array(self, x, y, t, layers=None, show_progress=True, parallel=False):
         """Head for array of points.
 
         Parameters
@@ -661,8 +674,7 @@ class Model:
         layers : integer, list or array, optional
             layers for which grid is returned
         show_progress : bool
-            show computation progress, by printing dots per row or with tqdm progressbar
-            when parallel is True. Default is False.
+            show computation progress, by default `True`.
         parallel : bool or int, optional
             if `True`, computes head_array in parallel using multiprocessing,
             by default `False`. If an integer is provided, it specifies the number of
@@ -672,7 +684,6 @@ class Model:
         -------
         h : array size `nlayers, ntimes, npoints`
         """
-        parallel, process_map, tqdm = check_tqdm_parallel(parallel)
         x = np.atleast_1d(x)
         y = np.atleast_1d(y)
         t = np.atleast_1d(t)
@@ -685,29 +696,30 @@ class Model:
             nlayers = len(np.atleast_1d(layers))
         h = np.empty((nlayers, ntimes, npts))
         if not parallel:
-            for i in (
-                tqdm(range(npts), disable=not show_progress, desc="head array")
-                if tqdm
-                else range(npts)
-            ):
+            for i in tqdm(range(npts), disable=not show_progress, desc="head array"):
                 h[:, :, i] = self.head(x[i], y[i], t, layers)
         else:
-            nproc = mp.cpu_count() if parallel is True else int(parallel)
-            chunksize = max(1, npts // (4 * nproc)) if nproc > 0 else 1
-            tasks = [(self, x[i], y[i], t, layers, i) for i in range(npts)]
-            results = process_map(
-                _compute_head_mp,
-                tasks,
-                total=npts,
-                desc="head array",
-                disable=not show_progress,
-                tqdm_class=tqdm,
+            nproc = mp.cpu_count() // 2 if parallel is True else int(parallel)
+            nproc = max(1, nproc)
+            responsive_progress = show_progress == "responsive"
+            chunksize = 1 if responsive_progress else max(1, npts // (4 * nproc))
+            with ProcessPoolExecutor(
                 max_workers=nproc,
-                chunksize=chunksize,
-            )
-
-            for i, result in results:
-                h[:, :, i] = result
+                initializer=_init_worker,
+                initargs=(self,),
+            ) as executor:
+                results = executor.map(
+                    _compute_head_mp,
+                    x,
+                    y,
+                    repeat(t),
+                    repeat(layers),
+                    chunksize=chunksize,
+                )
+                if show_progress:
+                    results = tqdm(results, total=npts, desc="head array")
+                for i, result in enumerate(results):
+                    h[:, :, i] = result
         return h
 
     def headgrid(
@@ -717,7 +729,7 @@ class Model:
         t,
         layers=None,
         printrow=False,
-        show_progress=False,
+        show_progress=True,
         parallel=False,
     ):
         """Grid of heads.
@@ -733,8 +745,7 @@ class Model:
         layers : integer, list or array, optional
             layers for which grid is returned
         show_progress : bool
-            show computation progress, by printing dots per row or with tqdm progressbar
-            when parallel is True. Default is False.
+            show computation progress, by default `True`.
         parallel : bool or int, optional
             if `True`, computes headgrid in parallel using multithreading,
             by default `False`. If an integer is provided, it specifies the number of
@@ -783,7 +794,7 @@ class Model:
         ny,
         t,
         layers=None,
-        show_progress=False,
+        show_progress=True,
         printrow=False,
         parallel=False,
     ):
@@ -800,8 +811,7 @@ class Model:
         layers : integer, list or array, optional
             layers for which grid is returned
         show_progress : bool
-            show computation progress, by printing dots per row or with tqdm progressbar
-            when parallel is True. Default is False.
+            show computation progress, by default `True`.
         parallel : bool or int, optional
             if `True`, computes headgrid in parallel using multiprocessing,
             by default `False`. If an integer is provided, it specifies the number of
@@ -831,6 +841,71 @@ class Model:
             parallel=parallel,
         )
 
+    def disvec_array(self, x, y, t, layers=None, show_progress=True, parallel=False):
+        """Discharge vector for array of points.
+
+        Parameters
+        ----------
+        x : 1D array or list
+            x values of points
+        y : 1D array or list
+            y values of points
+        t : float or 1D array or list
+            times for which grid is returned
+        layers : integer, list or array, optional
+            layers for which grid is returned
+        show_progress : bool
+            show computation progress, by default `True`.
+        parallel : bool or int, optional
+            if `True`, computes disvec_array in parallel using multiprocessing,
+            by default `False`. If an integer is provided, it specifies the number of
+            processes to use.
+
+        Returns
+        -------
+        qx : array size `nlayers, ntimes, npoints`
+        qy : array size `nlayers, ntimes, npoints`
+        """
+        x = np.atleast_1d(x)
+        y = np.atleast_1d(y)
+        t = np.atleast_1d(t)
+        npts = len(x)
+        assert npts == len(y), "x and y must have the same length"
+        ntimes = len(t)
+        if layers is None:
+            nlayers = self.aq.find_aquifer_data(x[0], y[0]).naq
+        else:
+            nlayers = len(np.atleast_1d(layers))
+        qx = np.empty((nlayers, ntimes, npts))
+        qy = np.empty((nlayers, ntimes, npts))
+        if not parallel:
+            for i in tqdm(range(npts), disable=not show_progress, desc="disvec array"):
+                qx[:, :, i], qy[:, :, i] = self.disvec(x[i], y[i], t, layers)
+        else:
+            nproc = mp.cpu_count() // 2 if parallel is True else int(parallel)
+            nproc = max(1, nproc)
+            responsive_progress = show_progress == "responsive"
+            chunksize = 1 if responsive_progress else max(1, npts // (4 * nproc))
+            with ProcessPoolExecutor(
+                max_workers=nproc,
+                initializer=_init_worker,
+                initargs=(self,),
+            ) as executor:
+                results = executor.map(
+                    _compute_disvec_mp,
+                    x,
+                    y,
+                    repeat(t),
+                    repeat(layers),
+                    chunksize=chunksize,
+                )
+                if show_progress:
+                    results = tqdm(results, total=npts, desc="disvec array")
+                for i, (result_qx, result_qy) in enumerate(results):
+                    qx[:, :, i] = result_qx
+                    qy[:, :, i] = result_qy
+        return qx, qy
+
     def disvecgrid(
         self,
         x,
@@ -853,11 +928,11 @@ class Model:
         layers : integer, list or array, optional
             layers for which grid is returned
         show_progress : bool
-            show computation progress, by printing dots per row or with tqdm progressbar
-            when parallel is True. Default is True.
-        parallel : bool, optional
+            show computation progress, by default `True`.
+        parallel : bool or int, optional
             if `True`, computes discharge vector grid in parallel using multiprocessing,
-            by default `False`
+            by default `False`. If an integer is provided, it specifies the number of
+            processes to use.
 
         Returns
         -------
@@ -866,44 +941,20 @@ class Model:
         qy : array size (nlayers, ntimes, ny, nx)
             y component of discharge vector at each point in grid
         """
-        parallel, thread_map, tqdm = check_tqdm_parallel(parallel)
-
-        x = np.atleast_1d(x)
-        y = np.atleast_1d(y)
-        t = np.atleast_1d(t)
-        nx, ny = len(x), len(y)
-        ntimes = len(t)
-        if layers is None:
-            nlayers = self.aq.find_aquifer_data(x[0], y[0]).naq
-        else:
-            nlayers = len(np.atleast_1d(layers))
-        qx = np.empty((nlayers, ntimes, ny, nx))
-        qy = np.empty((nlayers, ntimes, ny, nx))
-        if not parallel:
-            for j in range(ny):
-                if show_progress:
-                    print(".", end="", flush=True)
-                for i in range(nx):
-                    qx[:, :, j, i], qy[:, :, j, i] = self.disvec(x[i], y[j], t, layers)
-            if show_progress:
-                print("", flush=True)
-        else:
-
-            def compute(ij):
-                i, j = ij
-                return i, j, self.disvec(x[i], y[j], t, layers)
-
-            results = thread_map(
-                compute,
-                [(i, j) for j in range(ny) for i in range(nx)],
-                total=nx * ny,
-                desc="disvecgrid",
-                disable=not show_progress,
-                tqdm_class=tqdm,
-            )
-            for i, j, result in results:
-                qx[:, :, j, i], qy[:, :, j, i] = result
-
+        xg = np.atleast_1d(x)
+        yg = np.atleast_1d(y)
+        nx, ny = len(xg), len(yg)
+        x, y = np.meshgrid(xg, yg)
+        qx, qy = self.disvec_array(
+            x.ravel(),
+            y.ravel(),
+            t,
+            layers=layers,
+            show_progress=show_progress,
+            parallel=parallel,
+        )
+        qx = qx.reshape((qx.shape[0], qx.shape[1], ny, nx))
+        qy = qy.reshape((qy.shape[0], qy.shape[1], ny, nx))
         return qx, qy
 
     def inverseLapTran(self, pot, t):
