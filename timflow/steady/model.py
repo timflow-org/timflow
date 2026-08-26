@@ -24,7 +24,6 @@ from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
-from timflow.version import check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
