@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Hydrology",
 ]
 requires-python = ">=3.11"
-dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas"]
+dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas", "tqdm"]
 
 [project.urls]
 homepage = "https://github.com/timflow-org/timflow"
