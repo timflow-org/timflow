@@ -1640,6 +1640,13 @@ class Calibrate:
 
             if tref_idx is not None:
                 h_mod = h_mod - h_mod[tref_idx]
+                ax.axvline(
+                    obs.t[tref_idx],
+                    color="C3",
+                    linestyle="--",
+                    linewidth=0.5,
+                    label="reference time",
+                )
 
             # Apply tmin/tmax window
             mask = np.ones(len(t_plot), dtype=bool)
@@ -1658,7 +1665,7 @@ class Calibrate:
             ax.plot(t_plot[mask], h_mod[mask], **{**model_kw, "label": model_label})
             ax.set_ylabel("head")
             ax.grid(True)
-            ax.legend(loc=(0, 1), frameon=False, ncol=2)
+            ax.legend(loc=(0, 1), frameon=False, ncol=3)
             ax.set_xlim(left=t_plot[mask][0], right=t_plot[mask][-1])
             i += 1
         axes[-1].set_xlabel("time")
