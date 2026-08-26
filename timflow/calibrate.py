@@ -850,6 +850,11 @@ class Calibrate:
         rv = np.empty(0)
         for obs in self.observations_dict.values():
             if obs.model_key == "transient":
+                reftime = (
+                    obs.reference_time
+                    if obs.reference_time is not None
+                    else self.reference_time
+                )
                 dt = obs._time_shift if obs.time_shift is not None else 0.0
                 _tr_has_steady = getattr(self.transient_model, "steady", None) is not None
                 if obs.normalized or _tr_has_steady:
@@ -860,7 +865,7 @@ class Calibrate:
                     hsteady = 0.0
                 elif self.steady_model is not None:
                     hsteady = self.steady_model.head(obs.x, obs.y, layers=obs.layer)
-                elif obs.reference_time is None:
+                elif reftime is None:
                     warnings.warn(
                         f"Observation '{obs.name}' is not marked as normalized "
                         "but no steady model is provided and the transient model has "
@@ -870,17 +875,18 @@ class Calibrate:
                     )
                     hsteady = 0.0
                 h = (
-                    self.transient_model.head(obs.x, obs.y, obs.t - dt, layers=obs.layer)
+                    self.transient_model.head(
+                        obs.x,
+                        obs.y,
+                        obs.t - dt,
+                        layers=obs.layer,
+                        neglect_steady=obs.normalized,
+                    )
                     + hsteady
                 )
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
-                if obs.reference_time is not None or self.reference_time is not None:
-                    reftime = (
-                        obs.reference_time
-                        if obs.reference_time is not None
-                        else self.reference_time
-                    )
+                if reftime is not None:
                     # get closest observation to reference time
                     tref_idx = np.abs(obs.t - reftime).argmin()
                     closest_ref_time = obs.t[tref_idx]
@@ -901,17 +907,17 @@ class Calibrate:
 
         for obs in self.observations_in_well_dict.values():
             if obs.model_key == "transient":
+                reftime = (
+                    obs.reference_time
+                    if obs.reference_time is not None
+                    else self.reference_time
+                )
                 dt = obs._time_shift if obs.time_shift is not None else 0.0
                 t = obs.t - dt
                 h = obs.element.headinside(t)[0]
                 w = obs.weights if obs.weights is not None else np.ones_like(h)
                 c = obs._constant if obs.constant is not None else 0.0
-                if obs.reference_time is not None or self.reference_time is not None:
-                    reftime = (
-                        obs.reference_time
-                        if obs.reference_time is not None
-                        else self.reference_time
-                    )
+                if reftime is not None:
                     # get closest observation to reference time
                     tref_idx = np.abs(obs.t - reftime).argmin()
                     closest_ref_time = obs.t[tref_idx]
