@@ -41,8 +41,8 @@ documentation = "https://timflow.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 lint = ["ruff"]
-parallel = ["tqdm"]
-optional = ["timflow[parallel]", "lmfit"]
+lmfit = ["lmfit"]
+optional = ["timflow[lmfit]"]
 ci = [
     "timflow[lint,optional]",
     "pytest",
@@ -61,7 +61,7 @@ docs = [
     "myst_nb",
     "sphinxcontrib-bibtex",
     "sphinx-autoapi",
-    "jupyter-cache"
+    "jupyter-cache",
 ]
 dev = ["timflow[docs]"]
 
