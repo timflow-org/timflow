@@ -944,18 +944,11 @@ class PlotBase:
             z = np.hstack((aq.zaqtop[0], z, aq.zaqbot[-1]))
             arr = np.vstack((arr[0], arr, arr[-1]))
         else:
-            if self._ml.model_type == "steady" and aq.ilap == 0:
-                arr = np.vstack([aq.hstar * np.ones_like(arr[0]), np.repeat(arr, 2, 0)])
-                z = np.empty(1 + 2 * aq.naq)
-                z[0] = aq.z[0]
-                z[1::2] = aq.zaqtop
-                z[2::2] = aq.zaqbot
-            else:
-                z = np.empty(2 * aq.naq)
-                for i in range(aq.naq):
-                    z[2 * i] = aq.zaqtop[i]
-                    z[2 * i + 1] = aq.zaqbot[i]
-                arr = np.repeat(arr, 2, 0)
+            z = np.empty(2 * aq.naq)
+            for i in range(aq.naq):
+                z[2 * i] = aq.zaqtop[i]
+                z[2 * i + 1] = aq.zaqbot[i]
+            arr = np.repeat(arr, 2, 0)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
         if layout:
