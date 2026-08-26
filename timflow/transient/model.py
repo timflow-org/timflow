@@ -28,7 +28,6 @@ from timflow.transient.invlapnumba import (
 )
 from timflow.transient.plots import PlotTransient
 
-
 _WORKER_STATE = {"model": None}
 
 

@@ -1,4 +1,3 @@
-import warnings
 from importlib import import_module, metadata
 from platform import python_version
 
