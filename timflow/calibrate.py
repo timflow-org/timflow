@@ -120,6 +120,8 @@ class SteadyHead:
 
     Attributes
     ----------
+    name : str
+        Observation name.
     x, y : float
         Observation coordinates.
     layer : int
@@ -130,6 +132,7 @@ class SteadyHead:
         Weight applied to the residual in the objective function.
     """
 
+    name: str
     x: float
     y: float
     layer: int
@@ -144,6 +147,8 @@ class SteadyHeadInWell:
 
     Attributes
     ----------
+    name : str
+        Observation name.
     element : SteadyElement
         Well element in which the head is observed.
     x, y : float
@@ -156,6 +161,7 @@ class SteadyHeadInWell:
         Weight applied to the residual in the objective function.
     """
 
+    name: str
     element: SteadyElement
     x: float
     y: float
@@ -171,6 +177,8 @@ class HeadSeries:
 
     Attributes
     ----------
+    name : str
+        Name of the observation point.
     x, y : float
         Observation coordinates.
     layer : int
@@ -190,8 +198,11 @@ class HeadSeries:
         If not ``None``, a time shift is added as a calibration parameter.
         Supply a float for the initial value (unbounded), or a
         ``(initial, pmin, pmax)`` tuple to set bounds.
+    reference_time : float, optional
+        If not ``None``, residuals are computed relative to the head at this time.
     """
 
+    name: str
     x: float
     y: float
     layer: int
@@ -259,6 +270,8 @@ class HeadSeriesInWell:
 
     Attributes
     ----------
+    name : str
+        Observation name.
     element : TransientElement
         Well element at which heads are observed.
     t : np.ndarray
@@ -276,8 +289,11 @@ class HeadSeriesInWell:
         If not ``None``, a time shift is added as a calibration parameter.
         Supply a float for the initial value (unbounded), or a
         ``(initial, pmin, pmax)`` tuple to set bounds.
+    reference_time : float, optional
+        If not ``None``, residuals are computed relative to the head at this time.
     """
 
+    name: str
     element: TransientElement
     t: np.ndarray
     h: np.ndarray
@@ -542,7 +558,7 @@ class Calibrate:
                 "Steady model must be provided to add steady head observations."
             )
         self.observations_dict[name] = SteadyHead(
-            x=x, y=y, layer=layer, h=h, weight=weight
+            name, x=x, y=y, layer=layer, h=h, weight=weight
         )
 
     def add_steady_head_in_well(
@@ -573,6 +589,7 @@ class Calibrate:
                 "Steady model must be provided to add steady head observations."
             )
         self.observations_in_well_dict[name] = SteadyHeadInWell(
+            name=name,
             element=well_element,
             x=well_element.x,
             y=well_element.y,
@@ -691,6 +708,7 @@ class Calibrate:
         if self.transient_model is None:
             raise ValueError("Transient model must be provided to add head time series.")
         obs = HeadSeries(
+            name=name,
             x=x,
             y=y,
             layer=layer,
@@ -766,6 +784,7 @@ class Calibrate:
         if self.transient_model is None:
             raise ValueError("Transient model must be provided to add head time series.")
         obs = HeadSeriesInWell(
+            name=name,
             element=well_element,
             t=t,
             h=h,
@@ -841,9 +860,9 @@ class Calibrate:
                     hsteady = 0.0
                 elif self.steady_model is not None:
                     hsteady = self.steady_model.head(obs.x, obs.y, layers=obs.layer)
-                else:
+                elif obs.reference_time is None:
                     warnings.warn(
-                        f"Observation '{obs.x},{obs.y}' is not marked as normalized "
+                        f"Observation '{obs.name}' is not marked as normalized "
                         "but no steady model is provided and the transient model has "
                         "no embedded steady model. Residuals will be computed against "
                         "transient heads only.",
@@ -869,6 +888,9 @@ class Calibrate:
                         obs.x, obs.y, closest_ref_time, layers=obs.layer
                     ).squeeze()
                     res = ((obs.h - obs.h[tref_idx]) - (h - htref) - c) * w
+                    mask = np.ones_like(res, dtype=bool)
+                    mask[tref_idx] = False
+                    res = res[mask]
                 else:
                     res = (obs.h - h - c) * w
                 rv = np.append(rv, res)
@@ -895,6 +917,9 @@ class Calibrate:
                     closest_ref_time = obs.t[tref_idx]
                     htref = obs.element.headinside(closest_ref_time)[0]
                     res = ((obs.h - obs.h[tref_idx]) - (h - htref) - c) * w
+                    mask = np.ones_like(res, dtype=bool)
+                    mask[tref_idx] = False
+                    res = res[mask]
                 else:
                     res = (obs.h - h - c) * w
                 rv = np.append(rv, res)
