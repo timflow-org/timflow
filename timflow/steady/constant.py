@@ -33,6 +33,7 @@ class ConstantBase(Element, PotentialEquation):
         )
         # Defined here and not in Element as other elements can have multiple parameters
         # per layers:
+        self.layer = layer
         self.nparam = 1
         self.nunknowns = 0
         self.xr = xr

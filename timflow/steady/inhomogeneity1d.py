@@ -379,6 +379,7 @@ class XsectionMaq(Xsection):
         N=None,
         name=None,
     ):
+        self.topboundary = topboundary
         if c is None:
             c = []
         if z is None:
@@ -459,6 +460,7 @@ class Xsection3D(Xsection):
         N=None,
         name=None,
     ):
+        self.topboundary = topboundary
         if z is None:
             z = [1, 0]
         (

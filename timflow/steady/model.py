@@ -19,6 +19,7 @@ from scipy.integrate import quad_vec
 
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
+from timflow.steady.base_io import BaseIO
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
 from timflow.version import check_tqdm_parallel
@@ -42,7 +43,7 @@ def _compute_velocity_mp(args):
     return i, vv
 
 
-class Model:
+class Model(BaseIO):
     """Create a model consisting of an arbitrary sequence of aquifers and leaky layers.
 
     Notes
@@ -982,6 +983,7 @@ class ModelMaq(Model):
     """
 
     def __init__(self, kaq=1, z=None, c=None, npor=0.3, topboundary="conf", hstar=None):
+        self.topboundary = topboundary
         if c is None:
             c = []
         if z is None:
@@ -1097,6 +1099,7 @@ class ModelXsection(Model):
     """
 
     def __init__(self, naq=1):
+        self.naq = naq
         self.elementlist = []
         self.elementdict = {}  # only elements that have a label
         self.aq = SimpleAquifer(self, naq)
