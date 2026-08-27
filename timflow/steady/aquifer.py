@@ -12,8 +12,8 @@ Example::
 import numpy as np
 import pandas as pd
 
-from timflow.steady.constant import ConstantStar
 from timflow.steady.base_io import BaseIO
+from timflow.steady.constant import ConstantStar
 
 __all__ = ["Aquifer", "SimpleAquifer"]
 

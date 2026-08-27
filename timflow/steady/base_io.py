@@ -21,7 +21,7 @@ class BaseIO:
         """Add all newly created object to a registry if they are created directly.
 
         :return: instance of the (sub)class
-        """        
+        """
         instance = super().__new__(cls)
         frame = inspect.currentframe()
         caller = frame.f_back
@@ -41,7 +41,9 @@ class BaseIO:
                     m_inst = kwargs.get("model", None)
                     if m_inst is None:
                         m_inst = kwargs.get("ml")
-                cls._obj_registry[cls._model_registry[m_inst]].append((instance, args, kwargs))
+                cls._obj_registry[cls._model_registry[m_inst]].append(
+                    (instance, args, kwargs)
+                )
         return instance
 
     def to_json(self, filepath) -> None:
@@ -108,7 +110,7 @@ class BaseIO:
                 obj = cls.from_dict(v)
                 continue
             if "obj" not in locals():  # No model in json
-                raise ImportError
+                raise ImportError("No main model found in the JSON-file.")
             cls.from_dict(v)
         return obj
 
