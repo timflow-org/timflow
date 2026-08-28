@@ -804,7 +804,9 @@ class Calibrate:
             )
             self._add_series_time_shift(name, obs, initial=initial, pmin=pmin, pmax=pmax)
 
-    def residuals(self, p: np.ndarray, printdot: bool = False) -> np.ndarray:
+    def residuals(
+        self, p: np.ndarray, printdot: bool = False, weighted: bool = True
+    ) -> np.ndarray:
         """Compute residuals for parameter vector ``p``.
 
         Parameters
@@ -814,11 +816,13 @@ class Calibrate:
             ``self.parameters``.
         printdot : bool
             Print a dot to stdout on each call, useful for tracking progress.
+        weighted : bool, optional
+            Whether to apply observation weights to the residuals. Default is True.
 
         Returns
         -------
         np.ndarray
-            1-D array of weighted residuals (observed minus simulated).
+            1-D array of residuals (observed minus simulated).
         """
         if printdot:
             print(".", end="", flush=True)
@@ -884,7 +888,11 @@ class Calibrate:
                     )
                     + hsteady
                 )
-                w = obs.weights if obs.weights is not None else np.ones_like(h)
+                w = (
+                    (obs.weights if obs.weights is not None else np.ones_like(h))
+                    if weighted
+                    else 1.0
+                )
                 c = obs._constant if obs.constant is not None else 0.0
                 if reftime is not None:
                     # get closest observation to reference time
@@ -902,7 +910,7 @@ class Calibrate:
                 rv = np.append(rv, res)
             elif obs.model_key == "steady":
                 h = self.steady_model.head(obs.x, obs.y, layers=obs.layer)
-                w = obs.weight if obs.weight is not None else 1.0
+                w = (obs.weight if obs.weight is not None else 1.0) if weighted else 1.0
                 rv = np.append(rv, np.atleast_1d((obs.h - h) * w))
 
         for obs in self.observations_in_well_dict.values():
@@ -915,7 +923,11 @@ class Calibrate:
                 dt = obs._time_shift if obs.time_shift is not None else 0.0
                 t = obs.t - dt
                 h = obs.element.headinside(t)[0]
-                w = obs.weights if obs.weights is not None else np.ones_like(h)
+                w = (
+                    (obs.weights if obs.weights is not None else np.ones_like(h))
+                    if weighted
+                    else 1.0
+                )
                 c = obs._constant if obs.constant is not None else 0.0
                 if reftime is not None:
                     # get closest observation to reference time
@@ -937,7 +949,7 @@ class Calibrate:
                     rv[nan_mask] = np.interp(t[nan_mask], t[~nan_mask], rv[~nan_mask])
             elif obs.model_key == "steady":
                 h = obs.element.headinside()
-                w = obs.weight if obs.weight is not None else 1.0
+                w = (obs.weight if obs.weight is not None else 1.0) if weighted else 1.0
                 rv = np.append(rv, np.atleast_1d((obs.h - h) * w))
         return rv
 
@@ -1180,37 +1192,83 @@ class Calibrate:
             print(self.parameters)
             print(f"RMSE: {np.sqrt(np.mean(res**2)):.3e}")
 
-    def rmse(self) -> float:
-        """Return the root-mean-square error at the current optimal parameters.
+    def _param_vector(self) -> np.ndarray:
+        """Return the current optimization-space parameter vector."""
+        result = getattr(self, "result", None)
+        if result is not None and getattr(result, "x", None) is not None:
+            return result.x
+        values = [
+            np.log10(np.abs(p.effective_initial if np.isnan(p.optimal) else p.optimal))
+            if getattr(p, "log_scale", False)
+            else (p.effective_initial if np.isnan(p.optimal) else p.optimal)
+            for p in self._parameters.values()
+        ]
+        return np.array(values, dtype=float)
+
+    def rmse(self, weighted: bool = True) -> float:
+        """Return the root-mean-square error at current parameters.
+
+        Parameters
+        ----------
+        weighted : bool, optional
+            Whether to compute weighted RMSE. Default is True.
 
         Returns
         -------
         float
-            RMSE of the weighted residuals.
+            RMSE of the residuals.
         """
-        result = getattr(self, "result", None)
-        if result is not None and getattr(result, "x", None) is not None:
-            params_vec = result.x
-        else:
-            # Fall back to reconstructing optimization-space parameters
-            values = []
-            for p in self._parameters.values():
-                if getattr(p, "log_scale", False):
-                    values.append(
-                        np.log10(
-                            np.abs(p.effective_initial)
-                            if np.isnan(p.optimal)
-                            else np.abs(p.optimal)
-                        )
-                    )
-                else:
-                    values.append(
-                        p.effective_initial if np.isnan(p.optimal) else p.optimal
-                    )
-            params_vec = np.array(values, dtype=float)
-
-        r = self.residuals(params_vec)
+        r = self.residuals(self._param_vector(), weighted=weighted)
         return float(np.sqrt(np.mean(r**2)))
+
+    def nse(self, weighted: bool = False) -> float:
+        """Return the Nash-Sutcliffe Efficiency (NSE) for the complete calibration.
+
+        Parameters
+        ----------
+        weighted : bool, optional
+            Whether to compute weighted NSE. Default is False.
+
+        Returns
+        -------
+        float
+            NSE value across all observations.
+        """
+        all_obs = list(self.observations_dict.values()) + list(
+            self.observations_in_well_dict.values()
+        )
+        if not all_obs:
+            return np.nan
+        h_obs_list, weights_list = [], []
+        for obs in all_obs:
+            if obs.model_key == "transient":
+                reftime = (
+                    obs.reference_time
+                    if obs.reference_time is not None
+                    else self.reference_time
+                )
+                w_i = np.broadcast_to(
+                    obs.weights if obs.weights is not None else 1.0, obs.h.shape
+                )
+                if reftime is not None:
+                    tref_idx = np.abs(obs.t - reftime).argmin()
+                    h_i = obs.h - obs.h[tref_idx]
+                    mask = np.ones_like(h_i, dtype=bool)
+                    mask[tref_idx] = False
+                    h_i, w_i = h_i[mask], w_i[mask]
+                else:
+                    h_i = obs.h
+            else:
+                h_i = np.atleast_1d(obs.h)
+                w_i = np.atleast_1d(obs.weight if obs.weight is not None else 1.0)
+            h_obs_list.append(h_i)
+            weights_list.append(w_i)
+        h_obs = np.concatenate(h_obs_list)
+        w = np.concatenate(weights_list)
+        r = self.residuals(self._param_vector(), weighted=weighted)
+        h_o = h_obs * w if weighted else h_obs
+        h_m = h_o - r
+        return self._nse(h_o, h_m)
 
     @staticmethod
     def get_covariances(
