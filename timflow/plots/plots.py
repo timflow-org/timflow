@@ -934,15 +934,20 @@ class PlotBase:
             x = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
         else:
             raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
+        # find aquifer for z coordinates
+        if self._ml.name == "ModelXsection":
+            aq = self._ml.aq.find_aquifer_data(x[0], y[0])  # use aquifer at first coord
+        else:
+            aq = self._ml.aq
         if vinterp:
-            z = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
-            z = np.hstack((self._ml.aq.zaqtop[0], z, self._ml.aq.zaqbot[-1]))
+            z = 0.5 * (aq.zaqbot + aq.zaqtop)
+            z = np.hstack((aq.zaqtop[0], z, aq.zaqbot[-1]))
             arr = np.vstack((arr[0], arr, arr[-1]))
         else:
-            z = np.empty(2 * self._ml.aq.naq)
-            for i in range(self._ml.aq.naq):
-                z[2 * i] = self._ml.aq.zaqtop[i]
-                z[2 * i + 1] = self._ml.aq.zaqbot[i]
+            z = np.empty(2 * aq.naq)
+            for i in range(aq.naq):
+                z[2 * i] = aq.zaqtop[i]
+                z[2 * i + 1] = aq.zaqbot[i]
             arr = np.repeat(arr, 2, 0)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
