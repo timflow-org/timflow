@@ -49,6 +49,7 @@ ci = [
     "pytest-cov",
     "pytest-xdist",
     "nbval",
+    "papermill",
     "jupyter",
     "shapely",
 ]
