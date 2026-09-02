@@ -878,6 +878,8 @@ class Calibrate:
                         stacklevel=2,
                     )
                     hsteady = 0.0
+                else:
+                    hsteady = 0.0
                 h = (
                     self.transient_model.head(
                         obs.x,
@@ -887,7 +889,7 @@ class Calibrate:
                         neglect_steady=obs.normalized,
                     )
                     + hsteady
-                )
+                ).squeeze(axis=0)
                 w = (
                     (obs.weights if obs.weights is not None else np.ones_like(h))
                     if weighted
@@ -1702,7 +1704,7 @@ class Calibrate:
                     obs.t[tref_idx],
                     color="C3",
                     linestyle="--",
-                    linewidth=0.5,
+                    linewidth=1.0,
                     label="reference time",
                 )
 
@@ -1724,7 +1726,6 @@ class Calibrate:
             ax.set_ylabel("head")
             ax.grid(True)
             ax.legend(loc=(0, 1), frameon=False, ncol=3)
-            ax.set_xlim(left=t_plot[mask][0], right=t_plot[mask][-1])
             i += 1
         axes[-1].set_xlabel("time")
         fig.tight_layout()
