@@ -64,8 +64,14 @@ class CircInhomDataMaq(CircInhomData):
         topboundary="imp",
         phreatictop=False,
     ):
-        kaq, Haq, Hll, c, Saq, Sll = param_maq(
-            kaq, z, c, Saq, Sll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, _, _, _, _, _ = param_maq(
+            kaq=kaq,
+            z=z,
+            c=c,
+            Saq=Saq,
+            Sll=Sll,
+            topboundary=topboundary,
+            phreatictop=phreatictop,
         )
         CircInhomData.__init__(
             self, model, x0, y0, R, kaq, Haq, c, Saq, Sll, topboundary, phreatictop
@@ -89,8 +95,18 @@ class CircInhomData3D(CircInhomData):
         topthick=0,
         topSll=0,
     ):
-        kaq, Haq, Hll, c, Saq, Sll = param_3d(
-            kaq, z, Saq, kzoverkh, phreatictop, topboundary, topres, topthick, topSll
+        kaq, Haq, Hll, c, Saq, Sll, _, _, _, _, _, z = param_3d(
+            kaq=kaq,
+            z=z,
+            Saq=Saq,
+            kzoverkh=kzoverkh,
+            poraq=0.3,
+            phreatictop=phreatictop,
+            topboundary=topboundary,
+            topres=topres,
+            topthick=topthick,
+            topSll=topSll,
+            toppor=0.3,
         )
         CircInhomData.__init__(self, model, x0, y0, R, kaq, Haq, c, Saq, Sll, "imp")
 

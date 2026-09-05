@@ -22,6 +22,7 @@ from timflow.transient.invlapnumba import (
     compute_laplace_parameters_numba,
     invlap,
     invlapcomp,
+    invlapgen,
 )
 from timflow.transient.plots import PlotTransient
 from timflow.version import check_tqdm_parallel
@@ -54,6 +55,7 @@ class Model:
         Saq=[1e-4, 1e-4],
         Sll=[0],
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         porll=0.3,
         ltype=["a", "a"],
@@ -87,6 +89,7 @@ class Model:
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -372,6 +375,102 @@ class Model:
                 htimml = self.steady.head(x, y, layers=layers)
                 h += htimml[:, np.newaxis]
         return h
+
+    def headinvertical(self, x, y, z, t, aq=None, returneta=False):
+        """Head along vertical line at x, y, z, t.
+
+        Parameters
+        ----------
+        x : float
+        y : float
+        z : float, list, or array
+        t : float, list, or array
+
+        Returns
+        -------
+        h : array size `ntimes, nz`
+        """
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
+        if aq is None:
+            aq = self.aq.find_aquifer_data(x, y)
+        headbar = (
+            self.potential(x, y, t, aq=aq, returnphi=True)
+            / aq.T[np.newaxis, :, np.newaxis]
+        )
+        haq = invlapcomp(
+            t,
+            headbar,
+            self.npint,
+            self.M,
+            self.tintervals,
+            self.enumber,
+            self.etstart,
+            self.ebc,
+            aq.naq,
+        )
+        for iz in range(len(z)):
+            lay, ltype, _ = aq.findlayer(z[iz])
+            if ltype == "a":
+                rv[iz] = haq[lay]
+            elif ltype == "l":
+                if lay == 0:
+                    if aq.topboundary == "sem":
+                        eta = (
+                            headbar[:, lay]
+                            * np.sinh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                            / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                        )
+                    elif aq.topboundary == "lea":
+                        eta = (
+                            headbar[:, lay]
+                            * np.cosh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                            / np.cosh(aq.alpha[lay] * aq.Hll[lay])
+                        )
+                else:
+                    eta = (
+                        headbar[:, lay - 1]
+                        * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
+                        + headbar[:, lay]
+                        * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
+                    ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                eta = eta[:, np.newaxis, :]
+                if returneta:
+                    return eta
+                rv[iz] = invlapcomp(
+                    t,
+                    eta,
+                    self.npint,
+                    self.M,
+                    self.tintervals,
+                    self.enumber,
+                    self.etstart,
+                    self.ebc,
+                    1,
+                )
+        if aq.topboundary[:3] == "sem":
+            rv += aq.headsemitoplayer(x, y, z, t)
+        return rv
+
+    def headll(self, z, t, aq, returneta=False):
+        """Head in leaky layer caused by loading efficiency."""
+        z = np.atleast_1d(z)
+        t = np.atleast_1d(t)
+        rv = np.zeros((len(z), len(t)))
+        headbar = -1 / self.p
+        for iz in range(len(z)):
+            lay, ltype, _ = aq.findlayer(z[iz])
+            eta = (
+                headbar * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
+                + headbar * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
+            ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+            if returneta:
+                return eta
+            rv[iz] = invlapgen(
+                t, eta, self.M, self.tintervals, np.array([0.0]), np.array([1.0])
+            )
+        return rv
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
         # implemented for one layer
@@ -1030,6 +1129,9 @@ class ModelMaq(Model):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
+    leffll : float, array or list
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'confined', 'phreatic', 'semi', or 'leaky' (default is 'conf')
         indicating whether the top is confined ('con' is enough), phreatic ('phr' is
         enough), semi-confined ('sem' is enough), or a leaky layer ('lea' is enough).
@@ -1058,6 +1160,7 @@ class ModelMaq(Model):
         Saq=[0.001],
         Sll=[0],
         leffaq=0,
+        leffll=0,
         poraq=[0.3],
         porll=[0.3],
         topboundary="conf",
@@ -1079,8 +1182,8 @@ class ModelMaq(Model):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype = param_maq(
+            kaq, z, c, Saq, Sll, leffaq, leffll, poraq, porll, topboundary, phreatictop
         )
         super().__init__(
             kaq,
@@ -1091,6 +1194,7 @@ class ModelMaq(Model):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -1137,12 +1241,19 @@ class Model3D(Model):
     leffaq : float, array or list
         loading efficiency of the aquifer
         only used when topboundary='semi' and hstar varies with time
+    leffll : float, array or list
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     topboundary : string, 'confined', 'phreatic', or 'semi' (default is 'conf')
         indicating whether the top is confined ('con' is enough), phreatic
         ('phr' is enough) or semi-confined ('sem' is enough).
         When 'phreatic', the storage coefficient (Saq) of the top model layer is
         treated as phreatic storage (and not multiplied with the aquifer thickness)
         When 'semi', the topres and topthick must be specified.
+    topres : float
+        resistance of top semi-confining layer, only read if topboundary='semi'
+    topthick: float
+        thickness of top semi-confining layer, only read if topboundary='semi'
     topres : float
         resistance of top semi-confining layer, only read if topboundary='semi'
     topthick: float
@@ -1169,6 +1280,7 @@ class Model3D(Model):
         Saq=0.001,
         kzoverkh=0.1,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=None,
@@ -1194,12 +1306,13 @@ class Model3D(Model):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
             leffaq,
+            leffll,
             poraq,
             phreatictop,
             topboundary,
@@ -1217,6 +1330,7 @@ class Model3D(Model):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
