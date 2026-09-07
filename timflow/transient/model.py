@@ -460,7 +460,7 @@ class Model:
         rv = np.zeros((len(z), len(t)))
         headbar = -1 / self.p
         for iz in range(len(z)):
-            lay, ltype, _ = aq.findlayer(z[iz])
+            lay, _, _ = aq.findlayer(z[iz])
             eta = (
                 headbar * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
                 + headbar * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
