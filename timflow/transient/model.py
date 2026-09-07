@@ -22,7 +22,6 @@ from timflow.transient.invlapnumba import (
     compute_laplace_parameters_numba,
     invlap,
     invlapcomp,
-    invlapgen,
 )
 from timflow.transient.plots import PlotTransient
 from timflow.version import check_tqdm_parallel
