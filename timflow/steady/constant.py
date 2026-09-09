@@ -176,8 +176,6 @@ class ConstantInside(Element):
         self.parameters[:, 0] = sol
 
 
-# class ConstantStar(Element, PotentialEquation):
-# I don't think we need the equation
 class ConstantStar(Element):
     """Constant representing the particular solution inside a semi-confined aquifer.
 
