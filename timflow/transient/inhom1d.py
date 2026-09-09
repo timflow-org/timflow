@@ -205,7 +205,9 @@ class Xsection(AquiferData):
             assert self.topboundary == "con" or self.topboundary == "phr", Exception(
                 "Infiltration can only be applied to a confined aquifer."
             )
-            self.topbc = AreaSinkXsection(self.model, self.x1, self.x2, tsandN=self.tsandN)
+            self.topbc = AreaSinkXsection(
+                self.model, self.x1, self.x2, tsandN=self.tsandN
+            )
         if self.tsandhstar is not None:
             assert self.topboundary == "sem", Exception(
                 "hstar can only be implemented on top of a semi-confined aquifer."
