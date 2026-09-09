@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from timflow.bessel.besselnumba import disbesldv, potbesldv
+from timflow.steady.base_io import store_input
 from timflow.steady.controlpoints import controlpoints
 from timflow.steady.element import Element
 from timflow.steady.equation import DisvecEquation, LeakyWallEquation
@@ -185,6 +186,7 @@ class LineDoubletHoBase(Element):
             ax.plot([self.x1, self.x2], [self.y1, self.y2], "k")
 
 
+@store_input
 class ImpermeableWall(LineDoubletHoBase, DisvecEquation):
     """Create a segment of an impermeable wall, which is simulated with a line-doublet.
 
@@ -251,6 +253,7 @@ class ImpermeableWall(LineDoubletHoBase, DisvecEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class LeakyWall(LineDoubletHoBase, LeakyWallEquation):
     """Create a segment of a leaky wall, which is simulated with a line-doublet.
 
@@ -423,6 +426,7 @@ class LineDoubletStringBase(Element):
             ax.plot(self.x, self.y, "k")
 
 
+@store_input
 class ImpermeableWallString(LineDoubletStringBase, DisvecEquation):
     """Create a string of impermeable wall segments consisting of line-doublets.
 
@@ -473,6 +477,7 @@ class ImpermeableWallString(LineDoubletStringBase, DisvecEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class LeakyWallString(LineDoubletStringBase, LeakyWallEquation):
     """Create a string of leaky wall segments consisting of line-doublets.
 
@@ -525,6 +530,7 @@ class LeakyWallString(LineDoubletStringBase, LeakyWallEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class ImpLineDoublet(ImpermeableWall):
     """Deprecated alias for :class:`.ImpermeableWall`.
 
@@ -542,6 +548,7 @@ class ImpLineDoublet(ImpermeableWall):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class ImpLineDoubletString(ImpermeableWallString):
     """Deprecated alias for :class:`.ImpermeableWallString`.
 
@@ -559,6 +566,7 @@ class ImpLineDoubletString(ImpermeableWallString):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class LeakyLineDoublet(LeakyWall):
     """Deprecated alias for :class:`.LeakyWall`.
 
@@ -576,6 +584,7 @@ class LeakyLineDoublet(LeakyWall):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class LeakyLineDoubletString(LeakyWallString):
     """Deprecated alias for :class:`.LeakyWallString`.
 

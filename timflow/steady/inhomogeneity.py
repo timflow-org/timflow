@@ -19,6 +19,7 @@ import numpy as np
 
 from timflow.steady.aquifer import AquiferData
 from timflow.steady.aquifer_parameters import param_3d, param_maq
+from timflow.steady.base_io import store_input
 from timflow.steady.constant import ConstantInside, ConstantStar
 from timflow.steady.element import Element
 from timflow.steady.intlinesink import (
@@ -145,6 +146,7 @@ class PolygonInhom(AquiferData):
             c.inhomelement = True
 
 
+@store_input
 class PolygonInhomMaq(PolygonInhom):
     """Create a polygonal inhomogeneity.
 
@@ -240,6 +242,7 @@ class PolygonInhomMaq(PolygonInhom):
         )
 
 
+@store_input
 class PolygonInhom3D(PolygonInhom):
     """Create a multi-layer model object consisting of many aquifer layers.
 
@@ -545,6 +548,7 @@ class BuildingPit(AquiferData):
             c.inhomelement = True
 
 
+@store_input
 class BuildingPitMaq(BuildingPit):
     """Element to simulate a building pit with an impermeable wall in ModelMaq.
 
@@ -627,6 +631,7 @@ class BuildingPitMaq(BuildingPit):
         )
 
 
+@store_input
 class BuildingPit3D(BuildingPit):
     """Element to simulate a building pit with an impermeable wall in Model3D.
 
@@ -917,6 +922,7 @@ class LeakyBuildingPit(BuildingPit):
             c.inhomelement = True
 
 
+@store_input
 class LeakyBuildingPitMaq(LeakyBuildingPit):
     """Element to simulate a building pit with a leaky wall in ModelMaq.
 
@@ -1005,6 +1011,7 @@ class LeakyBuildingPitMaq(LeakyBuildingPit):
         )
 
 
+@store_input
 class LeakyBuildingPit3D(LeakyBuildingPit):
     """Element to simulate a building pit with a leaky wall in Model3D.
 

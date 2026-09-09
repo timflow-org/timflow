@@ -12,6 +12,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+from timflow.steady.base_io import store_input
 from timflow.steady.element import Element
 
 __all__ = ["XsectionAreaSinkInhom", "XsectionAreaSink"]
@@ -126,6 +127,7 @@ class XsectionAreaSinkInhom(Element):
         return ax
 
 
+@store_input
 class XsectionAreaSink(Element):
     """Cross-section area-sink for testing purposes only.
 

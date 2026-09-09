@@ -12,12 +12,13 @@ Example::
 import numpy as np
 import pandas as pd
 
+from timflow.steady.base_io import BaseIO
 from timflow.steady.constant import ConstantStar
 
 __all__ = ["Aquifer", "SimpleAquifer"]
 
 
-class AquiferData:
+class AquiferData(BaseIO):
     def __init__(self, model, kaq, c, z, npor, ltype, model3d=False):
         """Initialize aquifer data.
 
