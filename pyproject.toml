@@ -32,7 +32,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Hydrology",
 ]
 requires-python = ">=3.11"
-dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas"]
+dependencies = ["numpy", "scipy", "numba", "matplotlib", "pandas", "tqdm"]
 
 [project.urls]
 homepage = "https://github.com/timflow-org/timflow"
@@ -41,8 +41,8 @@ documentation = "https://timflow.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 lint = ["ruff"]
-parallel = ["tqdm"]
-optional = ["timflow[parallel]", "lmfit"]
+lmfit = ["lmfit"]
+optional = ["timflow[lmfit]"]
 ci = [
     "timflow[lint,optional]",
     "pytest",
@@ -62,7 +62,7 @@ docs = [
     "myst_nb",
     "sphinxcontrib-bibtex",
     "sphinx-autoapi",
-    "jupyter-cache"
+    "jupyter-cache",
 ]
 dev = ["timflow[docs]"]
 
