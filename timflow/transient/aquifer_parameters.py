@@ -50,6 +50,8 @@ def param_maq(
             Sll = Sll * np.ones(naq - 1)
         if len(porll) == 1:
             porll = porll * np.ones(naq - 1)
+        leffaq = np.zeros(naq)  # always 0.0, regardless of user input
+        leffll = np.zeros(naq)  # always 0.0, regardless of user input
         assert len(kaq) == naq, "Error: Length of kaq needs to be " + str(naq)
         assert len(Saq) == naq, "Error: Length of Saq needs to be " + str(naq)
         assert len(poraq) == naq, "Error: Length of poraq needs to be " + str(naq)

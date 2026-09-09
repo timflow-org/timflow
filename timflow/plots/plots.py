@@ -652,7 +652,11 @@ class PlotBase:
             # Transient: resistance c and storage Sll
             ssfmt = ".2e"
             cstr = f"$c$ = {self._ml.aq.c[lli]:{fmt}}"
-            sstr = f"$S_s$ = {self._ml.aq.Sll[lli]:{ssfmt}}"
+            Slli = self._ml.aq.Sll[lli]
+            if Slli > 1e-20:
+                sstr = f"$S_s$ = {Slli:{ssfmt}}"
+            else:
+                sstr = "$S_s$ = 0.0"
             if units is not None:
                 c_unitstr = f" {units['c']}" if "c" in units else ""
                 # Prefer Sll unit; fall back to Saq for compatibility.
@@ -661,6 +665,8 @@ class PlotBase:
                 c_unitstr = ""
                 ss_unitstr = ""
             paramtxt = cstr + c_unitstr + sep + sstr + ss_unitstr
+            if hasattr(self._ml.aq, "leffll") and self._ml.aq.leffll[lli] != 0:
+                paramtxt += f"{sep}$\\beta$ = {self._ml.aq.leffll[lli]:{fmt}}"
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
@@ -731,6 +737,8 @@ class PlotBase:
                 paramtxt += f"{sep}$S$ = {self._ml.aq.Saq[aqi]:{fmt}}"
             else:
                 paramtxt += f"{sep}$S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}" + ss_unitstr
+            if hasattr(self._ml.aq, "leffaq") and self._ml.aq.leffaq[aqi] != 0:
+                paramtxt += f"{sep}$\\beta$ = {self._ml.aq.leffaq[aqi]:{fmt}}"
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
