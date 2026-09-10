@@ -87,6 +87,8 @@ class AquiferData:
         # self.D = self.T / self.Saq
         self.area = 1e200  # Smaller than default of ml.aq so that inhom is found
         self.name = name
+        # set reference to top boundary element for background aquifers and inhoms
+        self.topbc = None  # top boundary condition element, if any
 
     def __repr__(self):
         if self.topboundary.startswith("con"):

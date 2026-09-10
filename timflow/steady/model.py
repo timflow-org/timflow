@@ -80,9 +80,11 @@ class Model:
         array indicating for each layer whether it is
         'a' aquifer layer
         'l' leaky layer
+    hstar : float, optional
+        head above the top leaky layer, only used if top is semi-confined.
     """
 
-    def __init__(self, kaq, z, c, npor, ltype, model3d=False):
+    def __init__(self, kaq, z, c, npor, ltype, model3d=False, hstar=None):
         # All input variables are numpy arrays
         # That should be checked outside this function
         self.elementlist = []
@@ -91,8 +93,10 @@ class Model:
         self.name = "Model"
         self.model_type = "steady"  # Model type for plotting and other purposes
 
-        self.plots = PlotSteady(self)
+        if self.aq.ltype[0] == "l":
+            self.aq.topbc = ConstantStar(self, hstar, aq=self.aq)
 
+        self.plots = PlotSteady(self)
         self.initialized = False
 
     def initialize(self):
@@ -1036,10 +1040,8 @@ class ModelMaq(Model):
         if z is None:
             z = [1, 0]
         kaq, c, npor, ltype = param_maq(kaq, z, c, npor, topboundary)
-        super().__init__(kaq=kaq, z=z, c=c, npor=npor, ltype=ltype)
+        super().__init__(kaq=kaq, z=z, c=c, npor=npor, ltype=ltype, hstar=hstar)
         self.name = "ModelMaq"
-        if self.aq.ltype[0] == "l":
-            ConstantStar(self, hstar, aq=self.aq)
 
 
 class Model3D(Model):
@@ -1119,11 +1121,11 @@ class Model3D(Model):
         if topboundary == "semi":
             z = np.hstack((z[0] + topthick, z))
         model3d = True
-        super().__init__(kaq=kaq, z=z, c=c, npor=npor, ltype=ltype, model3d=model3d)
+        super().__init__(
+            kaq=kaq, z=z, c=c, npor=npor, ltype=ltype, model3d=model3d, hstar=hstar
+        )
         self.aq.kzoverkh = kzoverkh  # add kzoverkh to aquifer object
         self.name = "Model3D"
-        if self.aq.ltype[0] == "l":
-            ConstantStar(self, hstar, aq=self.aq)
 
 
 class ModelXsection(Model):
