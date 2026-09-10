@@ -47,6 +47,10 @@ class Xsection(AquiferData):
         Specific storage of the leaky layers.
     leffaq : array
         loading efficiency of the aquifer
+        only used when topboundary='semi' and hstar varies with time
+    leffll : array
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -87,6 +91,7 @@ class Xsection(AquiferData):
         Saq,
         Sll,
         leffaq,
+        leffll,
         poraq,
         porll,
         ltype,
@@ -108,6 +113,7 @@ class Xsection(AquiferData):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -199,12 +205,16 @@ class Xsection(AquiferData):
             assert self.topboundary == "con" or self.topboundary == "phr", Exception(
                 "Infiltration can only be applied to a confined aquifer."
             )
-            AreaSinkXsection(self.model, self.x1, self.x2, tsandN=self.tsandN)
+            self.topbc = AreaSinkXsection(
+                self.model, self.x1, self.x2, tsandN=self.tsandN
+            )
         if self.tsandhstar is not None:
             assert self.topboundary == "sem", Exception(
                 "hstar can only be implemented on top of a semi-confined aquifer."
             )
-            HstarXsection(self.model, self.x1, self.x2, tsandhstar=self.tsandhstar)
+            self.topbc = HstarXsection(
+                self.model, self.x1, self.x2, tsandhstar=self.tsandhstar
+            )
 
     def plot(
         self,
@@ -334,13 +344,19 @@ class Xsection(AquiferData):
                     )
                 if params:
                     cstr = f"$c$ = {self.c[lli]:{fmt}}"
-                    sstr = f"$S_s$ = {self.Sll[lli]:{ssfmt}}"
+                    Slli = self.Sll[lli]
+                    if Slli > 1e-20:
+                        sstr = f"$S_s$ = {Slli:{ssfmt}}"
+                    else:
+                        sstr = "$S_s$ = 0.0"
                     cstr_with_unit = cstr + c_unitstr
                     sstr_with_unit = sstr + ss_unitstr
                     if sep == "\n":
                         paramtxt = cstr_with_unit + sep + sstr_with_unit
                     else:
                         paramtxt = cstr_with_unit + sep + sstr_with_unit
+                    if self.leffll[lli] != 0.0:
+                        paramtxt += f"{sep}$\\beta$ = {self.leffll[lli]:{fmt}}"
                     ax.text(
                         r0 + 0.75 * r if labels else r0 + 0.5 * r,
                         np.mean(self.z[i : i + 2]),
@@ -376,6 +392,8 @@ class Xsection(AquiferData):
                     paramtxt = khstr + kh_unitstr + "\n" + sstr + ss_unitstr
                 else:
                     paramtxt = khstr + kh_unitstr + sep + sstr + ss_unitstr
+                if self.leffaq[aqi] != 0.0:
+                    paramtxt += f"{sep}$\\beta$ = {self.leffaq[aqi]:{fmt}}"
                 ax.text(
                     r0 + 0.75 * r if labels else r0 + 0.5 * r,
                     np.mean(self.z[i : i + 2]),
@@ -425,6 +443,10 @@ class XsectionMaq(Xsection):
         Specific storage of the leaky layers.
     leffaq : array
         loading efficiency of the aquifer
+        only used when topboundary='semi' and hstar varies with time
+    leffll : array
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     poraq : array
         Porosities of the aquifers.
     porll : array
@@ -454,6 +476,7 @@ class XsectionMaq(Xsection):
         Saq=0.001,
         Sll=0,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         porll=0.3,
         topboundary="conf",
@@ -473,8 +496,8 @@ class XsectionMaq(Xsection):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype = param_maq(
-            kaq, z, c, Saq, Sll, leffaq, poraq, porll, topboundary, phreatictop
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype = param_maq(
+            kaq, z, c, Saq, Sll, leffaq, leffll, poraq, porll, topboundary, phreatictop
         )
         super().__init__(
             model,
@@ -488,6 +511,7 @@ class XsectionMaq(Xsection):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,
@@ -523,7 +547,11 @@ class Xsection3D(Xsection):
         Ratio of vertical hydraulic conductivity to horizontal hydraulic
         conductivity.
     leffaq : array
-        Loading efficiency
+        loading efficiency of the aquifer
+        only used when topboundary='semi' and hstar varies with time
+    leffll : array
+        loading efficiency of the leaky layer
+        only used when topboundary='semi' and hstar varies with time
     poraq : array
         Porosities of the aquifers.
     topboundary : string, 'confined', 'phreatic', or 'semi' (default is 'conf')
@@ -559,6 +587,7 @@ class Xsection3D(Xsection):
         Saq=0.001,
         kzoverkh=0.1,
         leffaq=0,
+        leffll=0,
         poraq=0.3,
         topboundary="conf",
         phreatictop=None,
@@ -581,12 +610,13 @@ class Xsection3D(Xsection):
                 DeprecationWarning,
                 stacklevel=2,
             )
-        kaq, Haq, Hll, c, Saq, Sll, leffaq, poraq, porll, ltype, z = param_3d(
+        kaq, Haq, Hll, c, Saq, Sll, leffaq, leffll, poraq, porll, ltype, z = param_3d(
             kaq,
             z,
             Saq,
             kzoverkh,
             leffaq,
+            leffll,
             poraq,
             phreatictop,
             topboundary,
@@ -607,6 +637,7 @@ class Xsection3D(Xsection):
             Saq,
             Sll,
             leffaq,
+            leffll,
             poraq,
             porll,
             ltype,

@@ -1,37 +1,59 @@
 from pathlib import Path
 
-import nbformat
+import papermill as pm
 import pytest
-from nbconvert.preprocessors import ExecutePreprocessor
 
-nbdirs = [
-    Path("docs/steady/00userguide/tutorials"),
-    Path("docs/steady/00userguide/howtos"),
-    Path("docs/steady/02examples"),
-    Path("docs/steady/03xsections"),
-    Path("docs/steady/04benchmarks"),
-]
+NB_DIR = Path.cwd().parent.parent / "docs/steady"
 
 
-def get_notebooks():
-    skip = ["benchmarking_besselaes.ipynb", "vertical_anisotropy.ipynb"]
-    nblist = []
-    for nbdir in nbdirs:
-        nblist += [nb for nb in nbdir.glob("*.ipynb") if nb.name not in skip]
-    return nblist
+def get_notebooks() -> list[Path]:
+    nb_subdirs = [
+        NB_DIR / "00userguide/tutorials",
+        NB_DIR / "00userguide/howtos",
+        NB_DIR / "02examples",
+        NB_DIR / "03xsections",
+        NB_DIR / "04benchmarks",
+    ]
+
+    return sorted([nb for nb_dir in nb_subdirs for nb in nb_dir.glob("*.ipynb")])
+
+
+PARAMETERS = {
+    "collector_wells.ipynb": {"NGR": 2},
+    "besselnumba_timing.ipynb": {"N": 1},
+    "vertical_anisotropy.ipynb": {"NTOT": 1},
+}
 
 
 # @pytest.mark.notebooks
 @pytest.mark.skip(reason="Use pytest --nbval on notebooks directly for coverage.")
 @pytest.mark.parametrize("pth", get_notebooks())
-def test_notebook_py(pth):
-    pth = Path(pth)
-    with open(pth, "r", encoding="utf-8") as f:
-        nb = nbformat.read(f, as_version=4)
-        ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
-        try:
-            assert ep.preprocess(nb, {"metadata": {"path": pth.parent}}) is not None, (
-                f"Got empty notebook for {pth.name}"
-            )
-        except Exception as e:
-            pytest.fail(reason=f"Failed executing {pth.name}: {e}")
+def test_notebook(pth):
+    input_path = pth
+    output_path = pth.with_suffix(".out.ipynb")
+    pm.execute_notebook(
+        input_path,
+        str(output_path),
+        timeout=600,
+        cwd=pth.parent,
+        parameters=PARAMETERS.get(pth.name),
+    )
+    output_path.unlink()  # Remove the output notebook after execution
+
+
+# local run
+if __name__ == "__main__":
+    from time import time
+
+    times = {}
+    for file in get_notebooks():
+        start = time()
+        test_notebook(file)
+        end = time()
+        times[file] = end - start
+        print(f"Execution time for {file}: {times[file]:.2f} seconds")
+
+    # Print summary
+    print("\nSummary:")
+    for file, duration in times.items():
+        print(f"{file}: {duration:.2f} seconds")

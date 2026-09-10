@@ -139,10 +139,12 @@ class PolygonInhom(AquiferData):
             if self.N is not None:
                 a = AreaSinkInhom(self.model, self.N, self.xcenter, aq=aqin)
                 a.inhomelement = True
+                self.topbc = a
         if aqin.ltype[0] == "l":
             assert self.hstar is not None, "Error: hstar needs to be set"
             c = ConstantStar(self.model, self.hstar, aq=aqin)
             c.inhomelement = True
+            self.topbc = c
 
 
 class PolygonInhomMaq(PolygonInhom):
@@ -543,6 +545,7 @@ class BuildingPit(AquiferData):
             assert self.hstar is not None, "Error: hstar needs to be set"
             c = ConstantStar(self.model, self.hstar, aq=aqin)
             c.inhomelement = True
+            self.topbc = c
 
 
 class BuildingPitMaq(BuildingPit):
@@ -915,6 +918,7 @@ class LeakyBuildingPit(BuildingPit):
             assert self.hstar is not None, "Error: hstar needs to be set"
             c = ConstantStar(self.model, self.hstar, aq=aqin)
             c.inhomelement = True
+            self.topbc = c
 
 
 class LeakyBuildingPitMaq(LeakyBuildingPit):

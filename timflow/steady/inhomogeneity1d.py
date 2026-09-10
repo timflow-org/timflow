@@ -135,12 +135,15 @@ class Xsection(AquiferData):
                 assert aqin.ilap, (
                     "Error: infiltration can only be added if topboundary='conf'"
                 )
-                XsectionAreaSinkInhom(self.model, self.x1, self.x2, self.N, layer=0)
+                self.topbc = XsectionAreaSinkInhom(
+                    self.model, self.x1, self.x2, self.N, layer=0
+                )
 
         if aqin.ltype[0] == "l":
             assert self.hstar is not None, "Error: hstar needs to be set"
             c = ConstantStar(self.model, self.hstar, aq=aqin)
             c.inhomelement = True
+            self.topbc = c
 
     def plot(
         self,
@@ -186,7 +189,7 @@ class Xsection(AquiferData):
             x1 = kwargs.pop("x1")
             if np.isfinite(self.x1):
                 x1 = max(x1, self.x1)
-            else:
+            elif not np.isfinite(x1):
                 x1 = self.x2 - 100.0
         elif np.isfinite(self.x1):
             x1 = self.x1
@@ -197,7 +200,7 @@ class Xsection(AquiferData):
             x2 = kwargs.pop("x2")
             if np.isfinite(self.x2):
                 x2 = min(x2, self.x2)
-            else:
+            elif not np.isfinite(x2):
                 x2 = self.x1 + 100.0
         elif np.isfinite(self.x2):
             x2 = self.x2
