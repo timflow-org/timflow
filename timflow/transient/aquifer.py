@@ -84,7 +84,6 @@ class AquiferData:
             assert self.topboundary.startswith("con") or self.topboundary.startswith(
                 "phr"
             ), "Error: For Model3D, only 'confined' topboundary is currently implemented."
-        # self.D = self.T / self.Saq
         self.area = 1e200  # Smaller than default of ml.aq so that inhom is found
         self.name = name
         # set reference to top boundary element for background aquifers and inhoms
