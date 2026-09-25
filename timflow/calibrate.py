@@ -1447,6 +1447,7 @@ class Calibrate:
         obs_kwargs: dict | None = None,
         model_kwargs: dict | None = None,
         sharey: bool = False,
+        units: dict | None = None,
     ) -> tuple[plt.Figure, np.ndarray]:
         """Plot modeled vs observed transient head time series.
 
@@ -1454,6 +1455,11 @@ class Calibrate:
         comparing observed heads to the current model response. Call this
         method before calibration to inspect the initial fit, or after
         calibration to inspect the calibrated fit.
+
+        For a cross-section model (``ModelXsection``), subplots are ordered
+        by ``(x, layer)`` and titled with the observation's location and
+        layer. For other model types, where ``x`` alone is not a meaningful
+        ordering, subplots are ordered and titled by observation name instead.
 
         Parameters
         ----------
@@ -1474,6 +1480,10 @@ class Calibrate:
         sharey : bool, optional
             If ``True``, all subplots share the same y-axis limits.
             Default is ``False``.
+        units : dict, optional
+            Optional units to append to the axis labels and, for
+            cross-section models, the per-subplot ``x`` value in the title,
+            e.g. ``{"head": "m", "time": "days", "x": "m"}``.
 
         Returns
         -------
@@ -1498,6 +1508,25 @@ class Calibrate:
         if n_obs == 0:
             raise ValueError("No transient observations to plot.")
 
+        # Cross-section models have a meaningful x-coordinate to sort/title
+        # on; for other model types (e.g. areal models) fall back to the
+        # observation name instead.
+        _model_for_type = (
+            self.transient_model
+            if self.transient_model is not None
+            else self.steady_model
+        )
+        is_xsection = type(_model_for_type).__name__ == "ModelXsection"
+        if is_xsection:
+            all_items = sorted(all_items, key=lambda item: (item[1].x, item[1].layer))
+        else:
+            all_items = sorted(all_items, key=lambda item: item[0])
+
+        units = units or {}
+        head_unit = f" [{units['head']}]" if "head" in units else ""
+        time_unit = f" [{units['time']}]" if "time" in units else ""
+        x_unit = f" {units['x']}" if "x" in units else ""
+
         # Default styling
         obs_kw: dict = {"color": "k", "marker": ".", "linestyle": "none"}
         obs_kw.update(obs_kwargs or {})
@@ -1515,7 +1544,7 @@ class Calibrate:
 
         # Create subplots
         fig, ax_array = plt.subplots(
-            n_obs, 1, sharex=True, sharey=sharey, figsize=figsize
+            n_obs, 1, sharex=True, sharey=sharey, figsize=figsize, layout="constrained"
         )
         axes = np.atleast_1d(ax_array)
 
@@ -1575,11 +1604,20 @@ class Calibrate:
             model_kw["color"] = f"C{i}"  # cycle through colors for each subplot
             ax.plot(t_plot[mask], h_obs_plot[mask], label=obs_label, **obs_kw)
             ax.plot(t_plot[mask], h_mod[mask], **{**model_kw, "label": model_label})
-            ax.set_ylabel("head")
+
+            if is_xsection:
+                ax.set_title(
+                    f"x: {obs.x:.1f}{x_unit}, layer: {obs.layer}",
+                    loc="right",
+                    fontsize="medium",
+                )
+            else:
+                ax.set_title(f"layer: {obs.layer}", loc="right", fontsize="medium")
+            ax.set_ylabel(f"head{head_unit}")
             ax.grid(True)
             ax.legend(loc=(0, 1), frameon=False, ncol=2)
             ax.set_xlim(left=t_plot[mask][0], right=t_plot[mask][-1])
             i += 1
-        axes[-1].set_xlabel("time")
-        fig.tight_layout()
+        axes[-1].set_xlabel(f"time{time_unit}")
+        fig.align_ylabels(axes)
         return fig, axes
