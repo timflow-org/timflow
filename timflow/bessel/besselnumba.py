@@ -1013,7 +1013,7 @@ def bessells(x, y, z1, z2, lab, order, d1in, d2in):
 #     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz)
 #     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz)
 #     return qxqy
-    
+
 
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
@@ -1426,6 +1426,7 @@ def besselld(x, y, z1, z2, lab, order, d1in, d2in):
 #     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz) - wlap.imag
 #     return qxqy
 
+
 @numba.njit(nogil=True, cache=True)
 def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     """Docs.
@@ -1457,13 +1458,15 @@ def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     term1 = bigx / (biga**2) * omega[:-1]
     term2 = -1 / (biga**2) * omega[1:]
     term3 = 4 * np.pi * ahat[0] * omegalap.imag
-    qx = -(2 / L) * bigy / (2 * np.pi * biglab**2) * (term1 + term2 + term3)  # + wlap.real
+    qx = (
+        -(2 / L) * bigy / (2 * np.pi * biglab**2) * (term1 + term2 + term3)
+    )  # + wlap.real
 
     term1 = omega_pot
     term2 = bigy / (biga**2) * omega[:-1]
     term3 = 4 * np.pi * ahat[0] * omegalap.real
     qy = 1 / (2.0 * np.pi * biglab**2) * (term1 + bigy * (term2 + term3))  # - wlap.imag
-    qy = -(2 / L) * qy # properly scaled
+    qy = -(2 / L) * qy  # properly scaled
 
     qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz) + wlap.real
