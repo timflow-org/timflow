@@ -20,7 +20,9 @@ from timflow.transient.equation import (
     HeadEquationNores,
     MscreenDitchEquation,
     MscreenEquation,
+    HeadEquationNew
 )
+from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 
 
 class LineSinkBase(Element):
@@ -140,7 +142,9 @@ class LineSinkBase(Element):
         return rv.reshape((self.nparam, aq.naq, self.model.npval))
 
     def disvecinf(self, x, y, aq=None):
-        """Can be called with only one x,y value."""
+        """Can be called with only one x,y value.
+        Returns array of naparam, naq, npval
+        """
         if aq is None:
             aq = self.model.aq.find_aquifer_data(x, y)
         rvx = np.zeros(
@@ -433,7 +437,7 @@ class LineSinkStringBase(Element):
         return rv
 
     def disvecinf(self, x, y, aq=None):
-        """Returns array (nunknowns,Nperiods)."""
+        """Returns array (nparam, naq, npval)."""
         if aq is None:
             aq = self.model.aq.find_aquifer_data(x, y)
         rvx = np.zeros((self.nparam, aq.naq, self.model.npval), dtype=complex)
@@ -909,21 +913,12 @@ class LineSinkHoBase(Element):
         self.z1 = self.x1 + 1j * self.y1
         self.z2 = self.x2 + 1j * self.y2
         self.L = np.abs(self.z1 - self.z2)
-        #
-        thetacp = np.arange(np.pi, 0, -np.pi / self.ncp) - 0.5 * np.pi / self.ncp
-        Zcp = np.zeros(self.ncp, dtype=complex)
-        Zcp.real = np.cos(thetacp)
-        # control point just on positive site (this is handy later on)
-        Zcp.imag = 1e-6
-        zcp = Zcp * (self.z2 - self.z1) / 2 + 0.5 * (self.z1 + self.z2)
-        self.xc = zcp.real
-        self.yc = zcp.imag
+        self.xc, self.yc = controlpoints(self.ncp, self.z1, self.z2, eps=1e-6)
         #
         self.aq = self.model.aq.find_aquifer_data(self.xc[0], self.yc[0])
         self.setbc()
         coef = self.aq.coef[self.layers, :]
         self.setflowcoef()
-        # shape of term (self.nlayers, self.aq.naq, self.model.npval)
         self.term = self.flowcoef * coef
         self.term2 = self.term.reshape(
             self.nlayers, self.aq.naq, self.model.nint, self.model.npint
@@ -936,6 +931,13 @@ class LineSinkHoBase(Element):
         self.dischargeinflayers = np.sum(
             self.dischargeinf * self.aq.eigvec[self.layers, :, :], 1
         )
+        # tested for 1 layer
+        fac = self.flowcoef * coef
+        self.strengthinflayers = np.sum(
+            fac * self.aq.eigvec[self.layers, :, :], 1
+        )
+        strengthinf = strengthinf_controlpoints(self.ncp, self.nlayers)
+        self.strengthinflayers = strengthinf[:, :, None] * self.strengthinflayers
         if self.wh == "H":
             self.wh = self.aq.Haq[self.layers]
         elif self.wh == "2H":
@@ -1082,7 +1084,8 @@ class LineSinkHo(LineSinkHoBase):
         )
 
 
-class RiverHo(LineSinkHoBase, HeadEquationNores):
+class RiverHo(LineSinkHoBase, HeadEquationNew):
+#class RiverHo(LineSinkHoBase, HeadEquationNores):
     """River of which the head varies through time.
 
     May be screened in multiple layers but all with the same head
@@ -1096,6 +1099,8 @@ class RiverHo(LineSinkHoBase, HeadEquationNores):
         x2=1,
         y2=0,
         tsandh=[(0.0, 1.0)],
+        res=0.0,
+        wh="H",
         order=0,
         layers=0,
         label=None,
@@ -1114,8 +1119,8 @@ class RiverHo(LineSinkHoBase, HeadEquationNores):
             x2=x2,
             y2=y2,
             tsandbc=tsandh,
-            res=0.0,
-            wh="H",
+            res=res,
+            wh=wh,
             order=order,
             layers=layers,
             type=etype,
