@@ -14,15 +14,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from timflow.bessel import besselnumba
+from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 from timflow.transient.element import Element
 from timflow.transient.equation import (
     HeadEquation,
-    HeadEquationNores,
+    HeadEquationNew,
     MscreenDitchEquation,
     MscreenEquation,
-    HeadEquationNew
 )
-from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 
 
 class LineSinkBase(Element):
@@ -143,6 +142,7 @@ class LineSinkBase(Element):
 
     def disvecinf(self, x, y, aq=None):
         """Can be called with only one x,y value.
+
         Returns array of naparam, naq, npval
         """
         if aq is None:
@@ -933,9 +933,7 @@ class LineSinkHoBase(Element):
         )
         # tested for 1 layer
         fac = self.flowcoef * coef
-        self.strengthinflayers = np.sum(
-            fac * self.aq.eigvec[self.layers, :, :], 1
-        )
+        self.strengthinflayers = np.sum(fac * self.aq.eigvec[self.layers, :, :], 1)
         strengthinf = strengthinf_controlpoints(self.ncp, self.nlayers)
         self.strengthinflayers = strengthinf[:, :, None] * self.strengthinflayers
         if self.wh == "H":
@@ -1085,7 +1083,7 @@ class LineSinkHo(LineSinkHoBase):
 
 
 class RiverHo(LineSinkHoBase, HeadEquationNew):
-#class RiverHo(LineSinkHoBase, HeadEquationNores):
+    # class RiverHo(LineSinkHoBase, HeadEquationNores):
     """River of which the head varies through time.
 
     May be screened in multiple layers but all with the same head

@@ -28,25 +28,22 @@ class HeadEquationNew:
             ieq = 0
             for e in self.model.elementlist:
                 if e.nunknowns > 0:
-                    mat[icp, ieq : ieq + e.nunknowns, :] = (
-                        e.potinflayers(self.xc[icp], self.yc[icp], self.layers)
+                    mat[icp, ieq : ieq + e.nunknowns, :] = e.potinflayers(
+                        self.xc[icp], self.yc[icp], self.layers
                     )
                     if e == self:
                         for jparam in range(self.ncp):
                             mat[icp, ieq + jparam, :] -= (
-                                self.resfacp[0]
-                                * e.strengthinflayers[icp, jparam] 
-                        )
+                                self.resfacp[0] * e.strengthinflayers[icp, jparam]
+                            )
                     ieq += e.nunknowns
             for i in range(self.model.ngbc):
-                rhs[icp, i, :] -= self.model.gbclist[
-                    i
-                ].unitpotentiallayers(self.xc[icp], self.yc[icp], self.layers)
+                rhs[icp, i, :] -= self.model.gbclist[i].unitpotentiallayers(
+                    self.xc[icp], self.yc[icp], self.layers
+                )
             if self.type == "v":
                 iself = self.model.vbclist.index(self)
-                rhs[icp, self.model.ngbc + iself, :] = (
-                    self.pc[icp] / self.model.p
-                )
+                rhs[icp, self.model.ngbc + iself, :] = self.pc[icp] / self.model.p
         return mat, rhs
 
 
