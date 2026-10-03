@@ -6,6 +6,47 @@ Defines mixins to build linear systems of equations for transient problems.
 import numpy as np
 
 
+class HeadEquationNew:
+    def equation(self):
+        """Matrix rows for head-specified conditions.
+
+        Really written as constant potential element.
+        Works for nunknowns = 1
+        Returns matrix part nunknowns,neq,npval, complex.
+
+        Returns rhs part nunknowns,nvbc,npval, complex
+        Phi_out - c*T*q_s = Phi_in
+        Well: q_s = Q / (2*pi*r_w*H)
+        LineSink: q_s = sigma / H = Q / (L*H)
+        """
+        mat = np.empty((self.nunknowns, self.model.neq, self.model.npval), dtype=complex)
+        # rhs needs be initialized zero
+        rhs = np.zeros(
+            (self.nunknowns, self.model.ngvbc, self.model.npval), dtype=complex
+        )
+        for icp in range(self.ncp):
+            ieq = 0
+            for e in self.model.elementlist:
+                if e.nunknowns > 0:
+                    mat[icp, ieq : ieq + e.nunknowns, :] = e.potinflayers(
+                        self.xc[icp], self.yc[icp], self.layers
+                    )
+                    if e == self:
+                        for jparam in range(self.ncp):
+                            mat[icp, ieq + jparam, :] -= (
+                                self.resfacp[0] * e.strengthinflayers[icp, jparam]
+                            )
+                    ieq += e.nunknowns
+            for i in range(self.model.ngbc):
+                rhs[icp, i, :] -= self.model.gbclist[i].unitpotentiallayers(
+                    self.xc[icp], self.yc[icp], self.layers
+                )
+            if self.type == "v":
+                iself = self.model.vbclist.index(self)
+                rhs[icp, self.model.ngbc + iself, :] = self.pc[icp] / self.model.p
+        return mat, rhs
+
+
 class HeadEquation:
     def equation(self):
         """Matrix rows for head-specified conditions.

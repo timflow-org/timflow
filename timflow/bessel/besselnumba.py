@@ -976,6 +976,45 @@ def bessells(x, y, z1, z2, lab, order, d1in, d2in):
 ######## Bessel line-sink discharge vector functions
 
 
+# #@numba.njit(nogil=True, cache=True)
+# def bessells_int_ho_qxqy_old(x, y, z1, z2, lab, order, d1, d2):
+#     """Docs.
+
+#     To come here
+#     """
+#     nt = 20  # number of terms in series is nt + 1
+#     bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+#     bigx = bigz.real
+#     bigy = bigz.imag
+#     L = np.abs(z2 - z1)
+#     ang = np.arctan2(lab.imag, lab.real)
+#     angz = np.arctan2((z2 - z1).imag, (z2 - z1).real)
+#     biglab = 2 * lab / L
+#     biga = np.abs(biglab)
+
+#     exprange = np.exp(-complex(0, 2) * ang * nrange)
+#     ahat = a * exprange
+#     bhat = (b - a * complex(0, 2) * ang) * exprange
+
+#     atil = 2 * nrange[1:] * ahat[1:]
+#     btil = 2 * nrange[1:] * bhat[1:] + 2 * ahat[1:]
+
+#     omega = Fp(x, y, z1, z2, biga, order + 1, d1, d2, atil, btil, nt - 1)
+#     omegalap = lapld_int_ho_d1d2(x, y, z1, z2, order, d1, d2)
+#     term1 = 1 / (2 * np.pi * biga**2) * bigx * omega[:-1]
+#     term2 = -1 / (2 * np.pi * biga**2) * omega[1:]
+#     term3 = 2 * ahat[0] * omegalap.imag
+#     qx = term1 + term2 + term3
+#     term1 = 1 / (2 * np.pi * biga**2) * bigy * omega[:-1]
+#     term3 = 2 * ahat[0] * omegalap.real
+#     qy = term1 + term3
+
+#     qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
+#     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz)
+#     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz)
+#     return qxqy
+
+
 @numba.njit(nogil=True, cache=True)
 def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     """Docs.
@@ -1001,13 +1040,14 @@ def bessells_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
 
     omega = Fp(x, y, z1, z2, biga, order + 1, d1, d2, atil, btil, nt - 1)
     omegalap = lapld_int_ho_d1d2(x, y, z1, z2, order, d1, d2)
-    term1 = 1 / (2 * np.pi * biga**2) * bigx * omega[:-1]
-    term2 = -1 / (2 * np.pi * biga**2) * omega[1:]
-    term3 = 2 * ahat[0] * omegalap.imag
-    qx = term1 + term2 + term3
-    term1 = 1 / (2 * np.pi * biga**2) * bigy * omega[:-1]
-    term3 = 2 * ahat[0] * omegalap.real
-    qy = term1 + term3
+    term1 = bigx / (biga**2) * omega[:-1]
+    term2 = -1 / (biga**2) * omega[1:]
+    term3 = 4 * np.pi * ahat[0] * omegalap.imag
+    # Note: qx and qy are already scaled by L / 2
+    qx = 1 / (2 * np.pi) * (term1 + term2 + term3)
+    term1 = bigy / (biga**2) * omega[:-1]
+    term3 = 4 * np.pi * ahat[0] * omegalap.real
+    qy = 1 / (2 * np.pi) * (term1 + term3)
 
     qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz)
@@ -1343,6 +1383,48 @@ def besselld(x, y, z1, z2, lab, order, d1in, d2in):
 
 
 ######## Bessel line-doublet discharge vector functions
+# @numba.njit(nogil=True, cache=True)
+# def besselld_int_ho_qxqy_old(x, y, z1, z2, lab, order, d1, d2):
+#     """Docs.
+
+#     To come here
+#     """
+#     nt = 20  # number of terms in series is nt + 1
+#     bigz = (2 * complex(x, y) - (z1 + z2)) / (z2 - z1)
+#     bigx = bigz.real
+#     bigy = bigz.imag
+#     L = np.abs(z2 - z1)
+#     ang = np.arctan2(lab.imag, lab.real)
+#     angz = np.arctan2((z2 - z1).imag, (z2 - z1).real)
+#     biglab = 2 * lab / L
+#     biga = np.abs(biglab)
+
+#     exprange = np.exp(-complex(0, 2) * ang * nrange)
+#     ahat = a1 * exprange
+#     bhat = (b1 - a1 * complex(0, 2) * ang) * exprange
+
+#     atil = 2 * nrange[1:] * ahat[1:]
+#     btil = 2 * nrange[1:] * bhat[1:] + 2 * ahat[1:]
+
+#     omega_pot = Fp(x, y, z1, z2, biga, order, d1, d2, ahat, bhat, nt)
+#     omega = Fp(x, y, z1, z2, biga, order + 1, d1, d2, atil, btil, nt - 1)
+#     omegalap = lapld_int_ho_d1d2(x, y, z1, z2, order, d1, d2)
+#     wlap = lapld_int_ho_wdis_d1d2(x, y, z1, z2, order, d1, d2)
+
+#     term1 = bigx / (2 * np.pi * biga**2) * omega[:-1]
+#     term2 = -1 / (2 * np.pi * biga**2) * omega[1:]
+#     term3 = 2 * ahat[0] * omegalap.imag
+#     qx = -2 * bigy / (L * biglab**2) * (term1 + term2 + term3)  # + wlap.real
+
+#     term1 = 1 / (2.0 * np.pi * biglab**2) * 2 / L * omega_pot
+#     term2 = bigy / (2 * np.pi * biga**2) * omega[:-1]
+#     term3 = 2 * ahat[0] * omegalap.real
+#     qy = -term1 - 2 * bigy / (L * biglab**2) * (term2 + term3)  # - wlap.imag
+
+#     qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
+#     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz) + wlap.real
+#     qxqy[order + 1 :] = qx * np.sin(angz) + qy * np.cos(angz) - wlap.imag
+#     return qxqy
 
 
 @numba.njit(nogil=True, cache=True)
@@ -1373,15 +1455,18 @@ def besselld_int_ho_qxqy(x, y, z1, z2, lab, order, d1, d2):
     omegalap = lapld_int_ho_d1d2(x, y, z1, z2, order, d1, d2)
     wlap = lapld_int_ho_wdis_d1d2(x, y, z1, z2, order, d1, d2)
 
-    term1 = bigx / (2 * np.pi * biga**2) * omega[:-1]
-    term2 = -1 / (2 * np.pi * biga**2) * omega[1:]
-    term3 = 2 * ahat[0] * omegalap.imag
-    qx = -2 * bigy / (L * biglab**2) * (term1 + term2 + term3)  # + wlap.real
+    term1 = bigx / (biga**2) * omega[:-1]
+    term2 = -1 / (biga**2) * omega[1:]
+    term3 = 4 * np.pi * ahat[0] * omegalap.imag
+    qx = (
+        -(2 / L) * bigy / (2 * np.pi * biglab**2) * (term1 + term2 + term3)
+    )  # + wlap.real
 
-    term1 = 1 / (2.0 * np.pi * biglab**2) * 2 / L * omega_pot
-    term2 = bigy / (2 * np.pi * biga**2) * omega[:-1]
-    term3 = 2 * ahat[0] * omegalap.real
-    qy = -term1 - 2 * bigy / (L * biglab**2) * (term2 + term3)  # - wlap.imag
+    term1 = omega_pot
+    term2 = bigy / (biga**2) * omega[:-1]
+    term3 = 4 * np.pi * ahat[0] * omegalap.real
+    qy = 1 / (2.0 * np.pi * biglab**2) * (term1 + bigy * (term2 + term3))  # - wlap.imag
+    qy = -(2 / L) * qy  # properly scaled
 
     qxqy = np.zeros(2 * order + 2, dtype=np.complex128)
     qxqy[: order + 1] = qx * np.cos(angz) - qy * np.sin(angz) + wlap.real

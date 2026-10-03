@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from timflow.bessel import besselnumba
+from timflow.steady.controlpoints import controlpoints
 from timflow.transient.element import Element
 from timflow.transient.equation import LeakyWallEquation
 
@@ -80,20 +81,8 @@ class LineDoubletHoBase(Element):
         self.cosout = np.cos(self.thetanormOut) * np.ones(self.ncp)
         self.sinout = np.sin(self.thetanormOut) * np.ones(self.ncp)
         #
-        thetacp = np.arange(np.pi, 0, -np.pi / self.ncp) - 0.5 * np.pi / self.ncp
-        Zcp = np.zeros(self.ncp, dtype=complex)
-        Zcp.real = np.cos(thetacp)
-        # control point just on positive site (this is handy later on)
-        Zcp.imag = 1e-6
-        zcp = Zcp * (self.z2 - self.z1) / 2 + 0.5 * (self.z1 + self.z2)
-        self.xc = zcp.real
-        self.yc = zcp.imag
-        # control point just on negative side
-        # (this is needed for building the system of equations)
-        Zcp.imag = -1e-6
-        zcp = Zcp * (self.z2 - self.z1) / 2 + 0.5 * (self.z1 + self.z2)
-        self.xcneg = zcp.real
-        self.ycneg = zcp.imag  # control points just on negative side
+        self.xc, self.yc = controlpoints(self.ncp, self.z1, self.z2, eps=1e-6)
+        self.xcneg, self.ycneg = controlpoints(self.ncp, self.z1, self.z2, eps=-1e-6)
         #
         self.aq = self.model.aq.find_aquifer_data(self.xc[0], self.yc[0])
         self.setbc()
