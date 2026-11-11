@@ -47,7 +47,7 @@ class ParameterTarget:
         self.array[self.key] = value
 
     def get(self) -> np.ndarray:
-        return self.array[self.key]
+        return np.atleast_1d(self.array[self.key])
 
 
 @dataclass
@@ -395,7 +395,7 @@ class Calibrate:
         Parameters
         ----------
         name : str
-            Parameter type: 'kaq', 'Saq', 'c', 'Sll', or 'kzoverkh'.
+            Parameter type: 'kaq', 'c' or 'kzoverkh', 'Saq', 'Sll', 'leffaq', 'leffll'.
         layers : int or iterable of int
             Layer(s) affected. Consecutive layers are grouped under one
             scalar parameter.
@@ -459,8 +459,9 @@ class Calibrate:
     def set_parameter_by_reference(
         self,
         name: str,
-        parameter: np.ndarray,
-        initial: float = 0.0,
+        parameter: np.ndarray | list[np.ndarray],
+        key: Any = None,
+        initial: float | None = None,
         pmin: float = -np.inf,
         pmax: float = np.inf,
         log_scale: bool = False,
@@ -474,10 +475,19 @@ class Calibrate:
         ----------
         name : str
             Unique name for the parameter.
-        parameter : np.ndarray
-            Array whose values will be updated during optimization.
-        initial : float
-            Initial parameter value.
+        parameter : np.ndarray, list of np.ndarray
+            Array whose values will be updated during optimization. If multiple arrays
+            are passed in a list, they will be linked to the same parameter value.
+        key : slice, int, array_like, or list/tuple of these, optional
+            Selects the part of the array(s) that is updated. Pass the full array(s)
+            in ``parameter`` and select here, so the link to the model is kept.
+            If ``parameter`` is a list of arrays and ``key`` is a list or tuple, it
+            must contain one key per array. Otherwise the same key is applied to all
+            arrays (pass a shared fancy index as a numpy array). Default (None)
+            selects the entire array.
+        initial : float, optional
+            Initial parameter value. If None (default) uses first selected value in
+            the (first) array. When log_scale=True, initial must be nonzero.
         pmin, pmax : float
             Lower and upper bounds for the optimizer.
         log_scale : bool
@@ -491,19 +501,44 @@ class Calibrate:
                 "well_resistance", well.res, initial=1.0, pmin=0.1, pmax=10.0
             )
 
+        Link layers 1 and 2 of two arrays, using a different key for each::
+
+            cal.set_parameter_by_reference(
+                "kaq_1_2", [aq1.kaq, aq2.kaq], key=[slice(1, 3), slice(0, 2)]
+            )
+
         See Also
         --------
-        set_aquifer_parameter : Register an aquifer parameter by specifying the type and
-            layer(s) it applies to.
+        set_aquifer_parameter : Register an aquifer parameter by specifying the type
+            and layers.
         """
-        assert isinstance(parameter, np.ndarray), "parameter must be a numpy array"
-        if initial is None:
-            initial = parameter[0]
+        if key is None:
+            key = slice(None)
+        if isinstance(parameter, (list, tuple)):
+            arrays = list(parameter)
+            if isinstance(key, (list, tuple)):
+                if len(key) != len(arrays):
+                    raise ValueError(
+                        "key must contain one entry per array when passed as a "
+                        "list or tuple"
+                    )
+                keys = list(key)
+            else:
+                keys = [key] * len(arrays)
+        else:
+            arrays, keys = [parameter], [key]
+        if not all(isinstance(arr, np.ndarray) for arr in arrays):
+            raise TypeError("parameter(s) must be a numpy array")
         param = Parameter(
             name=name, initial=initial, pmin=pmin, pmax=pmax, log_scale=log_scale
         )
-        param.add_target(parameter, slice(None))
+        for arr, k in zip(arrays, keys, strict=True):
+            param.add_target(arr, k)
+        if initial is None:
+            initial = float(np.atleast_1d(arrays[0][keys[0]])[0])
         if log_scale:
+            if initial == 0.0:
+                raise ValueError("initial must be nonzero when log_scale=True")
             param.set(np.log10(np.abs(initial)))
         else:
             param.set(initial)
@@ -1387,6 +1422,10 @@ class Calibrate:
             lookup["Sll"] = aq.Sll
         if hasattr(aq, "kzoverkh"):
             lookup["kzoverkh"] = aq.kzoverkh
+        if hasattr(aq, "leffaq"):
+            lookup["leffaq"] = aq.leffaq
+        if hasattr(aq, "leffll"):
+            lookup["leffll"] = aq.leffll
         assert aq.model == model, "Aquifer does not belong to the given model"
         for prefix, arr in lookup.items():
             if name.startswith(prefix):
