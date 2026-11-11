@@ -14,6 +14,7 @@ import json
 import multiprocessing as mp
 import warnings
 from importlib import import_module
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -22,10 +23,10 @@ from scipy.integrate import quad_vec
 
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
-from timflow.steady.base_io import BaseIO, store_input
+from timflow.steady.base_io import BaseIO, store_input, import_class
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
-from timflow.version import check_tqdm_parallel
+from timflow.version import __version__, check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
@@ -88,46 +89,122 @@ class Model(BaseIO):
 
         self.initialized = False
 
-    def to_json(self, filepath) -> None:
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize model to dict, including elements and inhomogeneities.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the serialized model data.
+        """
+        data = super().to_dict()
+
+        # inhomogeneities
+        data["inhoms"] = {
+            name: inhom.to_dict() for name, inhom in self.aq.inhomdict.items()
+        }
+
+        # elements
+        # exclude some elements because they are always recreated by the model
+        # this includes inhomelements and the list below.
+        exclude_elements = ["AreaSinkInhom", "ConstantStar", "XsectionAreaSink"]
+        data["elements"] = [
+            e.to_dict()
+            for e in self.elementlist
+            if not e.inhomelement and e.name not in exclude_elements
+        ]
+
+        # store timflow version number
+        data["version"] = __version__
+
+        return data
+
+    def to_json(self, filepath: str | Path) -> None:
         """
         Write the constructor arguments to a JSON-file.
 
         :param filepath: Filepath for the to be created JSON-file.
         """
-        data = {}
-        i = 0
-        for item in self._obj_registry:
-            type_name:str = item["class"]
-            args: list[Any] = item.get("args", [])
-            kwargs: dict[str, Any] = item.get("kwargs", {})
-            module_name: str = ".".join(type_name.split(".")[:-1])
-            class_name: str = type_name.split(".")[-1]
-            module = import_module(module_name)
-            subclass = getattr(module, class_name)
-            data.update({f"object{i}": subclass.to_dict(args, kwargs)})
-            i += 1
-        
         with open(filepath, "w") as f:
-            f.write(json.dumps(data, indent=4))
+            f.write(json.dumps(self.to_dict(), indent=2))
 
     @classmethod
-    def from_json(cls, filepath):
-        """
-        Read the constructor arguments and potential addition attributes from a JSON-file.
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        solve: bool = True,
+        **overrides: Any,
+    ) -> "Model":
+        """Load model from dict, including elements and inhomogeneities.
 
-        :param filepath: Filepath to the to be created JSON-file.
+        Parameters
+        ----------
+        data : dict
+            Dictionary containing the serialized model data.
+        solve : bool, optional
+            Whether to solve the model after reconstruction. Default is True.
+        overrides : dict, optional
+            Additional keyword arguments to override parameters during reconstruction.
+
+        Returns
+        -------
+        Model
+            An instance of the model reconstructed from the dictionary.
         """
-        cls._setup_model = None
-        with open(filepath, "r") as f:
-            data: dict = json.load(f)
-        for k, v in data.items():
-            if k == "object0":  # Model object is always first created.
-                obj = cls.from_dict(v)
-                continue
-            if "obj" not in locals():  # No model in json
-                raise ImportError("No main model found in the JSON-file.")
-            cls.from_dict(v)
-        return obj
+        # 1. Reconstruct the base model
+        model = super().from_dict(data, **overrides)
+
+        # 2. Reconstruct inhomogeneities
+        for _, inhom_data in data.get("inhoms", {}).items():
+            inhom_class = import_class(inhom_data["_type"])
+            inhom_class.from_dict(inhom_data, model=model)
+
+        # 3. Reconstruct elements
+        for elem_data in data.get("elements", []):
+            element_class = import_class(elem_data["_type"])
+            element_class.from_dict(elem_data, model=model)
+
+        # Optionally solve
+        if solve:
+            model.solve(silent=True)
+        return model
+
+    @classmethod
+    def from_json(cls, filepath: Path | str, solve: bool = True) -> "Model":
+        """Load model from JSON file, including elements and inhomogeneities.
+
+        Parameters
+        ----------
+        filepath : Path or str
+            Path to the JSON file to load.
+        solve : bool, optional
+            Whether to solve the model after loading. Default is True.
+
+        Returns
+        -------
+        Model
+            An instance of the model loaded from the JSON file.
+        """
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in {filepath}: {e}") from e
+
+        # Check file version against current timflow version
+        file_version = data.get("version", "unknown")
+        if file_version != __version__:
+            warnings.warn(
+                f"Version mismatch: file is {file_version}, current is {__version__}, "
+                "compatibility is not guaranteed.",
+                UserWarning,
+                stacklevel=2,
+            )
+        if "elements" not in data:
+            data["elements"] = []  # Default to empty list
+        if "inhoms" not in data:
+            data["inhoms"] = {}  # Default to empty dict
+        return cls.from_dict(data, solve=solve)
 
     def initialize(self):
         # remove inhomogeneity elements (they are added again)
