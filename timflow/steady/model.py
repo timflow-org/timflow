@@ -15,7 +15,7 @@ import multiprocessing as mp
 import warnings
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ from timflow.version import __version__, check_tqdm_parallel
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
+T = TypeVar("T")
 
 def _compute_head_mp(args):
     """Helper function for parallel computation of head_array."""
@@ -130,11 +131,11 @@ class Model(BaseIO):
 
     @classmethod
     def from_dict(
-        cls,
+        cls: type[T],
         data: dict[str, Any],
         solve: bool = True,
         **overrides: Any,
-    ) -> "Model":
+    ) -> T:
         """Load model from dict, including elements and inhomogeneities.
 
         Parameters
@@ -170,7 +171,7 @@ class Model(BaseIO):
         return model
 
     @classmethod
-    def from_json(cls, filepath: Path | str, solve: bool = True) -> "Model":
+    def from_json(cls: type[T], filepath: Path | str, solve: bool = True) -> T:
         """Load model from JSON file, including elements and inhomogeneities.
 
         Parameters

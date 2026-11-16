@@ -11,15 +11,14 @@ def store_input(
     cls: type[T],
     *,
     exclude: frozenset[str] = frozenset({"self", "model", "ml"}),
-    store_attr: str = "_init_args",
-) -> type[T]:
+) -> T:
     """Class decorator that captures normalized ``__init__`` arguments on the instance.
 
     After instantiation, ``self.<store_attr>`` is a dict mapping each parameter name
     from the original ``__init__`` signature to the value it received, with defaults
     applied. Names in *exclude* (parent-model references) are omitted.
 
-    When applied to both a parent and child class, only the outermost wrapper 
+    When applied to both a parent and child class, only the outermost wrapper
     (e.g. Well) runs and sets the attribute, inner wrappers (e.g. Element) skip.
 
     Parameters
@@ -28,8 +27,6 @@ def store_input(
         The class to decorate.
     exclude : frozenset of str, optional
         Parameter names to exclude from capture (default: ``self``, ``model``, ``ml``).
-    store_attr : str, optional
-        Instance attribute name for the captured dict (default: ``"_init_args"``).
 
     Returns
     -------
@@ -47,6 +44,8 @@ def store_input(
     >>> w._init_args
     {'x': 1.0, 'y': 2.0, 'Q': 1.0}   # model excluded by name, defaults applied
     """
+    store_attr: str = "_init_args"
+
     original_init = cls.__init__
     sig = inspect.signature(original_init)
 
@@ -72,7 +71,7 @@ def store_input(
         original_init(self, *args, **kwargs)
 
     cls.__init__ = new_init
-    
+
     return cls
 
 
