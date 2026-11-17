@@ -333,3 +333,31 @@ class Element(ABC):
     @abstractmethod
     def plot(self, ax=None):
         """Plot the element."""
+
+    def get_bc(self, t):
+        """Get the boundary condition at time(s) t.
+
+        Parameters
+        ----------
+        t : scalar or array
+            Time(s) at which to get the boundary condition.
+
+        Returns
+        -------
+        bc : scalar or array
+            Boundary condition(s) at time t.
+        """
+        t = np.atleast_1d(t)
+        bc = np.zeros_like(t, dtype=float)
+
+        if self.ntstart == 1:
+            bc[t >= self.tstart[0]] = self.bcin[0]
+        else:
+            for itime in range(self.ntstart):
+                if itime == self.ntstart - 1:
+                    mask = t >= self.tstart[itime]
+                else:
+                    mask = (t >= self.tstart[itime]) & (t < self.tstart[itime + 1])
+                bc[mask] = self.bcin[itime]
+
+        return bc if len(bc) > 1 else bc[0]

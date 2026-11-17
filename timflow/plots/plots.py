@@ -652,7 +652,11 @@ class PlotBase:
             # Transient: resistance c and storage Sll
             ssfmt = ".2e"
             cstr = f"$c$ = {self._ml.aq.c[lli]:{fmt}}"
-            sstr = f"$S_s$ = {self._ml.aq.Sll[lli]:{ssfmt}}"
+            Slli = self._ml.aq.Sll[lli]
+            if Slli > 1e-20:
+                sstr = f"$S_s$ = {Slli:{ssfmt}}"
+            else:
+                sstr = "$S_s$ = 0.0"
             if units is not None:
                 c_unitstr = f" {units['c']}" if "c" in units else ""
                 # Prefer Sll unit; fall back to Saq for compatibility.
@@ -661,6 +665,8 @@ class PlotBase:
                 c_unitstr = ""
                 ss_unitstr = ""
             paramtxt = cstr + c_unitstr + sep + sstr + ss_unitstr
+            if hasattr(self._ml.aq, "leffll") and self._ml.aq.leffll[lli] != 0:
+                paramtxt += f"{sep}$\\beta$ = {self._ml.aq.leffll[lli]:{fmt}}"
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
@@ -731,6 +737,8 @@ class PlotBase:
                 paramtxt += f"{sep}$S$ = {self._ml.aq.Saq[aqi]:{fmt}}"
             else:
                 paramtxt += f"{sep}$S_s$ = {self._ml.aq.Saq[aqi]:{ssfmt}}" + ss_unitstr
+            if hasattr(self._ml.aq, "leffaq") and self._ml.aq.leffaq[aqi] != 0:
+                paramtxt += f"{sep}$\\beta$ = {self._ml.aq.leffaq[aqi]:{fmt}}"
 
         ax.text(
             r0 + 0.75 * r if labels else r0 + 0.5 * r,
@@ -934,15 +942,20 @@ class PlotBase:
             x = np.sqrt((x - x[0]) ** 2 + (y - y[0]) ** 2)
         else:
             raise ValueError("horizontal_axis must be 'x', 'y', or 's'")
+        # find aquifer for z coordinates
+        if self._ml.name == "ModelXsection":
+            aq = self._ml.aq.find_aquifer_data(x[0], y[0])  # use aquifer at first coord
+        else:
+            aq = self._ml.aq
         if vinterp:
-            z = 0.5 * (self._ml.aq.zaqbot + self._ml.aq.zaqtop)
-            z = np.hstack((self._ml.aq.zaqtop[0], z, self._ml.aq.zaqbot[-1]))
+            z = 0.5 * (aq.zaqbot + aq.zaqtop)
+            z = np.hstack((aq.zaqtop[0], z, aq.zaqbot[-1]))
             arr = np.vstack((arr[0], arr, arr[-1]))
         else:
-            z = np.empty(2 * self._ml.aq.naq)
-            for i in range(self._ml.aq.naq):
-                z[2 * i] = self._ml.aq.zaqtop[i]
-                z[2 * i + 1] = self._ml.aq.zaqbot[i]
+            z = np.empty(2 * aq.naq)
+            for i in range(aq.naq):
+                z[2 * i] = aq.zaqtop[i]
+                z[2 * i + 1] = aq.zaqbot[i]
             arr = np.repeat(arr, 2, 0)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)

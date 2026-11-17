@@ -20,7 +20,7 @@ def param_maq(kaq, z, c, npor, top):
     npor : float or array of floats
         Porosity of the aquifer(s).
     top : string
-        'conf' for confined aquifer on top, 'leak' for leaky layer on top.
+        'conf' for confined aquifer on top, 'semi' for semi-confined aquifer on top.
 
     Returns
     -------

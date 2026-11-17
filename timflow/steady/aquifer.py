@@ -90,6 +90,8 @@ class AquiferData(BaseIO):
         else:
             self.nporll = self.npor[self.ltype == "l"]
         self.model3d = model3d
+        # set reference to top boundary for background aquifers and inhoms
+        self.topbc = None  # top boundary condition element, if any
 
     def initialize(self):
         self.elementlist = []  # Elementlist of aquifer

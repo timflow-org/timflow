@@ -233,9 +233,8 @@ class PlotTransient(PlotBase):
             if True, compute headgrid in parallel using multiprocessing,
             default is False. If int is provided, it is interpreted as the number of
             processes to use.
-        show_progress : bool, optional
-            if True, show progress bar when computing headgrid in parallel,
-            default is False.
+        show_progress : bool
+            if True, show progress bar when computing headgrid, default is False.
         **kwargs
             additional keyword arguments passed to ax.contour()
 

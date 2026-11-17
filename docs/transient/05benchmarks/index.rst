@@ -18,6 +18,7 @@ timflow solutions or understand the numerical accuracy of specific features.
 - :doc:`synthetic_test_calibrate`
 - :doc:`synthetic_calibrate_2aquifers`
 - :doc:`river1d`
+- :doc:`river1d_2layer_mf6.ipynb`
 
 .. toctree::
     :maxdepth: 3
@@ -35,3 +36,4 @@ timflow solutions or understand the numerical accuracy of specific features.
     synthetic_test_calibrate
     synthetic_calibrate_2aquifers
     river1d
+    river1d_2layer_mf6.ipynb

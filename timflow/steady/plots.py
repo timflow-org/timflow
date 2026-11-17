@@ -63,6 +63,7 @@ class PlotSteady(PlotBase):
         legend=True,
         return_contours=False,
         parallel=False,
+        show_progress=False,
         **kwargs,
     ):
         """Head contour plot.
@@ -102,6 +103,8 @@ class PlotSteady(PlotBase):
             if True, compute head grid in parallel using multiprocessing,
             default is False. If int is provided, it is interpreted as the number of
             processes to use.
+        show_progress : bool
+            if True, show progress bar when computing headgrid, default is False.
         **kwargs
             additional keyword arguments passed to ax.contour()
 
@@ -114,7 +117,9 @@ class PlotSteady(PlotBase):
             of contour sets for each contoured layer, only if return_contours=True
         """
         xg, yg = self._get_xy_arrays(win, ngr)
-        h = self._ml.headgrid(xg, yg, np.atleast_1d(layers), parallel=parallel)
+        h = self._ml.headgrid(
+            xg, yg, np.atleast_1d(layers), show_progress=show_progress, parallel=parallel
+        )
         return self.contour_array(
             xg,
             yg,
