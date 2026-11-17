@@ -15,6 +15,8 @@ import multiprocessing as mp
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from itertools import repeat
+from pathlib import Path
+from typing import Any, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -23,9 +25,10 @@ from tqdm import tqdm
 
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
-from timflow.steady.base_io import BaseIO, store_input, import_class
+from timflow.steady.base_io import BaseIO, import_class, store_input
 from timflow.steady.constant import ConstantStar
 from timflow.steady.plots import PlotSteady
+from timflow.version import __version__
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 

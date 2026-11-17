@@ -197,6 +197,7 @@ class LineSink1D(LineSink1DBase, MscreenWellEquation):
     def setparams(self, sol):
         self.parameters[:, 0] = sol
 
+
 @store_input
 class River1D(LineSink1DBase, HeadEquation):
     """Create an infinitely long line-sink with a given head.
