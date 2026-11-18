@@ -439,13 +439,17 @@ class Model:
                             * np.cosh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
                             / np.cosh(aq.alpha[lay] * aq.Hll[lay])
                         )
-                else:
-                    eta = (
-                        headbar[:, lay - 1]
+                else: # lay > 0
+                    if aq.topboundary == "sem" and aq.tsandhstar is not None:
+                        h0 = 1 / self.p
+                    else:
+                        h0 = 0
+                    eta = aq.leffll[lay] * h0 + (
+                        (headbar[:, lay - 1] - aq.leffll[lay] * h0)
                         * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
-                        + headbar[:, lay]
+                        + (headbar[:, lay] - aq.leffll[lay] * h0)
                         * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
-                    ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                        ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
                 eta = eta[:, np.newaxis, :]
                 if returneta:
                     return eta
