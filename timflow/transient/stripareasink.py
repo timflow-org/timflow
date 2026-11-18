@@ -148,36 +148,44 @@ class HstarXsection(Element):
         self.setbc()
         self.setflowcoef()
         self.ab = (self.aq.a.T - self.aq.b.T) / self.aq.c.T[:, np.newaxis]
-        self.new = self.aq.leffll[:, np.newaxis] * self.ab
-        self.new[:-1] += self.aq.leffll[1:, np.newaxis] * self.ab[1:]
-        self.new[0] += self.aq.b[:, 0] / self.aq.c[0]
-        self.new = self.new * self.flowcoef
+        new = self.aq.leffll[:, np.newaxis] * self.ab
+        new[:-1] += self.aq.leffll[1:, np.newaxis] * self.ab[1:]
+        new[0] += self.aq.b[:, 0] / self.aq.c[0]
+        new = new * self.flowcoef
         # note that this still allows for flowcoef to be something else than 1/p
-        self.new += self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis] * self.model.p * self.flowcoef
-        self.new = self.aq.lab**2 * np.sum(self.aq.coef * self.new, axis=0)
-        self.new = self.new[np.newaxis, :, :]  
+        new += self.aq.leffaq[:, np.newaxis] * self.aq.Scoefaq[:, np.newaxis] * self.model.p * self.flowcoef
+        self.new = np.zeros((self.aq.naq, self.model.npval), dtype='complex')
+        print('new.shape ', new.shape)
+        for i in range(self.model.npval):
+            self.new[:, i] = np.sum(self.aq.coef[:, :, i] * new[:, i:i+1], axis=0)
+        self.new = self.aq.lab**2 * self.new
+        self.new = self.new[np.newaxis, :, :] 
+
+        
+        #new = self.aq.lab**2 * np.sum(self.aq.coef * self.new, axis=0)
+        #new = self.new[np.newaxis, :, :] 
+        #
         self.resfac = 1.0 / self.aq.c[0]
         #
-        # 
-        # self.term = (
-        #     self.resfac * self.flowcoef * self.aq.lab**2 * self.aq.coef[self.layers]
-        # )
-        # self.term2 = np.zeros((1, self.aq.naq, self.model.npval), dtype=complex)
-        # for i in range(self.model.npval):
-        #     self.term2[0, :, i] = np.sum(
-        #         self.aq.coef[:, :, i]
-        #         * self.aq.leffaq[:, np.newaxis]
-        #         * self.aq.Scoefaq[:, np.newaxis],
-        #         axis=0,
-        #     )
-        # self.term2 = self.aq.lab**2 * self.term2
-        # # # leakage from leaky layer with loading efficiency
-        # self.abc = (-self.aq.b.T + self.aq.a.T) / self.aq.c.T[:, np.newaxis]
-        # self.nbar = self.aq.leffll[:, np.newaxis] * self.abc
-        # self.nbar[:-1] += self.aq.leffll[1:, np.newaxis] * self.abc[1:]
-        # self.nbar = self.nbar / self.model.p
-        # self.nbar = self.aq.lab**2 * np.sum(self.aq.coef * self.nbar, axis=0)
-        # self.nbar = self.nbar[np.newaxis, :, :]
+        self.term = (
+            self.resfac * self.flowcoef * self.aq.lab**2 * self.aq.coef[self.layers]
+        )
+        self.term2 = np.zeros((1, self.aq.naq, self.model.npval), dtype=complex)
+        for i in range(self.model.npval):
+            self.term2[0, :, i] = np.sum(
+                self.aq.coef[:, :, i]
+                * self.aq.leffaq[:, np.newaxis]
+                * self.aq.Scoefaq[:, np.newaxis],
+                axis=0,
+            )
+        self.term2 = self.aq.lab**2 * self.term2
+        # # leakage from leaky layer with loading efficiency
+        self.abc = (-self.aq.b.T + self.aq.a.T) / self.aq.c.T[:, np.newaxis]
+        self.nbar = self.aq.leffll[:, np.newaxis] * self.abc
+        self.nbar[:-1] += self.aq.leffll[1:, np.newaxis] * self.abc[1:]
+        self.nbar = self.nbar / self.model.p
+        self.nbar = self.aq.lab**2 * np.sum(self.aq.coef * self.nbar, axis=0)
+        self.nbar = self.nbar[np.newaxis, :, :]
         self.dischargeinf = self.aq.coef[0, :] * self.flowcoef * self.resfac
         self.dischargeinflayers = np.sum(
             self.dischargeinf * self.aq.eigvec[self.layers, :, :], 1
