@@ -425,31 +425,36 @@ class Model:
             lay, ltype, _ = aq.findlayer(z[iz])
             if ltype == "a":
                 rv[iz] = haq[lay]
-            elif ltype == "l":
-                if lay == 0:
-                    if aq.topboundary == "sem":
-                        eta = (
-                            headbar[:, lay]
-                            * np.sinh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
-                            / np.sinh(aq.alpha[lay] * aq.Hll[lay])
-                        )
-                    elif aq.topboundary == "lea":
-                        eta = (
-                            headbar[:, lay]
-                            * np.cosh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
-                            / np.cosh(aq.alpha[lay] * aq.Hll[lay])
-                        )
-                else: # lay > 0
-                    if aq.topboundary == "sem" and aq.tsandhstar is not None:
-                        h0 = 1 / self.p
+            elif ltype == "l": 
+                if aq.topboundary == "sem":
+                    if aq.tsandhstar is not None:
+                        h0 = 1 / self.p # hard coded as 1 / p
                     else:
                         h0 = 0
+                    if lay == 0:
+                        htop = h0
+                        ztop = aq.z[0]
+                    else:
+                        htop = headbar[:, lay - 1]
+                        ztop = aq.zaqbot[lay - 1]
                     eta = aq.leffll[lay] * h0 + (
-                        (headbar[:, lay - 1] - aq.leffll[lay] * h0)
+                        (htop - aq.leffll[lay] * h0)
                         * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay]))
                         + (headbar[:, lay] - aq.leffll[lay] * h0)
-                        * np.sinh(aq.alpha[lay] * (aq.zaqbot[lay - 1] - z[iz]))
+                        * np.sinh(aq.alpha[lay] * (ztop - z[iz]))
                         ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])
+                else: # aq.topboundary == "lea"
+                    if lay == 0 and aq.topboundary == "lea":
+                        eta = (
+                                headbar[:, lay]
+                                * np.cosh(aq.alpha[lay] * (aq.z[lay] - z[iz]))
+                                / np.cosh(aq.alpha[lay] * aq.Hll[lay])
+                            )
+                    else:
+                        eta = (headbar[:, lay - 1] * np.sinh(aq.alpha[lay] * (z[iz] - aq.zaqtop[lay])) + 
+                               headbar[:, lay] * np.sinh(aq.alpha[lay] * (ztop - z[iz]))
+                              ) / np.sinh(aq.alpha[lay] * aq.Hll[lay])                        
+
                 eta = eta[:, np.newaxis, :]
                 if returneta:
                     return eta
@@ -464,8 +469,8 @@ class Model:
                     self.ebc,
                     1,
                 )
-        if aq.topboundary[:3] == "sem":
-            rv += aq.headsemitoplayer(x, y, z, t)
+#        if aq.topboundary[:3] == "sem":
+#            rv += aq.headsemitoplayer(x, y, z, t)
         return rv
 
     def velocompold(self, x, y, z, t, aq=None, layer_ltype=[0, 0]):
