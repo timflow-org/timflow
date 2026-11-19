@@ -11,7 +11,7 @@ def store_input(
     cls: type[T],
     *,
     exclude: frozenset[str] = frozenset({"self", "model", "ml"}),
-) -> T:
+) -> type[T]:
     """Class decorator that captures normalized ``__init__`` arguments on the instance.
 
     After instantiation, ``self.<store_attr>`` is a dict mapping each parameter name
