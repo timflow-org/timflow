@@ -145,6 +145,7 @@ class AquiferData:
         self.eigval = np.zeros((self.naq, self.model.npval), dtype=complex)
         self.lab = np.zeros((self.naq, self.model.npval), dtype=complex)
         self.eigvec = np.zeros((self.naq, self.naq, self.model.npval), dtype=complex)
+        # coef is Vinv.T
         self.coef = np.zeros((self.naq, self.naq, self.model.npval), dtype=complex)
         bmat = np.diag(np.ones(self.naq))
         self.a = np.zeros((self.model.npval, len(self.c)), dtype=complex)
