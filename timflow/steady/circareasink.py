@@ -10,11 +10,13 @@ Example::
 import numpy as np
 from scipy.special import i0, i1, k0, k1
 
+from timflow.steady.base_io import store_input
 from timflow.steady.element import Element
 
 __all__ = ["CircAreaSink"]
 
 
+@store_input
 class CircAreaSink(Element):
     """Class to create a circular area-sink.
 

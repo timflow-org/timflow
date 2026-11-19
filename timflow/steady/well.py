@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import k0, k1
 
+from timflow.steady.base_io import store_input
 from timflow.steady.element import Element
 from timflow.steady.equation import HeadEquation, MscreenWellNoflowEquation
 from timflow.steady.trace import tracelines
@@ -341,6 +342,7 @@ class WellBase(Element):
         )
 
 
+@store_input
 class Well(WellBase):
     r"""Well Class to create a well with a specified discharge.
 
@@ -451,6 +453,7 @@ class Well(WellBase):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class HeadWell(WellBase, HeadEquation):
     r"""HeadWell Class to create a well with a specified head inside the well.
 
@@ -523,6 +526,7 @@ class HeadWell(WellBase, HeadEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class TargetHeadWell(WellBase):
     r"""TargetHeadWell is a well with a specified head at (layer, x, y).
 
@@ -924,6 +928,7 @@ class WellStringBase(Element):
         return self.wlist[0].headinside()[0]
 
 
+@store_input
 class WellString(WellStringBase):
     """
     WellString is a string of wells for which the total discharge is specified.
@@ -1012,6 +1017,7 @@ class WellString(WellStringBase):
             i += w.nparam
 
 
+@store_input
 class HeadWellString(WellStringBase):
     """
     HeadWellString is a string of wells for which the head is specified in the wells.
@@ -1080,6 +1086,7 @@ class HeadWellString(WellStringBase):
             i += w.nparam
 
 
+@store_input
 class TargetHeadWellString(WellStringBase):
     """
     A string of wells for which the head is specified at a point.
