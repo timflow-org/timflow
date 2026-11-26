@@ -10,6 +10,7 @@ Example::
 import numpy as np
 
 from timflow.steady.element import Element
+from timflow.steady.model import ModelXsection
 
 __all__ = ["Uflow"]
 
@@ -36,10 +37,25 @@ class Uflow(Element):
     """
 
     def __init__(self, model, slope, angle, label=None):
-        assert model.aq.ilap, (
-            "timflow error: Uflow can only be added to "
-            "model with background confined aquifer"
-        )
+        # use (0,0) to find background aquifer, also works for single xsection models
+        if isinstance(model, ModelXsection):
+            if len(model.aq.inhomdict) > 1:
+                raise ValueError(
+                    "timflow error: Uflow can only be added to "
+                    "cross-section model with a single confined xsection"
+                )
+            aq = next(iter(model.aq.inhomdict.values()))
+            if not aq.ilap:
+                raise ValueError(
+                    "timflow error: Uflow can only be added to "
+                    "cross-section model with a confined aquifer"
+                )
+        else:
+            aq = model.aq
+            assert aq.ilap, (
+                "timflow error: Uflow can only be added to "
+                "model with background confined aquifer"
+            )
         Element.__init__(
             self, model, nparam=2, nunknowns=0, layers=0, name="Uflow", label=label
         )
@@ -51,7 +67,11 @@ class Uflow(Element):
         return self.name + " with slope and angle: " + str((self.slope, self.angle))
 
     def initialize(self):
-        self.aq = self.model.aq
+        if isinstance(self.model, ModelXsection):
+            aq = next(iter(self.model.aq.inhomdict.values()))
+        else:
+            aq = self.model.aq
+        self.aq = aq
         self.aq.add_element(self)
         self.Qx = self.slope * np.cos(self.angle * np.pi / 180) * np.sum(self.aq.T)
         self.Qy = self.slope * np.sin(self.angle * np.pi / 180) * np.sum(self.aq.T)
