@@ -214,7 +214,7 @@ class ModelXsection:
             generated automatically.
         """
         if inhom.label is None:
-            label = f"inhom{len(self.inhomdict) + 1:02g}"
+            label = f"inhom{len(self.inhomdict):02g}"
         else:
             label = inhom.label
         self.inhomdict[label] = inhom
