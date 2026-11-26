@@ -34,6 +34,7 @@ from timflow.steady.element import Element as SteadyElement
 from timflow.steady.model import Model as SteadyModel
 from timflow.transient.element import Element as TransientElement
 from timflow.transient.model import Model as TransientModel
+from timflow.xsection import ModelXsection as UnifiedModelXsection
 
 
 @dataclass
@@ -345,13 +346,19 @@ class Calibrate:
 
     def __init__(
         self,
-        transient_model: TransientModel | None = None,
+        transient_model: TransientModel | UnifiedModelXsection | None = None,
         steady_model: SteadyModel | None = None,
         reference_time: float | None = None,
     ):
         if transient_model is None and steady_model is None:
             raise ValueError("At least one model must be provided.")
-        self.transient_model = transient_model
+        if isinstance(transient_model, UnifiedModelXsection):
+            ml_transient = transient_model.transient
+            ml_steady = transient_model.steady
+        else:
+            ml_transient = transient_model
+            ml_steady = steady_model
+        self.transient_model = ml_transient
         self.reference_time = reference_time
         self._parameters: dict[str, Parameter] = {}
         self.observations_dict: dict[str, HeadSeries | SteadyHead] = {}
@@ -361,14 +368,14 @@ class Calibrate:
 
         embedded_steady = getattr(transient_model, "steady", None)
         if embedded_steady is not None:
-            if steady_model is not None and steady_model is not embedded_steady:
+            if ml_steady is not None and ml_steady is not embedded_steady:
                 warnings.warn(
                     "The transient model already has a steady model embedded "
                     "(transient_model.steady). The steady_model argument will be "
                     "ignored and the embedded steady model will be used instead.",
                     stacklevel=2,
                 )
-            elif steady_model is None:
+            elif ml_steady is None:
                 warnings.warn(
                     "The transient model has an embedded steady model "
                     "(transient_model.steady). Using it as the steady model for "
@@ -377,7 +384,7 @@ class Calibrate:
                 )
             self.steady_model = embedded_steady
         else:
-            self.steady_model = steady_model
+            self.steady_model = ml_steady
 
     def set_aquifer_parameter(
         self,
@@ -1387,6 +1394,10 @@ class Calibrate:
             lookup["Sll"] = aq.Sll
         if hasattr(aq, "kzoverkh"):
             lookup["kzoverkh"] = aq.kzoverkh
+        if hasattr(aq, "leffaq"):
+            lookup["leffaq"] = aq.leffaq
+        if hasattr(aq, "leffll"):
+            lookup["leffll"] = aq.leffll
         assert aq.model == model, "Aquifer does not belong to the given model"
         for prefix, arr in lookup.items():
             if name.startswith(prefix):

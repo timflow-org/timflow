@@ -26,7 +26,7 @@ from timflow.transient.invlapnumba import (
     invlap,
     invlapcomp,
 )
-from timflow.transient.plots import PlotTransient
+from timflow.transient.plots import PlotTransient, PlotTransientXsection
 
 _WORKER_STATE = {"model": None}
 
@@ -538,12 +538,12 @@ class Model:
                         x, y, t, layers=[layer, layer + 1], aq=aq, neglect_steady=True
                     )[:, 0]
             # this works because c[0] = 1e100 for impermeable top
-            qztop = (h[1] - h[0]) / self.aq.c[layer]
+            qztop = (h[1] - h[0]) / aq.c[layer]
             # TODO: modify for infiltration in top aquifer
             # if layer == 0:
             #    qztop += self.qztop(x, y)
             if layer < aq.naq - 1:
-                qzbot = (h[2] - h[1]) / self.aq.c[layer + 1]
+                qzbot = (h[2] - h[1]) / aq.c[layer + 1]
             else:
                 qzbot = 0.0
             vz = (
@@ -1434,8 +1434,8 @@ class ModelXsection(Model):
         if self.steady is not None:
             self.steady.solve()
 
-        self.plots = PlotTransient(self)
-        self.plot = self.plots.topview
+        self.plots = PlotTransientXsection(self)
+        self.plot = self.plots.xsection
         self.name = "ModelXsection"
         self.model_type = "transient"
 
@@ -1448,6 +1448,8 @@ class ModelXsection(Model):
         aquifers in the model, and whether the inhoms span from -inf to inf.
 
         """
+        if not self.aq.inhomdict:
+            return
         # check aquifers
         naqs = {}
         for inhom in self.aq.inhomdict.values():
@@ -1501,6 +1503,8 @@ class ModelXsection(Model):
         Checks that no elements are located exactly on the boundaries between
         inhomogeneities.
         """
+        if self.aq.inhomdict and len(self.elementlist) == 0:
+            return
         x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
         x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
         elements = [e for e in self.elementlist if not e.inhomelement]

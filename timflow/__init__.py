@@ -11,3 +11,14 @@ dot nl.
 from timflow import steady, transient
 from timflow.calibrate import Calibrate
 from timflow.version import __version__, show_versions
+from timflow.xsection import (
+    Constant,
+    ImpermeableWall1D,
+    LeakyWall1D,
+    LineSink1D,
+    ModelXsection,
+    River1D,
+    Uflow,
+    Xsection3D,
+    XsectionMaq,
+)

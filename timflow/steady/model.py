@@ -23,7 +23,7 @@ from tqdm import tqdm
 from timflow.steady.aquifer import Aquifer, SimpleAquifer
 from timflow.steady.aquifer_parameters import param_3d, param_maq
 from timflow.steady.constant import ConstantStar
-from timflow.steady.plots import PlotSteady
+from timflow.steady.plots import PlotSteady, PlotSteadyXsection
 
 __all__ = ["Model", "ModelMaq", "Model3D", "ModelXsection"]
 
@@ -1152,7 +1152,7 @@ class ModelXsection(Model):
         self.elementdict = {}  # only elements that have a label
         self.aq = SimpleAquifer(self, naq)
 
-        self.plots = PlotSteady(self)
+        self.plots = PlotSteadyXsection(self)
         self.name = "ModelXsection"
         self.model_type = "steady"
 
@@ -1165,6 +1165,8 @@ class ModelXsection(Model):
         aquifers in the model, and whether the inhoms span from -inf to inf.
         """
         # check aquifers
+        if not self.aq.inhomdict:
+            return
         naqs = {}
         for inhom in self.aq.inhomdict.values():
             naqs[inhom.name] = inhom.naq

@@ -13,7 +13,7 @@ from typing import Literal
 import matplotlib.pyplot as plt
 import numpy as np
 
-from timflow.plots.plots import PlotBase
+from timflow.plots.plots import PlotBase, PlotBaseXsection
 
 
 class PlotTransient(PlotBase):
@@ -252,7 +252,7 @@ class PlotTransient(PlotBase):
             parallel=parallel,
             show_progress=show_progress,
         )[:, 0, ...]  # squeeze time dimension
-        return self.contour_array(
+        return self._contour_array(
             xg,
             yg,
             h,
@@ -335,7 +335,7 @@ class PlotTransient(PlotBase):
         """
         xg, yg = self._get_xy_arrays(win, n, nudge=nudge)
         h = self._ml.headalongline(xg, yg, t=t)[:, 0, :]
-        return self.vcontour_array(
+        return self._vcontour_array(
             xg,
             yg,
             h,
@@ -435,3 +435,231 @@ class PlotTransient(PlotBase):
         return super().quiver_z(
             x, y, z, U, W, normalize=normalize, ax=ax, figsize=figsize, **kwargs
         )
+
+
+class PlotTransientXsection(PlotBaseXsection, PlotTransient):
+    """Plotting functionality for timflow.transient.ModelXsection models.
+
+    Combines the cross-section adapters and ``NotImplementedError`` stubs from
+    :class:`PlotBaseXsection` with the transient methods from
+    :class:`PlotTransient`. The cross-section lies along the x-axis (y = 0),
+    so the y-coordinate is not part of the method signatures, and methods that
+    require plan-view (x, y) coordinates raise ``NotImplementedError``.
+    """
+
+    def vcontour(
+        self,
+        x1,
+        x2,
+        n,
+        t,
+        levels=20,
+        labels=True,
+        decimals=0,
+        color=None,
+        cmap=None,
+        vinterp=True,
+        nudge=1e-6,
+        ax=None,
+        figsize=None,
+        layout=True,
+        return_contours=False,
+        **kwargs,
+    ):
+        """Head contour plot in a vertical cross-section along the x-axis.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            left and right edge of the cross-section
+        n : integer
+            number of grid points along the cross-section
+        t : scalar
+            time
+        levels : integer or array (default 20)
+            levels that are contoured
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        color : str or list of strings
+            color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
+        vinterp : boolean
+            when True, interpolate between centers of layers
+            when False, constant value vertically in each layer
+        nudge : float
+            small value to nudge grid points away from boundaries
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        layout : boolean
+            plot layout if True
+        return_contours : bool
+            if True, return contour set, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
+
+        Returns
+        -------
+        cs : contour set
+        """
+        # horizontal_axis is pinned to "x" for cross-section models
+        kwargs.pop("horizontal_axis", None)
+        return PlotTransient.vcontour(
+            self,
+            win=[x1, x2, 0, 0],
+            n=n,
+            t=t,
+            levels=levels,
+            labels=labels,
+            decimals=decimals,
+            color=color,
+            cmap=cmap,
+            vinterp=vinterp,
+            nudge=nudge,
+            ax=ax,
+            figsize=figsize,
+            layout=layout,
+            horizontal_axis="x",
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def head_along_line(
+        self,
+        x1=0,
+        x2=1,
+        npoints=100,
+        t=1.0,
+        layers=None,
+        color=None,
+        lw=1,
+        figsize=None,
+        ax=None,
+        legend=True,
+        grid=True,
+        **kwargs,
+    ):
+        """Plot head along the x-axis of the cross-section.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            start and end x-coordinate of the line
+        npoints : int
+            number of points along line
+        t : scalar or array
+            times at which to plot heads
+        layers : int, list or array
+            layers for which to plot heads, default is all layers
+        color : str
+            color of line
+        lw : float
+            line width
+        figsize : tuple of 2 values
+            size of figure
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        legend : bool
+            add legend to plot
+        grid : bool
+            add grid to plot
+        **kwargs
+            additional keyword arguments passed to ax.plot()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        t = np.atleast_1d(t)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+        x = np.linspace(x1, x2, npoints)
+        h = self._ml.headalongline(x, np.zeros_like(x), t, layers=layers)
+        if layers is None:
+            plotlayers = np.arange(self._ml.aq.naq)
+        else:
+            plotlayers = np.atleast_1d(layers)
+        nlayers, ntime, _ = h.shape
+        label = kwargs.pop("label", None)
+        for i in range(nlayers):
+            for j in range(ntime):
+                lbl = (
+                    label
+                    if label is not None
+                    else f"head (t={t[j]}, layer={plotlayers[i]})"
+                )
+                ax.plot(x, h[i, j, :], c=color, lw=lw, label=lbl, **kwargs)
+        if legend:
+            ax.legend(loc=(0, 1), ncol=3, frameon=False)
+        if grid:
+            ax.grid(True)
+        return ax
+
+    def discharge_along_line(
+        self,
+        x1=0,
+        x2=1,
+        npoints=100,
+        t=1.0,
+        layers=0,
+        color=None,
+        lw=1,
+        figsize=None,
+        ax=None,
+        legend=True,
+        grid=True,
+    ):
+        """Plot discharge along the x-axis of the cross-section.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            start and end x-coordinate of the line
+        npoints : int
+            number of points along line
+        t : scalar or array
+            times at which to plot discharge
+        layers : int, list or array
+            layers for which to plot discharge
+        color : str
+            color of line
+        lw : float
+            line width
+        figsize : tuple of 2 values
+            size of figure
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        legend : bool
+            add legend to plot
+        grid : bool
+            add grid to plot
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        layers = np.atleast_1d(layers)
+        t = np.atleast_1d(t)
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+        x = np.linspace(x1, x2, npoints)
+        qx, _qy = self._ml.disvecalongline(x, np.zeros_like(x), t, layers)
+        nlayers, ntime, _ = qx.shape
+        for i in range(nlayers):
+            for j in range(ntime):
+                lbl = f"q$_x$ (t={t[j]}, layer={layers[i]})"
+                if color is None:
+                    ax.plot(x, qx[i, j, :], lw=lw, label=lbl)
+                else:
+                    ax.plot(x, qx[i, j, :], color, lw=lw, label=lbl)
+        if legend:
+            ax.legend(loc=(0, 1), ncol=3, frameon=False)
+        if grid:
+            ax.grid(True)
+        return ax

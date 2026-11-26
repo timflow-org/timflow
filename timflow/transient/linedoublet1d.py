@@ -165,17 +165,19 @@ class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
     model : Model object
         model to which the element is added
     xld : float
-        x-coordinate of the line doublet
+        x-coordinate of the leaky wall
     res : float or str
-        resistance of the line doublet, default is "imp" for impermeable,
+        resistance of the leaky wall, default is "imp" for impermeable,
         use float to specify a finite resistance.
     layers : int, array or list
-        layer (int) or layers (list or array) in which line doublet is located
+        layer (int) or layers (list or array) in which leaky wall is located
     label : string or None (default: None)
         label of the element
+    name : string or None (default: "LeakyWall1D")
+        name of the element
     """
 
-    def __init__(self, model, xld=0, res="imp", layers=0, label=None):
+    def __init__(self, model, xld=0, res="imp", layers=0, label=None, **kwargs):
         super().__init__(
             model,
             xld,
@@ -183,7 +185,7 @@ class LeakyWall1D(LineDoublet1DBase, LeakyWallEquation):
             res=res,
             layers=layers,
             type="z",
-            name="LeakyWall1D",
+            name=kwargs.get("name", "LeakyWall1D"),
             label=label,
         )
         self.nunknowns = self.nparam
@@ -203,9 +205,9 @@ class ImpermeableWall1D(LeakyWall1D):
     model : Model object
         model to which the element is added
     xld : float
-        x-coordinate of the line doublet
+        x-coordinate of the impermeable wall
     layers : int, array or list
-        layer (int) or layers (list or array) in which line doublet is located
+        layer (int) or layers (list or array) in which impermeable wall is located
     label : string or None (default: None)
         label of the element
     """
@@ -217,6 +219,7 @@ class ImpermeableWall1D(LeakyWall1D):
             res="imp",
             layers=layers,
             label=label,
+            name="ImpermeableWall1D",
         )
 
 

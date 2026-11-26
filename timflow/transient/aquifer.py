@@ -84,7 +84,6 @@ class AquiferData:
             assert self.topboundary.startswith("con") or self.topboundary.startswith(
                 "phr"
             ), "Error: For Model3D, only 'confined' topboundary is currently implemented."
-        # self.D = self.T / self.Saq
         self.area = 1e200  # Smaller than default of ml.aq so that inhom is found
         self.name = name
         # set reference to top boundary element for background aquifers and inhoms
@@ -331,6 +330,19 @@ class AquiferData:
                     1,
                 )
         return rv
+
+    def diffusivity(self):
+        """Aquifer diffusivity D = T / S in m^2/d.
+
+        For a phreatic top layer the storage coefficient is the specific
+        yield Saq (dimensionless) instead of S_s * H.
+        """
+        S = self.Saq * self.Haq
+        if self.topboundary.startswith("phr") or (
+            self.topboundary.startswith("con") and self.phreatictop
+        ):
+            S[0] = self.Saq[0]
+        return (self.kaq * self.Haq) / S
 
 
 class Aquifer(AquiferData):

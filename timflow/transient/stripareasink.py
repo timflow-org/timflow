@@ -199,6 +199,18 @@ class HstarXsection(Element):
         if hstar is None:
             dy = Ly / 20.0
             zdivider = ztop + 1.1 * dy
+        elif isinstance(hstar, str) and hstar.lower() == "mean":
+            dy = np.mean(self.bcin) - ztop
+            zdivider = np.mean(self.bcin) + 1.1 * dy
+        elif isinstance(hstar, str) and hstar.lower() == "first":
+            dy = self.bcin[0] - ztop
+            zdivider = self.bcin[0] + 1.1 * dy
+        elif isinstance(hstar, str) and hstar.lower() == "max":
+            dy = np.max(self.bcin) - ztop
+            zdivider = np.max(self.bcin) + 1.1 * dy
+        elif isinstance(hstar, str) and hstar.lower() == "min":
+            dy = np.min(self.bcin) - ztop
+            zdivider = np.min(self.bcin) + 1.1 * dy
         else:
             dy = hstar - ztop
             zdivider = hstar + 1
