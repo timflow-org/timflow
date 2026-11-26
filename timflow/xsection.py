@@ -626,10 +626,21 @@ class ModelXsection:
             for param in sig.parameters.keys():
                 if param == "model":
                     continue
-                if param == "hsteady":
+                if param.startswith("tsand"):
+                    kwargs[param] = None
+                elif param == "hsteady":
                     kwargs[param] = hfinal
                 elif param == "Nsteady":
                     kwargs[param] = Nfinal
+                elif isinstance(inhom, XsectionMaq) and param == "poraq":
+                    kwargs[param] = inhom._poraq.copy()
+                elif (
+                    isinstance(inhom, XsectionMaq)
+                    and param in ("c", "Sll", "porll")
+                    and inhom.transient.ltype[0] == "a"
+                ):
+                    # Confined aquifers contain a synthetic top leaky layer internally.
+                    kwargs[param] = getattr(inhom.transient, param)[1:]
                 elif hasattr(inhom.steady, param):
                     kwargs[param] = getattr(inhom.steady, param)
                 else:
@@ -879,6 +890,7 @@ class XsectionMaq(UnifiedInhom1D):
         name=None,
     ):
         """Initialize the unified XsectionMaq and add it to the model."""
+        self._poraq = np.atleast_1d(poraq).copy()
         super().__init__(
             model,
             tsandhstar=tsandhstar,
@@ -891,7 +903,7 @@ class XsectionMaq(UnifiedInhom1D):
         # steady model
         steady_topboundary = (
             "conf"
-            if topboundary.startswith("con") or topboundary.startswith("phre")
+            if topboundary.startswith("con") or topboundary.startswith("phr")
             else "semi"
         )
         self.steady = tfs.XsectionMaq(
