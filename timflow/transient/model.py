@@ -538,12 +538,12 @@ class Model:
                         x, y, t, layers=[layer, layer + 1], aq=aq, neglect_steady=True
                     )[:, 0]
             # this works because c[0] = 1e100 for impermeable top
-            qztop = (h[1] - h[0]) / self.aq.c[layer]
+            qztop = (h[1] - h[0]) / aq.c[layer]
             # TODO: modify for infiltration in top aquifer
             # if layer == 0:
             #    qztop += self.qztop(x, y)
             if layer < aq.naq - 1:
-                qzbot = (h[2] - h[1]) / self.aq.c[layer + 1]
+                qzbot = (h[2] - h[1]) / aq.c[layer + 1]
             else:
                 qzbot = 0.0
             vz = (
