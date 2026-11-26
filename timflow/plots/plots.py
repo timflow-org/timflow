@@ -37,11 +37,23 @@ class PlotBase:
         """
         self._ml = ml
 
+    def _public_methods(self):
+        """Return names of supported public methods (used by ``__repr__``).
+
+        Methods marked with the :func:`_unsupported` decorator are excluded.
+        """
+        methods = []
+        for name in dir(self):
+            if name.startswith("_"):
+                continue
+            if getattr(getattr(self, name, None), "_unsupported", False):
+                continue
+            methods.append(name)
+        return methods
+
     def __repr__(self):
         """Return string representation of Plots submodule."""
-        methods = "".join(
-            [f"\n - {meth}" for meth in dir(self) if not meth.startswith("_")]
-        )
+        methods = "".join([f"\n - {meth}" for meth in self._public_methods()])
         model_type = getattr(self._ml, "model_type", "unknown")
         return f"timflow {model_type} plots, available methods:" + methods
 
@@ -78,7 +90,7 @@ class PlotBase:
             ax.axis(win)
         return ax
 
-    def xsection(
+    def _xsection(
         self,
         xy: Optional[list[tuple[float]]] = None,
         labels: bool = True,
@@ -221,6 +233,93 @@ class PlotBase:
 
         return ax
 
+    def xsection(
+        self,
+        xy: Optional[list[tuple[float]]] = None,
+        labels: bool = True,
+        params: bool = False,
+        names: bool = False,
+        ax=None,
+        fmt: str | None = None,
+        units: dict | None = None,
+        layer_names: tuple | dict = ("aquifer", "leaky layer"),
+        hstar: float | None = None,
+        boundaries: bool = True,
+        horizontal_axis: Literal["x", "y", "s"] = "s",
+        sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
+        **kwargs,
+    ):
+        r"""Plot cross-section of model.
+
+        This is a shared method that handles cross-section plotting for both
+        steady and transient models. The method automatically adapts the parameter
+        labels based on the model type.
+
+        Parameters
+        ----------
+        xy : list of tuples, optional
+            list of tuples with coordinates of the form [(x0, y0), (x1, y1)]. If not
+            provided, a cross section with length 1 is plotted for 3D models.
+            For cross-section models the left and right are derived from the elements.
+        labels : bool, optional
+            add layer numbering labels to plot
+        params : bool, optional
+            add parameter values to plot
+        names : bool, optional
+            add inhomogeneity names to plot, only supported for cross-section models.
+        ax : matplotlib.Axes, optional
+            axes to plot on, default is None which creates a new figure
+        fmt : str, optional
+            format string for parameter values, e.g. '.2f' for 2 decimals
+        units : dict, optional
+            dictionary with units keyed by timflow parameter names,
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
+        layer_names : 2-tuple or dict
+            words to use for aquifers and leaky layers, default is
+            ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'}
+        horizontal_axis : str
+            's' for distance along cross-section on x-axis (default)
+            'x' for using x-coordinates on x-axis
+            'y' for using y-coordinates on x-axis
+        hstar : float, optional
+            override hstar value for plotting water level in transient
+            1D inhomogeneities that use hstar, useful for plotting pretty
+            cross-sections when reference level is not equal to 0.
+        boundaries : bool, optional
+            whether to plot aquifer boundaries for cross-section models,
+            default is True
+        sep : str
+            Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
+        **kwargs
+            passed on to all ax.plot calls
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        return self._xsection(
+            xy=xy,
+            labels=labels,
+            params=params,
+            names=names,
+            ax=ax,
+            fmt=fmt,
+            units=units,
+            layer_names=layer_names,
+            hstar=hstar,
+            boundaries=boundaries,
+            horizontal_axis=horizontal_axis,
+            sep=sep,
+            ha=ha,
+            **kwargs,
+        )
+
     def topview_and_xsection(
         self,
         win=None,
@@ -286,7 +385,7 @@ class PlotBase:
             xy = [(np.mean(win[:2]), win[2]), (np.mean(win[:2]), win[3])]
         else:
             raise ValueError("horizontal_axis must be 'x' or 'y'.")
-        self.xsection(
+        self._xsection(
             xy=xy,
             ax=axes[1],
             horizontal_axis=horizontal_axis,
