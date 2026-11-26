@@ -63,11 +63,12 @@ class Xsection(AquiferData):
     phreatictop : bool
         If true, interpret the first specific storage coefficient as specific
         yield., i.e. it is not multiplied by aquifer thickness.
-    tsandhstar : list of tuples
-        list containing time and water level pairs for the hstar boundary condition.
-    tsandN : list of tuples
-        list containing time and infiltration pairs for the infiltration boundary
-        condition.
+    tsandhstar : list of tuples or str
+        List containing time and water level pairs for the hstar boundary condition,
+        or "fixed" for a fixed value of zero.
+    tsandN : list of tuples or str
+        List containing time and infiltration pairs for the infiltration boundary
+        condition, or "fixed" for a fixed value of zero.
     kzoverkh: float, optional,
         anisotropy factor for vertical resistance, kzoverkh = kz / kh. Default is 1.
     model3d : bool, optional
@@ -125,14 +126,23 @@ class Xsection(AquiferData):
         )
         self.x1 = x1
         self.x2 = x2
-        self.tsandhstar = tsandhstar
-        self.tsandN = tsandN
+        if isinstance(tsandhstar, str) and tsandhstar == "fixed":
+            self.tsandhstar = [(0.0, 0.0)]
+        else:
+            self.tsandhstar = tsandhstar
+        if isinstance(tsandN, str) and tsandN == "fixed":
+            self.tsandN = [(0.0, 0.0)]
+        else:
+            self.tsandN = tsandN
         self.inhom_number = self.model.aq.add_inhom(self)
         self.addlinesinks = True  # Set to False not to add line-sinks
 
     def __repr__(self):
         if self.tsandhstar is not None:
-            hstar = " with h*(t)"
+            if self.tsandhstar == [(0.0, 0.0)]:
+                hstar = " with fixed h*"
+            else:
+                hstar = " with h*(t)"
         else:
             hstar = ""
         if self.tsandN is not None:

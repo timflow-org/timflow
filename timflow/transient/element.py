@@ -50,17 +50,8 @@ class Element(ABC):
         self.layers = np.atleast_1d(layers)
         self.nlayers = len(self.layers)
         self.inhomelement = inhomelement  # tag inhomelements
-        #
-        tsandbc = np.atleast_2d(tsandbc).astype(float)
-        tsandbc_error = (
-            "tsandQ or tsandh need to be 2D lists"
-            + " or arrays, like [(0, 1), (2, 5), (8, 0)] "
-        )
-        assert tsandbc.shape[1] == 2, tsandbc_error
-        self.tstart, self.bcin = tsandbc[:, 0] - self.model.tstart, tsandbc[:, 1]
-        if self.tstart[0] > 0:
-            self.tstart = np.hstack((np.zeros(1), self.tstart))
-            self.bcin = np.hstack((np.zeros(1), self.bcin))
+        # store raw time series; parsed into tstart/bcin/bc in setbc() during initialize
+        self.tsandbc = tsandbc
         #
         # 'z' boundary condition thru time or 'v' boundary condition thru time
         self.type = type
@@ -73,6 +64,21 @@ class Element(ABC):
         self.rzero = 30
 
     def setbc(self):
+        """Parse the raw tsandbc time series and compute step-wise bc.
+
+        Called from each element's initialize() (during Model.solve), so that
+        tsandbc can be modified after element creation and before solving.
+        """
+        tsandbc = np.atleast_2d(self.tsandbc).astype(float)
+        tsandbc_error = (
+            "tsandQ or tsandh need to be 2D lists"
+            + " or arrays, like [(0, 1), (2, 5), (8, 0)] "
+        )
+        assert tsandbc.shape[1] == 2, tsandbc_error
+        self.tstart, self.bcin = tsandbc[:, 0] - self.model.tstart, tsandbc[:, 1]
+        if self.tstart[0] > 0:
+            self.tstart = np.hstack((np.zeros(1), self.tstart))
+            self.bcin = np.hstack((np.zeros(1), self.bcin))
         if len(self.tstart) > 1:
             self.bc = np.zeros_like(self.bcin)
             self.bc[0] = self.bcin[0]
