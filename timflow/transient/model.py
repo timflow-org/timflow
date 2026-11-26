@@ -26,7 +26,7 @@ from timflow.transient.invlapnumba import (
     invlap,
     invlapcomp,
 )
-from timflow.transient.plots import PlotTransient
+from timflow.transient.plots import PlotTransient, PlotTransientXsection
 
 _WORKER_STATE = {"model": None}
 
@@ -1434,8 +1434,8 @@ class ModelXsection(Model):
         if self.steady is not None:
             self.steady.solve()
 
-        self.plots = PlotTransient(self)
-        self.plot = self.plots.topview
+        self.plots = PlotTransientXsection(self)
+        self.plot = self.plots.xsection
         self.name = "ModelXsection"
         self.model_type = "transient"
 
@@ -1503,6 +1503,8 @@ class ModelXsection(Model):
         Checks that no elements are located exactly on the boundaries between
         inhomogeneities.
         """
+        if self.aq.inhomdict and len(self.elementlist) == 0:
+            return
         x1list = np.sort([inhom.x1 for inhom in self.aq.inhomdict.values()])
         x2list = np.sort([inhom.x2 for inhom in self.aq.inhomdict.values()])
         elements = [e for e in self.elementlist if not e.inhomelement]
