@@ -937,6 +937,81 @@ class PlotBase:
         return_contours=False,
         **kwargs,
     ):
+        """Contour array in plan view.
+
+        Parameters
+        ----------
+        x, y : 1D arrays
+            coordinates of grid points
+        arr : 2D or 3D array
+            array to contour; if 3D, the first dimension corresponds to layers
+        layers : integer or array (default 0)
+            layers that are contoured
+        levels : integer or array (default 20)
+            levels that are contoured
+        color : str or list of strings
+            color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        legend : list or boolean (default True)
+            add legend to figure; if list of strings, use strings as names
+        layout : boolean (default True)
+            plot layout of elements
+        return_contours : bool
+            if True, return contour sets, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        return self._contour_array(
+            x=x,
+            y=y,
+            arr=arr,
+            layers=layers,
+            levels=levels,
+            color=color,
+            cmap=cmap,
+            figsize=figsize,
+            ax=ax,
+            labels=labels,
+            decimals=decimals,
+            legend=legend,
+            layout=layout,
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def _contour_array(
+        self,
+        x,
+        y,
+        arr,
+        layers=0,
+        levels=20,
+        color=None,
+        cmap=None,
+        figsize=None,
+        ax=None,
+        labels=True,
+        decimals=0,
+        legend=True,
+        layout=True,
+        return_contours=False,
+        **kwargs,
+    ):
+        """Implementation of contour_array(); internal calls should use this."""
         layers = np.atleast_1d(layers)
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
@@ -1046,6 +1121,43 @@ class PlotBase:
         -------
         cs : contour set
         """
+        return self._vcontour_array(
+            x=x,
+            y=y,
+            arr=arr,
+            levels=levels,
+            labels=labels,
+            decimals=decimals,
+            color=color,
+            cmap=cmap,
+            vinterp=vinterp,
+            ax=ax,
+            figsize=figsize,
+            layout=layout,
+            horizontal_axis=horizontal_axis,
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def _vcontour_array(
+        self,
+        x,
+        y,
+        arr,
+        levels=20,
+        labels=True,
+        decimals=0,
+        color=None,
+        cmap=None,
+        vinterp=True,
+        ax=None,
+        figsize=None,
+        layout=True,
+        horizontal_axis: Literal["x", "y", "s"] = "s",
+        return_contours=False,
+        **kwargs,
+    ):
+        """Implementation of vcontour_array(); internal calls should use this."""
         if horizontal_axis == "x":
             x = x
         elif horizontal_axis == "y":
@@ -1072,7 +1184,7 @@ class PlotBase:
         if ax is None:
             _, ax = plt.subplots(figsize=figsize)
         if layout:
-            self.xsection(
+            self._xsection(
                 xy=[(x[0], y[0]), (x[-1], y[-1])],
                 labels=False,
                 ax=ax,
