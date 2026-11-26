@@ -332,6 +332,19 @@ class AquiferData:
                 )
         return rv
 
+    def diffusivity(self):
+        """Aquifer diffusivity D = T / S in m^2/d.
+
+        For a phreatic top layer the storage coefficient is the specific
+        yield Saq (dimensionless) instead of S_s * H.
+        """
+        S = self.Saq * self.Haq
+        if self.topboundary.startswith("phr") or (
+            self.topboundary.startswith("con") and self.phreatictop
+        ):
+            S[0] = self.Saq[0]
+        return (self.kaq * self.Haq) / S
+
 
 class Aquifer(AquiferData):
     def __init__(
