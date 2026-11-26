@@ -11,7 +11,16 @@ import numpy as np
 
 plt.rcParams["contour.negative_linestyle"] = "solid"
 
-__all__ = ["PlotBase"]
+__all__ = ["PlotBase", "PlotBaseXsection"]
+
+
+def _unsupported(func):
+    """Mark a plotting method as unsupported (it raises NotImplementedError).
+
+    Marked methods are excluded from the method list in ``__repr__``.
+    """
+    func._unsupported = True
+    return func
 
 
 class PlotBase:
@@ -1182,3 +1191,356 @@ class PlotBase:
             _, ax = plt.subplots(1, 1, figsize=figsize)
         ax.quiver(s, z, U, V, **kwargs)
         return ax
+
+
+class PlotBaseXsection(PlotBase):
+    """Base class for cross-section plotting.
+
+    This class provides methods for plotting cross-sections of aquifer models.
+    It is intended to be subclassed by specific model types that implement
+    the required plotting functionality.
+
+    Only cross-section plotting routines are supported. The cross-section
+    lies along the x-axis (y = 0), so the y-coordinate is not part of the
+    method signatures. Methods that require plan-view (x, y) coordinates,
+    such as :meth:`topview` and :meth:`contour`, raise ``NotImplementedError``.
+
+    Attributes
+    ----------
+    _ml : ModelXsection
+        The model object containing aquifer data and parameters.
+    """
+
+    def __init__(self, ml):
+        """Initialize the PlotBaseXsection with a model.
+
+        Parameters
+        ----------
+        ml : ModelXsection
+            The model object containing aquifer data and parameters.
+        """
+        super().__init__(ml)
+
+    # ------------------------------------------------------------------
+    # Methods not supported for cross-section models
+    # ------------------------------------------------------------------
+
+    @_unsupported
+    def topview(self, *args, **kwargs):
+        """Plot top-view.
+
+        Not supported for cross-section models.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised; use :meth:`xsection` instead.
+        """
+        raise NotImplementedError(
+            "topview() is not supported for cross-section models, use xsection()"
+        )
+
+    @_unsupported
+    def topview_and_xsection(self, *args, **kwargs):
+        """Plot top-view above and cross-section below.
+
+        Not supported for cross-section models.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised; use :meth:`xsection` instead.
+        """
+        raise NotImplementedError(
+            "topview_and_xsection() is not supported for cross-section models, "
+            "use xsection()"
+        )
+
+    @_unsupported
+    def contour(self, *args, **kwargs):
+        """Plot head contours in plan view.
+
+        Not supported for cross-section models.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised; use :meth:`vcontour_array` instead.
+        """
+        raise NotImplementedError(
+            "contour() is not supported for cross-section models, use vcontour_array()"
+        )
+
+    @_unsupported
+    def contour_array(self, *args, **kwargs):
+        """Contour array in plan view.
+
+        Not supported for cross-section models.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised; use :meth:`vcontour_array` instead.
+        """
+        raise NotImplementedError(
+            "contour_array() is not supported for cross-section models, "
+            "use vcontour_array()"
+        )
+
+    @_unsupported
+    def quiver_xy(self, *args, **kwargs):
+        """Plot quiver of flow vectors in plan view.
+
+        Not supported for cross-section models.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised; use :meth:`quiver_z` instead.
+        """
+        raise NotImplementedError(
+            "quiver_xy() is not supported for cross-section models, use quiver_z()"
+        )
+
+    @_unsupported
+    def headalongline(self, *args, **kwargs):
+        """Plot head along a line given by x and y coordinates.
+
+        Not supported for cross-section models, where the cross-section lies
+        along the x-axis (y = 0).
+
+        Raises
+        ------
+        NotImplementedError
+            Always raised.
+        """
+        raise NotImplementedError(
+            "headalongline() with (x, y) arguments is not supported for "
+            "cross-section models"
+        )
+
+    # ------------------------------------------------------------------
+    # Supported cross-section methods (adapters around the base methods)
+    # ------------------------------------------------------------------
+
+    def xsection(
+        self,
+        x1=None,
+        x2=None,
+        labels: bool = True,
+        params: bool = False,
+        names: bool = False,
+        ax=None,
+        fmt: str | None = None,
+        units: dict | None = None,
+        layer_names: tuple | dict = ("aquifer", "leaky layer"),
+        hstar: float | None = None,
+        boundaries: bool = True,
+        sep: Literal[", ", "\n"] = ", ",
+        ha: str = "center",
+        **kwargs,
+    ):
+        r"""Plot cross-section of model.
+
+        This is a shared method that handles cross-section plotting for both
+        steady and transient models. The method automatically adapts the parameter
+        labels based on the model type.
+
+        Parameters
+        ----------
+        x1, x2 : float, optional
+            x-coordinates of the start and end points of the cross-section.
+            If both are omitted, the extent is derived from the model elements.
+            The cross-section lies along the x-axis (y = 0), so the horizontal
+            axis is always the x-axis and cannot be overridden.
+        labels : bool, optional
+            add layer numbering labels to plot
+        params : bool, optional
+            add parameter values to plot
+        names : bool, optional
+            add inhomogeneity names to plot, only supported for cross-section models.
+        ax : matplotlib.Axes, optional
+            axes to plot on, default is None which creates a new figure
+        fmt : str, optional
+            format string for parameter values, e.g. '.2f' for 2 decimals
+        units : dict, optional
+            dictionary with units keyed by timflow parameter names,
+            e.g. {'kaq': 'm/d', 'c': 'd', 'Saq': 'm$^{-1}$', 'Sll': 'm$^{-1}$'}
+        layer_names : 2-tuple or dict
+            words to use for aquifers and leaky layers, default is
+            ('aquifer', 'leaky layer').
+            If a dict is provided, it maps layer type and number to a name,
+            e.g. {'aquifer 0': 'top aquifer', 'leaky layer 1': 'clay layer'}
+        hstar : float, optional
+            override hstar value for plotting water level in transient
+            1D inhomogeneities that use hstar, useful for plotting pretty
+            cross-sections when reference level is not equal to 0.
+        boundaries : bool, optional
+            whether to plot aquifer boundaries for cross-section models,
+            default is True
+        sep : str
+            Separator between parameters, either ", " or "\n"
+        ha : str, optional
+            Horizontal alignment for parameter labels. Defaults to "center".
+        **kwargs
+            passed on to all ax.plot calls
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with plot
+        """
+        if x1 is None and x2 is None:
+            xy = None  # extent is derived from the model elements
+        elif x1 is None or x2 is None:
+            raise ValueError("provide both x1 and x2, or neither")
+        else:
+            xy = [(x1, 0), (x2, 0)]
+        # horizontal_axis is pinned to "x" for cross-section models
+        kwargs.pop("horizontal_axis", None)
+        return super()._xsection(
+            xy=xy,
+            labels=labels,
+            params=params,
+            names=names,
+            ax=ax,
+            fmt=fmt,
+            units=units,
+            layer_names=layer_names,
+            hstar=hstar,
+            boundaries=boundaries,
+            horizontal_axis="x",
+            sep=sep,
+            ha=ha,
+            **kwargs,
+        )
+
+    def vcontour_array(
+        self,
+        x,
+        arr,
+        levels=20,
+        labels=True,
+        decimals=0,
+        color=None,
+        cmap=None,
+        vinterp=True,
+        ax=None,
+        figsize=None,
+        layout=True,
+        return_contours=False,
+        **kwargs,
+    ):
+        """Contour array in vertical cross-section.
+
+        This method derives the vertical coordinates based on the model layers.
+        It assumes that the input array has shape (layers, len(x)). Use vinterp
+        to control whether to interpolate between layer centers or use constant
+        values within each layer.
+
+        Parameters
+        ----------
+        x : 1D array
+            horizontal coordinates of grid points
+        arr : 2D array
+            array to contour, shape (naq, len(x))
+        levels : integer or array (default 20)
+            levels that are contoured
+        labels : boolean (default True)
+            print labels along contours
+        decimals : integer (default 0)
+            number of decimals of labels along contours
+        color : str or list of strings
+            color of contour lines
+        cmap : str or matplotlib colormap
+            colormap for contour lines, only used if color is None
+        vinterp : boolean
+            when True, interpolate between centers of layers
+            when False, constant value vertically in each layer
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        layout : boolean
+            plot layout if True
+        return_contours : bool
+            if True, return contour set, default is False
+        **kwargs
+            additional keyword arguments passed to ax.contour()
+
+        Returns
+        -------
+        cs : contour set
+        """
+        # horizontal_axis is pinned to "x" for cross-section models
+        kwargs.pop("horizontal_axis", None)
+        return self._vcontour_array(
+            x=x,
+            y=np.zeros_like(x),
+            arr=arr,
+            levels=levels,
+            labels=labels,
+            decimals=decimals,
+            color=color,
+            cmap=cmap,
+            vinterp=vinterp,
+            ax=ax,
+            figsize=figsize,
+            layout=layout,
+            horizontal_axis="x",
+            return_contours=return_contours,
+            **kwargs,
+        )
+
+    def quiver_z(
+        self,
+        x,
+        z,
+        U,
+        V,
+        normalize=False,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
+        """Plot quiver of flow vectors in vertical cross-section.
+
+        Parameters
+        ----------
+        x : 1D array
+            x coordinates of grid points
+        z : 1D array
+            z coordinates of grid points
+        U : 2D array
+            x component of flow vectors
+        V : 2D array
+            y component of flow vectors
+        normalize : bool
+            whether to normalize flow vectors for plotting
+        ax : matplotlib.Axes
+            axes to plot on, default is None which creates a new figure
+        figsize : tuple of 2 values (default is mpl default)
+            size of figure
+        **kwargs
+            additional keyword arguments passed to ax.quiver()
+
+        Returns
+        -------
+        ax : matplotlib.Axes
+            axes with quiver plot
+        """
+        # Call PlotBase.quiver_z explicitly: with multiple inheritance
+        # (e.g. PlotSteadyXsection(PlotBaseXsection, PlotSteady)) super() here
+        # resolves to PlotSteady.quiver_z.
+        return PlotBase.quiver_z(
+            self,
+            x=x,
+            y=np.zeros(1),
+            z=z,
+            U=U,
+            V=V,
+            normalize=normalize,
+            ax=ax,
+            figsize=figsize,
+            **kwargs,
+        )
