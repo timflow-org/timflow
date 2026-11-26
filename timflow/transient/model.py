@@ -1448,6 +1448,8 @@ class ModelXsection(Model):
         aquifers in the model, and whether the inhoms span from -inf to inf.
 
         """
+        if not self.aq.inhomdict:
+            return
         # check aquifers
         naqs = {}
         for inhom in self.aq.inhomdict.values():
