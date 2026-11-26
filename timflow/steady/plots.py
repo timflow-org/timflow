@@ -991,10 +991,10 @@ class PlotSteadyXsection(PlotBaseXsection, PlotSteady):
         else:
             plotlayers = np.atleast_1d(layers)
         label = kwargs.pop("label", None)
-        for ilay in plotlayers:
+        for i, ilay in enumerate(plotlayers):
             ax.plot(
                 x,
-                head[ilay],
+                head[i],
                 label=label if label is not None else f"head (layer={ilay})",
                 c=color,
                 lw=lw,
