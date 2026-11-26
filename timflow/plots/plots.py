@@ -466,7 +466,11 @@ class PlotBase:
 
         for e in self._ml.elementlist:
             if isinstance(e, HstarXsection):
-                e.plot(ax=ax, hstar=hstar)
+                if isinstance(hstar, dict):
+                    hs = hstar.get(e.name, "first")
+                else:
+                    hs = hstar
+                e.plot(ax=ax, hstar=hs)
             else:
                 if not e.inhomelement or boundaries:
                     e.plot(ax=ax)

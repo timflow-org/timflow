@@ -213,7 +213,11 @@ class Xsection(AquiferData):
                 "hstar can only be implemented on top of a semi-confined aquifer."
             )
             self.topbc = HstarXsection(
-                self.model, self.x1, self.x2, tsandhstar=self.tsandhstar
+                self.model,
+                self.x1,
+                self.x2,
+                tsandhstar=self.tsandhstar,
+                name=self.name,
             )
 
     def plot(
