@@ -194,6 +194,10 @@ class ModelXsection:
             If the element is not in the model.
         """
         if element in self.elementlist:
+            if element.steady is not None:
+                self.steady.remove_element(element.steady)
+            if element.transient is not None:
+                self.transient.removeelement(element.transient)
             self.elementlist.remove(element)
             if element.label is not None and element.label in self.elementdict:
                 del self.elementdict[element.label]
