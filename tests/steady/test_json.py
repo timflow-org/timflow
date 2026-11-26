@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 import timflow.steady as tfs
@@ -34,9 +35,9 @@ def test_model_maq_inhoms(component: str, kwargs: dict, tmp_path) -> None:
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
-        ("Well", {"xw": 0, "yw": 0}),
-        ("HeadWell", {"xw": 0, "yw": 0}),
-        ("TargetHeadWell", {"xw": 0, "yw": 0}),
+        ("Well", {}),
+        ("HeadWell", {}),
+        ("TargetHeadWell", {}),
         ("WellString", {"xy": [[-1, 0], [0, 0], [1, 0]]}),
         ("HeadWellString", {"xy": [[-1, 0], [0, 0], [1, 0]]}),
         ("TargetHeadWellString", {"xy": [[-1, 0], [0, 0], [1, 0]]}),
@@ -66,7 +67,7 @@ def test_model_maq_wells(component: str, kwargs: dict, tmp_path) -> None:
         ("Ditch", {}),
         ("RiverString", {}),
         ("DitchString", {}),
-        ("CollectorWell", {}),
+        ("CollectorWell", {"xy":[[1, 0, 10, 0], [0, 1, 0, 10]]}),
         ("RadialCollectorWell", {}),
     ],
 )
@@ -85,6 +86,7 @@ def test_model_maq_linesink(component: str, kwargs: dict, tmp_path) -> None:
     assert model_out is not model_in
     # Assert all kwargs are the same
     assert model_out.to_dict() == model_in.to_dict()
+
 
 @pytest.mark.parametrize(
     ("component", "kwargs"),
@@ -111,15 +113,41 @@ def test_model_maq_linedoublet(component: str, kwargs: dict, tmp_path) -> None:
     # Assert all kwargs are the same
     assert model_out.to_dict() == model_in.to_dict()
 
+
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
         ("CircAreaSink", {}),
         ("Constant", {}),
-        ("Uflow", {}),
+        ("Uflow", {"slope":1e-4, "angle":0.0}),
     ],
 )
 def test_model_maq_other(component: str, kwargs: dict, tmp_path) -> None:
+    file_path: Path = tmp_path / "linesink.json"
+
+    model_in = tfs.ModelMaq()
+
+    getattr(tfs, component)(model_in, **kwargs)
+
+    model_in.to_json(file_path)
+
+    model_out: tfs.ModelMaq = tfs.ModelMaq.from_json(file_path)
+
+    # Assert that model_out is not a reference to model_in
+    assert model_out is not model_in
+    # Assert all kwargs are the same
+    assert model_out.to_dict() == model_in.to_dict()
+    
+@pytest.mark.parametrize(
+    ("component", "kwargs"),
+    [
+        ("ImpermeableWall1D", {}),
+        ("LeakyWall1D", {}),
+        ("LineSink1D", {}),
+        ("River1D", {}),
+    ],
+)
+def test_model_maq_1D(component: str, kwargs: dict, tmp_path) -> None:
     file_path: Path = tmp_path / "linesink.json"
 
     model_in = tfs.ModelMaq()
@@ -197,7 +225,7 @@ def test_model_3D_wells(component: str, kwargs: dict, tmp_path) -> None:
         ("Ditch", {}),
         ("RiverString", {}),
         ("DitchString", {}),
-        ("CollectorWell", {}),
+        ("CollectorWell", {"xy":[[1, 0, 10, 0], [0, 1, 0, 10]]}),
         ("RadialCollectorWell", {}),
     ],
 )
@@ -216,6 +244,7 @@ def test_model_3D_linesink(component: str, kwargs: dict, tmp_path) -> None:
     assert model_out is not model_in
     # Assert all kwargs are the same
     assert model_out.to_dict() == model_in.to_dict()
+
 
 @pytest.mark.parametrize(
     ("component", "kwargs"),
@@ -242,15 +271,41 @@ def test_model_3D_linedoublet(component: str, kwargs: dict, tmp_path) -> None:
     # Assert all kwargs are the same
     assert model_out.to_dict() == model_in.to_dict()
 
+
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
         ("CircAreaSink", {}),
         ("Constant", {}),
-        ("Uflow", {}),
+        ("Uflow", {"slope":1e-4, "angle":0.0}),
     ],
 )
 def test_model_3D_other(component: str, kwargs: dict, tmp_path) -> None:
+    file_path: Path = tmp_path / "linesink.json"
+
+    model_in = tfs.Model3D()
+
+    getattr(tfs, component)(model_in, **kwargs)
+
+    model_in.to_json(file_path)
+
+    model_out: tfs.Model3D = tfs.Model3D.from_json(file_path)
+
+    # Assert that model_out is not a reference to model_in
+    assert model_out is not model_in
+    # Assert all kwargs are the same
+    assert model_out.to_dict() == model_in.to_dict()
+
+@pytest.mark.parametrize(
+    ("component", "kwargs"),
+    [
+        ("ImpermeableWall1D", {}),
+        ("LeakyWall1D", {}),
+        ("LineSink1D", {}),
+        ("River1D", {}),
+    ],
+)
+def test_model_3D_1D(component: str, kwargs: dict, tmp_path) -> None:
     file_path: Path = tmp_path / "linesink.json"
 
     model_in = tfs.Model3D()
@@ -270,12 +325,8 @@ def test_model_3D_other(component: str, kwargs: dict, tmp_path) -> None:
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
-        ("XsectionMaq", {}),
-        ("Xsection3Dant", {}),
-        ("ImpermeableWall1D", {}),
-        ("LeakyWall1D", {}),
-        ("LineSink1D", {}),
-        ("River1D", {}),
+        ("XsectionMaq", {"x1":-np.inf, "x2":np.inf}),
+        ("Xsection3D", {"x1":-np.inf, "x2":np.inf, "kaq":1}),
     ],
 )
 def test_model_xsection(component: str, kwargs: dict, tmp_path) -> None:
