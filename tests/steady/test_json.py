@@ -67,7 +67,7 @@ def test_model_maq_wells(component: str, kwargs: dict, tmp_path) -> None:
         ("Ditch", {}),
         ("RiverString", {}),
         ("DitchString", {}),
-        ("CollectorWell", {"xy":[[1, 0, 10, 0], [0, 1, 0, 10]]}),
+        ("CollectorWell", {"xy": [[1, 0, 10, 0], [0, 1, 0, 10]]}),
         ("RadialCollectorWell", {}),
     ],
 )
@@ -119,35 +119,10 @@ def test_model_maq_linedoublet(component: str, kwargs: dict, tmp_path) -> None:
     [
         ("CircAreaSink", {}),
         ("Constant", {}),
-        ("Uflow", {"slope":1e-4, "angle":0.0}),
+        ("Uflow", {"slope": 1e-4, "angle": 0.0}),
     ],
 )
 def test_model_maq_other(component: str, kwargs: dict, tmp_path) -> None:
-    file_path: Path = tmp_path / "linesink.json"
-
-    model_in = tfs.ModelMaq()
-
-    getattr(tfs, component)(model_in, **kwargs)
-
-    model_in.to_json(file_path)
-
-    model_out: tfs.ModelMaq = tfs.ModelMaq.from_json(file_path)
-
-    # Assert that model_out is not a reference to model_in
-    assert model_out is not model_in
-    # Assert all kwargs are the same
-    assert model_out.to_dict() == model_in.to_dict()
-    
-@pytest.mark.parametrize(
-    ("component", "kwargs"),
-    [
-        ("ImpermeableWall1D", {}),
-        ("LeakyWall1D", {}),
-        ("LineSink1D", {}),
-        ("River1D", {}),
-    ],
-)
-def test_model_maq_1D(component: str, kwargs: dict, tmp_path) -> None:
     file_path: Path = tmp_path / "linesink.json"
 
     model_in = tfs.ModelMaq()
@@ -225,7 +200,7 @@ def test_model_3D_wells(component: str, kwargs: dict, tmp_path) -> None:
         ("Ditch", {}),
         ("RiverString", {}),
         ("DitchString", {}),
-        ("CollectorWell", {"xy":[[1, 0, 10, 0], [0, 1, 0, 10]]}),
+        ("CollectorWell", {"xy": [[1, 0, 10, 0], [0, 1, 0, 10]]}),
         ("RadialCollectorWell", {}),
     ],
 )
@@ -277,7 +252,7 @@ def test_model_3D_linedoublet(component: str, kwargs: dict, tmp_path) -> None:
     [
         ("CircAreaSink", {}),
         ("Constant", {}),
-        ("Uflow", {"slope":1e-4, "angle":0.0}),
+        ("Uflow", {"slope": 1e-4, "angle": 0.0}),
     ],
 )
 def test_model_3D_other(component: str, kwargs: dict, tmp_path) -> None:
@@ -296,25 +271,24 @@ def test_model_3D_other(component: str, kwargs: dict, tmp_path) -> None:
     # Assert all kwargs are the same
     assert model_out.to_dict() == model_in.to_dict()
 
+
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
-        ("ImpermeableWall1D", {}),
-        ("LeakyWall1D", {}),
-        ("LineSink1D", {}),
-        ("River1D", {}),
+        ("XsectionMaq", {"x1": -np.inf, "x2": np.inf}),
+        ("Xsection3D", {"x1": -np.inf, "x2": np.inf, "kaq": 1}),
     ],
 )
-def test_model_3D_1D(component: str, kwargs: dict, tmp_path) -> None:
-    file_path: Path = tmp_path / "linesink.json"
+def test_model_xsection(component: str, kwargs: dict, tmp_path) -> None:
+    file_path: Path = tmp_path / "xsection.json"
 
-    model_in = tfs.Model3D()
+    model_in = tfs.ModelXsection()
 
     getattr(tfs, component)(model_in, **kwargs)
 
     model_in.to_json(file_path)
 
-    model_out: tfs.Model3D = tfs.Model3D.from_json(file_path)
+    model_out: tfs.ModelXsection = tfs.ModelXsection.from_json(file_path)
 
     # Assert that model_out is not a reference to model_in
     assert model_out is not model_in
@@ -325,14 +299,17 @@ def test_model_3D_1D(component: str, kwargs: dict, tmp_path) -> None:
 @pytest.mark.parametrize(
     ("component", "kwargs"),
     [
-        ("XsectionMaq", {"x1":-np.inf, "x2":np.inf}),
-        ("Xsection3D", {"x1":-np.inf, "x2":np.inf, "kaq":1}),
+        ("ImpermeableWall1D", {}),
+        ("LeakyWall1D", {}),
+        ("LineSink1D", {}),
+        ("River1D", {}),
     ],
 )
-def test_model_xsection(component: str, kwargs: dict, tmp_path) -> None:
+def test_model_xsection_1D(component: str, kwargs: dict, tmp_path) -> None:
     file_path: Path = tmp_path / "xsection.json"
 
     model_in = tfs.ModelXsection()
+    tfs.XsectionMaq(model_in, x1=-np.inf, x2=np.inf)
 
     getattr(tfs, component)(model_in, **kwargs)
 
