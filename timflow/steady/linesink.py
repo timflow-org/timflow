@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from timflow.bessel.besselnumba import disbeslsv, potbeslsv
+from timflow.steady.base_io import store_input
 from timflow.steady.controlpoints import controlpoints, strengthinf_controlpoints
 from timflow.steady.element import Element
 from timflow.steady.equation import HeadEquation
@@ -500,6 +501,7 @@ class LineSinkHoBase(LineSinkChangeTrace, Element):
         return hinside
 
 
+@store_input
 class River(LineSinkHoBase, HeadEquation):
     """Head-specified line-sink which may optionally have a width and resistance.
 
@@ -609,6 +611,7 @@ class River(LineSinkHoBase, HeadEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class Ditch(River):
     """Line-sink with specified total discharge, and uniform but unknown head.
 
@@ -872,6 +875,7 @@ class LineSinkStringBase2(Element):
             ls.plot(layer=layer, ax=ax, **kwargs)
 
 
+@store_input
 class RiverString(LineSinkStringBase2):
     """String of head-specified line-sinks with optional width and resistance.
 
@@ -1029,6 +1033,7 @@ class RiverString(LineSinkStringBase2):
         return mat, rhs
 
 
+@store_input
 class DitchString(RiverString):
     """String of Ditches with specified discharge and uniform unknown head.
 
@@ -1117,6 +1122,7 @@ class DitchString(RiverString):
         return mat, rhs
 
 
+@store_input
 class LineSinkDitch(Ditch):
     """Deprecated alias for :class:`.Ditch`.
 
@@ -1133,6 +1139,7 @@ class LineSinkDitch(Ditch):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class LineSinkDitchString(DitchString):
     """Deprecated alias for :class:`.DitchString`.
 
@@ -1150,6 +1157,7 @@ class LineSinkDitchString(DitchString):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class HeadLineSink(River):
     """Deprecated alias for :class:`.River`.
 
@@ -1167,6 +1175,7 @@ class HeadLineSink(River):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class HeadLineSinkString(RiverString):
     """Deprecated alias for :class:`.RiverString`.
 
@@ -1184,6 +1193,7 @@ class HeadLineSinkString(RiverString):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class CollectorWell(DitchString):
     """Collector well: collection of line sinks with a specified total discharge.
 
@@ -1246,6 +1256,7 @@ class CollectorWell(DitchString):
         self.name = "CollectorWell"
 
 
+@store_input
 class RadialCollectorWell(CollectorWell):
     """Radial collector well.
 

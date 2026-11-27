@@ -9,11 +9,13 @@ Example::
 
 import numpy as np
 
+from timflow.steady.base_io import store_input
 from timflow.steady.element import Element
 
 __all__ = ["Uflow"]
 
 
+@store_input
 class Uflow(Element):
     """Add uniform flow to the model.
 

@@ -13,6 +13,7 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+from timflow.steady.base_io import store_input
 from timflow.steady.element import Element
 from timflow.steady.equation import DisvecEquation, LeakyWallEquation
 
@@ -122,6 +123,7 @@ class LineDoublet1D(Element):
         )
 
 
+@store_input
 class ImpermeableWall1D(LineDoublet1D, DisvecEquation):
     """Create 1D impermeable wall."""
 
@@ -147,6 +149,7 @@ class ImpermeableWall1D(LineDoublet1D, DisvecEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class LeakyWall1D(LineDoublet1D, LeakyWallEquation):
     """Create an infinitely long leaky or impermeable wall.
 
@@ -196,6 +199,7 @@ class LeakyWall1D(LineDoublet1D, LeakyWallEquation):
         self.parameters[:, 0] = sol
 
 
+@store_input
 class ImpLineDoublet1D(ImpermeableWall1D):
     """Deprecated alias for :class:`.ImpermeableWall1D`.
 
@@ -213,6 +217,7 @@ class ImpLineDoublet1D(ImpermeableWall1D):
         super().__init__(*args, **kwargs)
 
 
+@store_input
 class LeakyLineDoublet1D(LeakyWall1D):
     """Deprecated alias for :class:`.LeakyWall1D`.
 
